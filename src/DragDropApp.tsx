@@ -6,7 +6,7 @@ import { KanbanView } from './KanbanView';
 import { DraggableItem } from './components/Item/Item';
 import { DraggableLane } from './components/Lane/Lane';
 import { KanbanContext } from './components/context';
-import { c, clearCompletedMoveSource, maybeCompleteForMove } from './components/helpers';
+import { c, maybeCompleteForMove } from './components/helpers';
 import { Board, DataTypes, Item, Lane } from './components/types';
 import { DndContext } from './dnd/components/DndContext';
 import { DragOverlay } from './dnd/components/DragOverlay';
@@ -111,7 +111,7 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
 
         return stateManager.setState((board) => {
           const entity = getEntityFromPath(board, dragPath);
-          const newBoard: Board = moveEntity(
+          let newBoard: Board = moveEntity(
             board,
             dragPath,
             dropPath,
@@ -127,7 +127,7 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
                   entity
                 );
 
-                return dragPath[0] === dropPath[0] ? next : clearCompletedMoveSource(next);
+                return next;
               }
               return entity;
             },
@@ -165,6 +165,25 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
             return update<Board>(newBoard, {
               data: { settings: { 'list-collapse': { $set: op(collapsedState) } } },
             });
+          }
+
+          if (entity.type === DataTypes.Item && dragPath[0] !== dropPath[0]) {
+            const blockId = entity.data.blockId;
+
+            if (blockId && newBoard.data.settings['completed-card-sources']?.[blockId]) {
+              const nextSources = { ...newBoard.data.settings['completed-card-sources'] };
+              delete nextSources[blockId];
+
+              newBoard = update<Board>(newBoard, {
+                data: {
+                  settings: {
+                    'completed-card-sources': {
+                      $set: nextSources,
+                    },
+                  },
+                },
+              });
+            }
           }
 
           // Remove sorting in the destination lane
@@ -216,7 +235,7 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
               entity
             );
             replacementEntity = replacement;
-            toInsert.push(clearCompletedMoveSource(next));
+            toInsert.push(next);
           } else {
             toInsert.push(entity);
           }
@@ -253,7 +272,25 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
             data: { settings: { 'list-collapse': { $set: op(collapsedState) } } },
           });
         } else {
-          return removeEntity(sourceBoard, dragPath, replacementEntity);
+          let nextSourceBoard = removeEntity(sourceBoard, dragPath, replacementEntity);
+          const blockId = entity.data.blockId;
+
+          if (blockId && nextSourceBoard.data.settings['completed-card-sources']?.[blockId]) {
+            const nextSources = { ...nextSourceBoard.data.settings['completed-card-sources'] };
+            delete nextSources[blockId];
+
+            nextSourceBoard = update<Board>(nextSourceBoard, {
+              data: {
+                settings: {
+                  'completed-card-sources': {
+                    $set: nextSources,
+                  },
+                },
+              },
+            });
+          }
+
+          return nextSourceBoard;
         }
       });
     },

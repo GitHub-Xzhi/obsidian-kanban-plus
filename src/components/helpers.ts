@@ -33,22 +33,6 @@ export function generateInstanceId(len: number = 9): string {
     .slice(2, 2 + len);
 }
 
-export function clearCompletedMoveSource(item: Item): Item {
-  if (
-    item.data.completedFromLaneId === undefined &&
-    item.data.completedFromLaneIndex === undefined &&
-    item.data.completedFromLaneTitle === undefined
-  ) {
-    return item;
-  }
-
-  return update(item, {
-    data: {
-      $unset: ['completedFromLaneId', 'completedFromLaneIndex', 'completedFromLaneTitle'],
-    },
-  });
-}
-
 export function maybeCompleteForMove(
   sourceStateManager: StateManager,
   sourceBoard: Board,

@@ -3,16 +3,10 @@ import { Menu, Platform, TFile, TFolder } from 'obsidian';
 import { Dispatch, StateUpdater, useCallback } from 'preact/hooks';
 import { StateManager } from 'src/StateManager';
 import { Path } from 'src/dnd/types';
-import { moveEntity } from 'src/dnd/util/data';
 import { t } from 'src/lang/helpers';
 
 import { BoardModifiers } from '../../helpers/boardModifiers';
-import {
-  applyTemplate,
-  clearCompletedMoveSource,
-  escapeRegExpStr,
-  generateInstanceId,
-} from '../helpers';
+import { applyTemplate, escapeRegExpStr, generateInstanceId } from '../helpers';
 import { EditState, Item } from '../types';
 import {
   constructDatePicker,
@@ -38,7 +32,7 @@ interface UseItemMenuParams {
 
 export function useItemMenu({
   setEditState,
-  item,
+  item: card,
   path,
   boardModifiers,
   stateManager,
@@ -46,8 +40,27 @@ export function useItemMenu({
   return useCallback(
     (e: MouseEvent) => {
       const coordinates = { x: e.clientX, y: e.clientY };
-      const hasDate = !!item.data.metadata.date;
-      const hasTime = !!item.data.metadata.time;
+      const fileManager = stateManager.app.fileManager;
+      const pickerWindow = activeWindow as Window;
+      const hasDate = !!card.data.metadata.date;
+      const hasTime = !!card.data.metadata.time;
+      const copyCardLink = () => {
+        const blockId = card.data.blockId || generateInstanceId(6);
+
+        navigator.clipboard.writeText(
+          `${fileManager.generateMarkdownLink(stateManager.file, '', '#^' + blockId)}`
+        );
+
+        if (!card.data.blockId) {
+          boardModifiers.updateItem(
+            path,
+            stateManager.updateItemContent(
+              update(card, { data: { blockId: { $set: blockId } } }),
+              card.data.titleRaw
+            )
+          );
+        }
+      };
 
       const menu = new Menu().addItem((i) => {
         i.setIcon('lucide-edit')
@@ -60,7 +73,7 @@ export function useItemMenu({
           i.setIcon('lucide-file-plus-2')
             .setTitle(t('New note from card'))
             .onClick(async () => {
-              const prevTitle = item.data.titleRaw.split('\n')[0].trim();
+              const prevTitle = card.data.titleRaw.split('\n')[0].trim();
               const sanitizedTitle = prevTitle
                 .replace(embedRegEx, '$1')
                 .replace(wikilinkRegEx, '$1')
@@ -90,51 +103,27 @@ export function useItemMenu({
 
               await applyTemplate(stateManager, newNoteTemplatePath as string | undefined);
 
-              const newTitleRaw = item.data.titleRaw.replace(
+              const newTitleRaw = card.data.titleRaw.replace(
                 prevTitle,
-                stateManager.app.fileManager.generateMarkdownLink(newFile, stateManager.file.path)
+                fileManager.generateMarkdownLink(newFile, stateManager.file.path)
               );
 
-              boardModifiers.updateItem(path, stateManager.updateItemContent(item, newTitleRaw));
+              boardModifiers.updateItem(path, stateManager.updateItemContent(card, newTitleRaw));
             });
         })
         .addItem((i) => {
           i.setIcon('lucide-link')
             .setTitle(t('Copy link to card'))
-            .onClick(() => {
-              if (item.data.blockId) {
-                navigator.clipboard.writeText(
-                  `${this.app.fileManager.generateMarkdownLink(
-                    stateManager.file,
-                    '',
-                    '#^' + item.data.blockId
-                  )}`
-                );
-              } else {
-                const id = generateInstanceId(6);
-
-                navigator.clipboard.writeText(
-                  `${this.app.fileManager.generateMarkdownLink(stateManager.file, '', '#^' + id)}`
-                );
-
-                boardModifiers.updateItem(
-                  path,
-                  stateManager.updateItemContent(
-                    update(item, { data: { blockId: { $set: id } } }),
-                    item.data.titleRaw
-                  )
-                );
-              }
-            });
+            .onClick(copyCardLink);
         })
         .addSeparator();
 
-      if (/\n/.test(item.data.titleRaw)) {
+      if (/\n/.test(card.data.titleRaw)) {
         menu.addItem((i) => {
           i.setIcon('lucide-wrap-text')
             .setTitle(t('Split card'))
             .onClick(async () => {
-              const titles = item.data.titleRaw.split(/[\r\n]+/g).map((t) => t.trim());
+              const titles = card.data.titleRaw.split(/[\r\n]+/g).map((t) => t.trim());
               const newItems = await Promise.all(
                 titles.map((title) => {
                   return stateManager.getNewItem(title, ' ');
@@ -196,17 +185,17 @@ export function useItemMenu({
             .setTitle(hasDate ? t('Edit date') : t('Add date'))
             .onClick(() => {
               constructDatePicker(
-                e.view,
+                pickerWindow,
                 stateManager,
                 coordinates,
                 constructMenuDatePickerOnChange({
                   stateManager,
                   boardModifiers,
-                  item,
+                  item: card,
                   hasDate,
                   path,
                 }),
-                item.data.metadata.date?.toDate()
+                card.data.metadata.date?.toDate()
               );
             });
         });
@@ -225,9 +214,9 @@ export function useItemMenu({
                 `(^|\\s)${escapeRegExpStr(dateTrigger as string)}${contentMatch}`
               );
 
-              const titleRaw = item.data.titleRaw.replace(dateRegEx, '').trim();
+              const titleRaw = card.data.titleRaw.replace(dateRegEx, '').trim();
 
-              boardModifiers.updateItem(path, stateManager.updateItemContent(item, titleRaw));
+              boardModifiers.updateItem(path, stateManager.updateItemContent(card, titleRaw));
             });
         });
 
@@ -236,17 +225,17 @@ export function useItemMenu({
             .setTitle(hasTime ? t('Edit time') : t('Add time'))
             .onClick(() => {
               constructTimePicker(
-                e.view,
+                pickerWindow,
                 stateManager,
                 coordinates,
                 constructMenuTimePickerOnChange({
                   stateManager,
                   boardModifiers,
-                  item,
+                  item: card,
                   hasTime,
                   path,
                 }),
-                item.data.metadata.time
+                card.data.metadata.time
               );
             });
         });
@@ -261,8 +250,8 @@ export function useItemMenu({
                   `(^|\\s)${escapeRegExpStr(timeTrigger as string)}{([^}]+)}`
                 );
 
-                const titleRaw = item.data.titleRaw.replace(timeRegEx, '').trim();
-                boardModifiers.updateItem(path, stateManager.updateItemContent(item, titleRaw));
+                const titleRaw = card.data.titleRaw.replace(timeRegEx, '').trim();
+                boardModifiers.updateItem(path, stateManager.updateItemContent(card, titleRaw));
               });
           });
         }
@@ -273,24 +262,18 @@ export function useItemMenu({
       const addMoveToOptions = (menu: Menu) => {
         const lanes = stateManager.state.children;
         if (lanes.length <= 1) return;
-        for (let i = 0, len = lanes.length; i < len; i++) {
-          menu.addItem((item) =>
-            item
+        lanes.forEach((lane, laneIndex) => {
+          menu.addItem((menuItem) => {
+            menuItem
               .setIcon('lucide-square-kanban')
-              .setChecked(path[0] === i)
-              .setTitle(lanes[i].data.title)
+              .setChecked(path[0] === laneIndex)
+              .setTitle(lane.data.title)
               .onClick(() => {
-                if (path[0] === i) return;
-                stateManager.setState((boardData) => {
-                  return moveEntity(boardData, path, [i, 0], (entity) => {
-                    return entity.type === item.type
-                      ? clearCompletedMoveSource(entity as Item)
-                      : entity;
-                  });
-                });
-              })
-          );
-        }
+                if (path[0] === laneIndex) return;
+                stateManager.moveItemToLane(path, laneIndex);
+              });
+          });
+        });
       };
 
       if (Platform.isPhone) {
@@ -308,6 +291,6 @@ export function useItemMenu({
 
       menu.showAtPosition(coordinates);
     },
-    [setEditState, item, path, boardModifiers, stateManager]
+    [setEditState, card, path, boardModifiers, stateManager]
   );
 }

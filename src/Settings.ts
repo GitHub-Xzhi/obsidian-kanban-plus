@@ -61,6 +61,15 @@ export interface KanbanSettings {
   'date-picker-week-start'?: number;
   'date-time-display-format'?: string;
   'date-trigger'?: string;
+  'completed-card-sources'?: Record<
+    string,
+    {
+      sourceLaneIndex: number;
+      sourceLaneTitle: string;
+      sourceItemIndex: number;
+      movedAt: number;
+    }
+  >;
   'default-complete-lane-title'?: string;
   'default-complete-lane-titles'?: Record<string, string>;
   'completed-card-insertion-method'?: 'prepend' | 'append';
@@ -115,6 +124,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'date-picker-week-start',
   'date-time-display-format',
   'date-trigger',
+  'completed-card-sources',
   'default-complete-lane-title',
   'default-complete-lane-titles',
   'completed-card-insertion-method',

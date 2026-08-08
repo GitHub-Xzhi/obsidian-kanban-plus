@@ -234,7 +234,25 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       stateManager.setState((boardData) => {
         const item = getEntityFromPath(boardData, path);
         try {
-          return update(removeEntity(boardData, path), {
+          let nextBoard = removeEntity(boardData, path);
+          const blockId = item.data.blockId;
+
+          if (blockId && nextBoard.data.settings['completed-card-sources']?.[blockId]) {
+            const nextSources = { ...nextBoard.data.settings['completed-card-sources'] };
+            delete nextSources[blockId];
+
+            nextBoard = update(nextBoard, {
+              data: {
+                settings: {
+                  'completed-card-sources': {
+                    $set: nextSources,
+                  },
+                },
+              },
+            });
+          }
+
+          return update(nextBoard, {
             data: {
               archive: {
                 $push: [
@@ -253,11 +271,17 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     duplicateEntity: (path: Path) => {
       stateManager.setState((boardData) => {
         const entity = getEntityFromPath(boardData, path);
-        const entityWithNewID = update(entity, {
-          id: {
-            $set: generateInstanceId(),
-          },
+        let entityWithNewID = update(entity, {
+          id: { $set: generateInstanceId() },
         });
+
+        if (entity.type === DataTypes.Item) {
+          entityWithNewID = update(entityWithNewID, {
+            data: {
+              $unset: ['blockId'],
+            },
+          });
+        }
 
         if (entity.type === DataTypes.Lane) {
           const collapseState = view.getViewState('list-collapse');

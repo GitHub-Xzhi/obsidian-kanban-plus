@@ -5,13 +5,13 @@ import { useEffect, useState } from 'preact/compat';
 import { KanbanView } from './KanbanView';
 import { KanbanSettings, SettingRetrievers } from './Settings';
 import {
-  clearCompletedMoveSource,
+  generateInstanceId,
   getDefaultDateFormat,
   getDefaultTimeFormat,
 } from './components/helpers';
 import { Board, BoardTemplate, Item, Lane } from './components/types';
 import { Path } from './dnd/types';
-import { insertEntity, removeEntity, updateEntity } from './dnd/util/data';
+import { insertEntity, moveEntity, removeEntity, updateEntity } from './dnd/util/data';
 import { ListFormat } from './parsers/List';
 import { BaseFormat, frontmatterKey, shouldRefreshBoard } from './parsers/common';
 import { getTaskStatusDone } from './parsers/helpers/inlineMetadata';
@@ -401,16 +401,11 @@ export class StateManager {
       }
 
       const sourceLane = board.children[path[0]];
+      const blockId = replacements[completedIndex].data.blockId || generateInstanceId(6);
       const completedItem = update(replacements[completedIndex], {
         data: {
-          completedFromLaneId: {
-            $set: sourceLane.id,
-          },
-          completedFromLaneIndex: {
-            $set: path[1],
-          },
-          completedFromLaneTitle: {
-            $set: sourceLane.data.title,
+          blockId: {
+            $set: blockId,
           },
         },
       });
@@ -426,6 +421,24 @@ export class StateManager {
       const destinationIndex = insertionMethod === 'append' ? destinationLane.children.length : 0;
 
       nextBoard = insertEntity(nextBoard, [laneIndex, destinationIndex], [completedItem]);
+
+      nextBoard = update(nextBoard, {
+        data: {
+          settings: {
+            'completed-card-sources': {
+              $set: {
+                ...(nextBoard.data.settings['completed-card-sources'] || {}),
+                [blockId]: {
+                  sourceLaneIndex: path[0],
+                  sourceLaneTitle: sourceLane.data.title,
+                  sourceItemIndex: path[1],
+                  movedAt: Date.now(),
+                },
+              },
+            },
+          },
+        },
+      });
 
       if (destinationLane.data.sorted !== undefined) {
         nextBoard = updateEntity(nextBoard, [laneIndex], {
@@ -447,17 +460,19 @@ export class StateManager {
     completedIndex: number,
     originalItem: Item
   ) {
-    const { completedFromLaneId, completedFromLaneIndex, completedFromLaneTitle } =
-      originalItem.data;
+    const blockId = originalItem.data.blockId;
+    const sourceRecord = blockId
+      ? this.state.data.settings['completed-card-sources']?.[blockId]
+      : null;
 
-    if (!completedFromLaneId && !completedFromLaneTitle) {
+    if (!blockId || !sourceRecord) {
       return false;
     }
 
     const sourceLaneIndex = this.state.children.findIndex((lane) => {
       return (
-        (completedFromLaneId && lane.id === completedFromLaneId) ||
-        (completedFromLaneTitle && lane.data.title === completedFromLaneTitle)
+        lane.data.title === sourceRecord.sourceLaneTitle ||
+        this.state.children[sourceRecord.sourceLaneIndex] === lane
       );
     });
 
@@ -474,7 +489,7 @@ export class StateManager {
         return board;
       }
 
-      const returnedItem = clearCompletedMoveSource(replacements[completedIndex]);
+      const returnedItem = replacements[completedIndex];
       const sourceReplacements = replacements.filter((_, index) => index !== completedIndex);
       let nextBoard = removeEntity(board, path);
 
@@ -484,14 +499,82 @@ export class StateManager {
 
       const sourceLane = nextBoard.children[sourceLaneIndex];
       const destinationIndex = Math.min(
-        completedFromLaneIndex ?? sourceLane.children.length,
+        sourceRecord.sourceItemIndex ?? sourceLane.children.length,
         sourceLane.children.length
       );
 
-      return insertEntity(nextBoard, [sourceLaneIndex, destinationIndex], [returnedItem]);
+      nextBoard = insertEntity(nextBoard, [sourceLaneIndex, destinationIndex], [returnedItem]);
+
+      const nextSources = { ...(nextBoard.data.settings['completed-card-sources'] || {}) };
+      delete nextSources[blockId];
+
+      return update(nextBoard, {
+        data: {
+          settings: {
+            'completed-card-sources': {
+              $set: nextSources,
+            },
+          },
+        },
+      });
     });
 
     return true;
+  }
+
+  clearCompletedCardSource(item: Item) {
+    this.clearCompletedCardSourceByBlockId(item.data.blockId);
+  }
+
+  clearCompletedCardSourceByBlockId(blockId?: string) {
+    if (!blockId || !this.state.data.settings['completed-card-sources']?.[blockId]) {
+      return;
+    }
+
+    this.setState((board) => {
+      const nextSources = { ...(board.data.settings['completed-card-sources'] || {}) };
+      delete nextSources[blockId];
+
+      return update(board, {
+        data: {
+          settings: {
+            'completed-card-sources': {
+              $set: nextSources,
+            },
+          },
+        },
+      });
+    });
+  }
+
+  moveItemToLane(path: Path, laneIndex: number) {
+    this.setState((board) => {
+      const item = board.children[path[0]]?.children[path[1]];
+
+      if (!item || path[0] === laneIndex || !board.children[laneIndex]) {
+        return board;
+      }
+
+      let nextBoard = moveEntity(board, path, [laneIndex, 0]);
+      const blockId = item.data.blockId;
+
+      if (blockId && nextBoard.data.settings['completed-card-sources']?.[blockId]) {
+        const nextSources = { ...nextBoard.data.settings['completed-card-sources'] };
+        delete nextSources[blockId];
+
+        nextBoard = update(nextBoard, {
+          data: {
+            settings: {
+              'completed-card-sources': {
+                $set: nextSources,
+              },
+            },
+          },
+        });
+      }
+
+      return nextBoard;
+    });
   }
 
   getParsedBoard(data: string) {
