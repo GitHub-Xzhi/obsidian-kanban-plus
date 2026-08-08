@@ -51,6 +51,9 @@ const en = {
   'Prepend / append new cards': 'Prepend / append new cards',
   'This setting controls whether new cards are added to the beginning or end of the list.':
     'This setting controls whether new cards are added to the beginning or end of the list.',
+  'Completed card placement': 'Completed card placement',
+  'This setting controls where cards are moved after their checkbox is completed.':
+    'This setting controls where cards are moved after their checkbox is completed.',
   Prepend: 'Prepend',
   'Prepend (compact)': 'Prepend (compact)',
   Append: 'Append',
@@ -244,6 +247,10 @@ const en = {
   'Mark cards in this list as complete': 'Mark cards in this list as complete',
   'Add list': 'Add list',
   'Add a list': 'Add a list',
+  'Default complete list': 'Default complete list',
+  'Cards completed by checkbox will be moved to this list.':
+    'Cards completed by checkbox will be moved to this list.',
+  Select: 'Select',
 
   // components/Lane/LaneHeader.tsx
   'Move list': 'Move list',
@@ -261,6 +268,7 @@ const en = {
   'Yes, archive cards': 'Yes, archive cards',
   'Edit list': 'Edit list',
   'Archive cards': 'Archive cards',
+  'Change default complete list': 'Change default complete list',
   'Archive list': 'Archive list',
   'Delete list': 'Delete list',
   'Insert list before': 'Insert list before',

@@ -6,6 +6,7 @@ import { getTaskStatusDone, toggleTask } from 'src/parsers/helpers/inlineMetadat
 
 import { BoardModifiers } from '../../helpers/boardModifiers';
 import { Icon } from '../Icon/Icon';
+import { openCompleteLaneModal } from '../Lane/CompleteLaneModal';
 import { c } from '../helpers';
 import { Item } from '../types';
 
@@ -30,19 +31,23 @@ export const ItemCheckbox = memo(function ItemCheckbox({
   const [isHoveringCheckbox, setIsHoveringCheckbox] = useState(false);
 
   const onCheckboxChange = useCallback(() => {
+    const isComplete = item.data.checked && item.data.checkChar === getTaskStatusDone();
     const updates = toggleTask(item, stateManager.file);
+
+    let replacements: Item[];
+    let completedIndex = 0;
+
     if (updates) {
       const [itemStrings, checkChars, thisIndex] = updates;
-      const replacements: Item[] = itemStrings.map((str, i) => {
+      replacements = itemStrings.map((str, i) => {
         const next = stateManager.getNewItem(str, checkChars[i]);
         if (i === thisIndex) next.id = item.id;
         return next;
       });
 
-      boardModifiers.replaceItem(path, replacements);
+      completedIndex = thisIndex;
     } else {
-      boardModifiers.updateItem(
-        path,
+      replacements = [
         update(item, {
           data: {
             checkChar: {
@@ -52,8 +57,35 @@ export const ItemCheckbox = memo(function ItemCheckbox({
             },
             $toggle: ['checked'],
           },
-        })
-      );
+        }),
+      ];
+    }
+
+    const completeLanes = stateManager.getCompleteLaneOptions();
+    const sourceIsCompleteLane = completeLanes.some((option) => option.index === path[0]);
+
+    if (!isComplete && completeLanes.length && !sourceIsCompleteLane) {
+      const moveToLane = (laneIndex: number) => {
+        if (!stateManager.moveCompletedItemToLane(path, replacements, completedIndex, laneIndex)) {
+          boardModifiers.updateItem(path, replacements[completedIndex]);
+        }
+      };
+
+      const defaultCompleteLaneIndex = stateManager.getDefaultCompleteLaneIndex();
+
+      if (defaultCompleteLaneIndex !== null) {
+        moveToLane(defaultCompleteLaneIndex);
+      } else {
+        openCompleteLaneModal(stateManager, moveToLane);
+      }
+
+      return;
+    }
+
+    if (replacements.length === 1) {
+      boardModifiers.updateItem(path, replacements[0]);
+    } else {
+      boardModifiers.replaceItem(path, replacements);
     }
   }, [item, stateManager, boardModifiers, ...path]);
 

@@ -61,6 +61,8 @@ export interface KanbanSettings {
   'date-picker-week-start'?: number;
   'date-time-display-format'?: string;
   'date-trigger'?: string;
+  'default-complete-lane-title'?: string;
+  'completed-card-insertion-method'?: 'prepend' | 'append';
   'full-list-lane-width'?: boolean;
   'hide-card-count'?: boolean;
   'inline-metadata-position'?: 'body' | 'footer' | 'metadata-table';
@@ -110,6 +112,8 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'date-picker-week-start',
   'date-time-display-format',
   'date-trigger',
+  'default-complete-lane-title',
+  'completed-card-insertion-method',
   'full-list-lane-width',
   'hide-card-count',
   'inline-metadata-position',
@@ -312,6 +316,25 @@ export class SettingsManager {
         dropdown.onChange((value) => {
           this.applySettingsUpdate({
             'new-card-insertion-method': {
+              $set: value as 'prepend' | 'append',
+            },
+          });
+        });
+      });
+
+    new Setting(contentEl)
+      .setName(t('Completed card placement'))
+      .setDesc(t('This setting controls where cards are moved after their checkbox is completed.'))
+      .addDropdown((dropdown) => {
+        dropdown.addOption('prepend', t('Prepend'));
+        dropdown.addOption('append', t('Append'));
+
+        const [value, globalValue] = this.getSetting('completed-card-insertion-method', local);
+
+        dropdown.setValue((value as string) || (globalValue as string) || 'prepend');
+        dropdown.onChange((value) => {
+          this.applySettingsUpdate({
+            'completed-card-insertion-method': {
               $set: value as 'prepend' | 'append',
             },
           });

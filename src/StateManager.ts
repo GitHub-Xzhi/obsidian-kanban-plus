@@ -5,7 +5,9 @@ import { useEffect, useState } from 'preact/compat';
 import { KanbanView } from './KanbanView';
 import { KanbanSettings, SettingRetrievers } from './Settings';
 import { getDefaultDateFormat, getDefaultTimeFormat } from './components/helpers';
-import { Board, BoardTemplate, Item } from './components/types';
+import { Board, BoardTemplate, Item, Lane } from './components/types';
+import { Path } from './dnd/types';
+import { insertEntity, removeEntity, updateEntity } from './dnd/util/data';
 import { ListFormat } from './parsers/List';
 import { BaseFormat, frontmatterKey, shouldRefreshBoard } from './parsers/common';
 import { getTaskStatusDone } from './parsers/helpers/inlineMetadata';
@@ -247,6 +249,8 @@ export class StateManager {
       'metadata-keys': metadataKeys,
       'archive-date-separator': this.getSettingRaw('archive-date-separator') || '',
       'archive-date-format': archiveDateFormat,
+      'completed-card-insertion-method':
+        this.getSettingRaw('completed-card-insertion-method', suppliedSettings) ?? 'prepend',
       'show-add-list': this.getSettingRaw('show-add-list', suppliedSettings) ?? true,
       'show-archive-all': this.getSettingRaw('show-archive-all', suppliedSettings) ?? true,
       'show-view-as-markdown':
@@ -300,6 +304,95 @@ export class StateManager {
 
     return null;
   };
+
+  getCompleteLaneOptions(board: Board = this.state): Array<{ lane: Lane; index: number }> {
+    return board.children.reduce<Array<{ lane: Lane; index: number }>>((acc, lane, index) => {
+      if (lane.data.shouldMarkItemsComplete) {
+        acc.push({ lane, index });
+      }
+
+      return acc;
+    }, []);
+  }
+
+  getDefaultCompleteLaneIndex(): number | null {
+    const completeLanes = this.getCompleteLaneOptions();
+
+    if (completeLanes.length === 1) {
+      return completeLanes[0].index;
+    }
+
+    const defaultTitle = this.getSetting('default-complete-lane-title');
+
+    if (!defaultTitle) {
+      return null;
+    }
+
+    return completeLanes.find((option) => option.lane.data.title === defaultTitle)?.index ?? null;
+  }
+
+  setDefaultCompleteLane(index: number) {
+    const lane = this.state.children[index];
+
+    if (!lane?.data.shouldMarkItemsComplete) {
+      return;
+    }
+
+    this.setState((board) =>
+      update(board, {
+        data: {
+          settings: {
+            'default-complete-lane-title': {
+              $set: lane.data.title,
+            },
+          },
+        },
+      })
+    );
+  }
+
+  moveCompletedItemToLane(
+    path: Path,
+    replacements: Item[],
+    completedIndex: number,
+    laneIndex: number
+  ) {
+    if (!replacements[completedIndex] || path[0] === laneIndex) {
+      return false;
+    }
+
+    this.setState((board) => {
+      if (!board.children[path[0]]?.children[path[1]] || !board.children[laneIndex]) {
+        return board;
+      }
+
+      const completedItem = replacements[completedIndex];
+      const sourceReplacements = replacements.filter((_, index) => index !== completedIndex);
+      let nextBoard = removeEntity(board, path);
+
+      if (sourceReplacements.length) {
+        nextBoard = insertEntity(nextBoard, path, sourceReplacements);
+      }
+
+      const destinationLane = nextBoard.children[laneIndex];
+      const insertionMethod = this.getSetting('completed-card-insertion-method');
+      const destinationIndex = insertionMethod === 'append' ? destinationLane.children.length : 0;
+
+      nextBoard = insertEntity(nextBoard, [laneIndex, destinationIndex], [completedItem]);
+
+      if (destinationLane.data.sorted !== undefined) {
+        nextBoard = updateEntity(nextBoard, [laneIndex], {
+          data: {
+            $unset: ['sorted'],
+          },
+        });
+      }
+
+      return nextBoard;
+    });
+
+    return true;
+  }
 
   getParsedBoard(data: string) {
     const trimmedContent = data.trim();

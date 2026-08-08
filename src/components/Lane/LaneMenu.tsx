@@ -10,6 +10,7 @@ import { anyToString } from '../Item/MetadataTable';
 import { KanbanContext } from '../context';
 import { c, generateInstanceId } from '../helpers';
 import { EditState, Lane, LaneSort, LaneTemplate } from '../types';
+import { openCompleteLaneModal } from './CompleteLaneModal';
 
 export type LaneAction = 'delete' | 'archive' | 'archive-items' | null;
 
@@ -74,6 +75,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     const metadataSortOptions = new Set<string>();
     let canSortDate = false;
     let canSortTags = false;
+    const completeLanes = stateManager.getCompleteLaneOptions();
 
     lane.children.forEach((item) => {
       const taskData = item.data.metadata.inlineMetadata;
@@ -100,7 +102,18 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           .setIcon('lucide-archive')
           .setTitle(t('Archive cards'))
           .onClick(() => setConfirmAction('archive-items'));
-      })
+      });
+
+    if (completeLanes.length > 1) {
+      menu.addItem((item) => {
+        item
+          .setIcon('lucide-check-check')
+          .setTitle(t('Change default complete list'))
+          .onClick(() => openCompleteLaneModal(stateManager));
+      });
+    }
+
+    menu
       .addSeparator()
       .addItem((i) => {
         i.setIcon('arrow-left-to-line')

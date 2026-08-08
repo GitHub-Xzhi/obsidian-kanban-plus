@@ -46,6 +46,9 @@ const lang: Partial<Lang> = {
   'Prepend / append new cards': '追加新卡片',
   'This setting controls whether new cards are added to the beginning or end of the list.':
     '设置新卡片追加到列头部或尾部。',
+  'Completed card placement': '完成卡片放置位置',
+  'This setting controls where cards are moved after their checkbox is completed.':
+    '设置点击完成复选框后，卡片移动到完成列的头部或尾部。',
   Prepend: '头部',
   'Prepend (compact)': '头部 (紧凑)',
   Append: '尾部',
@@ -164,6 +167,9 @@ const lang: Partial<Lang> = {
   'Mark cards in this list as complete': '将该列设置为完成列',
   'Add list': '添加',
   'Add a list': '添加列',
+  'Default complete list': '默认完成列',
+  'Cards completed by checkbox will be moved to this list.': '点击复选框完成的卡片会移动到这个列。',
+  Select: '选择',
 
   // components/Lane/LaneHeader.tsx
   'Move list': '移动列',
@@ -180,6 +186,7 @@ const lang: Partial<Lang> = {
   'Yes, archive cards': '是，归档所有卡片',
   'Edit list': '编辑列',
   'Archive cards': '归档卡片',
+  'Change default complete list': '修改默认完成列',
   'Archive list': '归档列',
   'Delete list': '删除列',
   'Insert list before': '在上方插入列',
