@@ -17,7 +17,7 @@ import {
 import { t } from 'src/lang/helpers';
 import { getTaskStatusDone } from 'src/parsers/helpers/inlineMetadata';
 
-import { generateInstanceId } from '../components/helpers';
+import { escapeRegExpStr, generateInstanceId } from '../components/helpers';
 import { Board, DataTypes, Item, Lane } from '../components/types';
 
 export interface BoardModifiers {
@@ -60,6 +60,25 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     const titleRaw = newTitle.join(' ');
     return stateManager.updateItemContent(item, titleRaw);
+  };
+
+  const removeArchiveDate = (item: Item, archivedAt?: number) => {
+    if (!stateManager.getSetting('archive-with-date') || !archivedAt) {
+      return item;
+    }
+
+    const archiveDateFormat = stateManager.getSetting('archive-date-format');
+    const archiveDateSeparator = stateManager.getSetting('archive-date-separator');
+    const archiveDateAfterTitle = stateManager.getSetting('append-archive-date');
+    const archiveDate = moment(archivedAt).format(archiveDateFormat);
+    const separator = archiveDateSeparator ? ` ${archiveDateSeparator}` : '';
+    const archiveText = `${archiveDate}${separator}`;
+    const archiveRegExp = archiveDateAfterTitle
+      ? new RegExp(`\\s+${escapeRegExpStr(archiveText)}$`)
+      : new RegExp(`^${escapeRegExpStr(archiveText)}\\s+`);
+    const titleRaw = item.data.titleRaw.replace(archiveRegExp, '').trim();
+
+    return titleRaw === item.data.titleRaw ? item : stateManager.updateItemContent(item, titleRaw);
   };
 
   const collectBlockIds = (entity: Item | Lane): string[] => {
@@ -617,6 +636,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           return boardData;
         }
 
+        const unarchivedItem = removeArchiveDate(item, source.archivedAt);
         const sourceLane = boardData.children[sourceLaneIndex];
         const destinationIndex = Math.min(
           source.sourceItemIndex ?? sourceLane.children.length,
@@ -635,7 +655,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
               },
             }),
             [sourceLaneIndex, destinationIndex],
-            [item]
+            [unarchivedItem]
           ),
           {
             data: {
