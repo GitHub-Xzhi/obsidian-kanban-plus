@@ -62,6 +62,7 @@ export type PageDataValue =
 
 export interface PageData extends DataKey {
   value: PageDataValue;
+  format?: string;
 }
 
 export interface FileMetadata {

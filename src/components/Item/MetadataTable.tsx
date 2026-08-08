@@ -62,7 +62,8 @@ export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
           label: t('Created'),
           shouldHideLabel: false,
           containsMarkdown: false,
-          value: moment(createdAt).format(cardCreatedTimeFormat),
+          value: moment(createdAt),
+          format: cardCreatedTimeFormat,
         },
       };
     }
@@ -75,7 +76,8 @@ export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
           label: t('Completed'),
           shouldHideLabel: false,
           containsMarkdown: false,
-          value: moment(completedAt).format(cardCompletedTimeFormat),
+          value: moment(completedAt),
+          format: cardCompletedTimeFormat,
         },
       };
     }
@@ -212,7 +214,7 @@ export function MetadataValue({ data, dateLabel, searchQuery }: MetadataValuePro
   const renderChild = (v: any, sep?: string) => {
     const link = getLinkFromObj(v, view);
     const date = getDate(v);
-    const str = anyToString(v, stateManager);
+    const str = date && data.format ? date.format(data.format) : anyToString(v, stateManager);
     const isMatch = searchQuery && str.toLocaleLowerCase().contains(searchQuery);
 
     let content: ComponentChild;
