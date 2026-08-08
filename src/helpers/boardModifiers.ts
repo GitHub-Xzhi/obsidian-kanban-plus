@@ -1,7 +1,7 @@
 import update from 'immutability-helper';
 import { Notice, moment } from 'obsidian';
-import { KanbanSettings } from 'src/Settings';
 import { KanbanView } from 'src/KanbanView';
+import { KanbanSettings } from 'src/Settings';
 import { StateManager } from 'src/StateManager';
 import { Path } from 'src/dnd/types';
 import {
@@ -14,6 +14,7 @@ import {
   updateEntity,
   updateParentEntity,
 } from 'src/dnd/util/data';
+import { t } from 'src/lang/helpers';
 
 import { generateInstanceId } from '../components/helpers';
 import { Board, DataTypes, Item, Lane } from '../components/types';
@@ -115,10 +116,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     });
   };
 
-  const findArchivedSourceLaneIndex = (
-    boardData: Board,
-    source: ArchivedCardSources[string]
-  ) => {
+  const findArchivedSourceLaneIndex = (boardData: Board, source: ArchivedCardSources[string]) => {
     if (source.sourceLaneId) {
       return boardData.children.findIndex((lane) => lane.id === source.sourceLaneId);
     }
@@ -300,7 +298,12 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const items = lane.children;
 
         try {
-          const archived = archiveItemsWithSources(items, lane, path.last(), (itemIndex) => itemIndex);
+          const archived = archiveItemsWithSources(
+            items,
+            lane,
+            path.last(),
+            (itemIndex) => itemIndex
+          );
           const collapseState = view.getViewState('list-collapse');
           const op = (collapseState: boolean[]) => {
             const newState = [...collapseState];
@@ -309,14 +312,17 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           };
           view.setViewState('list-collapse', undefined, op);
 
-          return updateArchivedSources(update<Board>(removeEntity(boardData, path), {
-            data: {
-              settings: { 'list-collapse': { $set: op(collapseState) } },
-              archive: {
-                $unshift: archived.items,
+          return updateArchivedSources(
+            update<Board>(removeEntity(boardData, path), {
+              data: {
+                settings: { 'list-collapse': { $set: op(collapseState) } },
+                archive: {
+                  $unshift: archived.items,
+                },
               },
-            },
-          }), archived.sources);
+            }),
+            archived.sources
+          );
         } catch (e) {
           stateManager.setError(e);
           return boardData;
@@ -330,22 +336,30 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const items = lane.children;
 
         try {
-          const archived = archiveItemsWithSources(items, lane, path.last(), (itemIndex) => itemIndex);
+          const archived = archiveItemsWithSources(
+            items,
+            lane,
+            path.last(),
+            (itemIndex) => itemIndex
+          );
 
-          return updateArchivedSources(update(
-            updateEntity(boardData, path, {
-              children: {
-                $set: [],
-              },
-            }),
-            {
-              data: {
-                archive: {
-                  $unshift: archived.items,
+          return updateArchivedSources(
+            update(
+              updateEntity(boardData, path, {
+                children: {
+                  $set: [],
                 },
-              },
-            }
-          ), archived.sources);
+              }),
+              {
+                data: {
+                  archive: {
+                    $unshift: archived.items,
+                  },
+                },
+              }
+            ),
+            archived.sources
+          );
         } catch (e) {
           stateManager.setError(e);
           return boardData;
@@ -459,21 +473,28 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const nextSources = { ...(boardData.data.settings['archived-card-sources'] || {}) };
         delete nextSources[blockId];
 
-        return update(insertEntity(update<Board>(boardData, {
-          data: {
-            archive: {
-              $splice: [[archiveIndex, 1]],
-            },
-          },
-        }), [sourceLaneIndex, destinationIndex], [item]), {
-          data: {
-            settings: {
-              'archived-card-sources': {
-                $set: nextSources,
+        return update(
+          insertEntity(
+            update<Board>(boardData, {
+              data: {
+                archive: {
+                  $splice: [[archiveIndex, 1]],
+                },
+              },
+            }),
+            [sourceLaneIndex, destinationIndex],
+            [item]
+          ),
+          {
+            data: {
+              settings: {
+                'archived-card-sources': {
+                  $set: nextSources,
+                },
               },
             },
-          },
-        });
+          }
+        );
       });
     },
 
