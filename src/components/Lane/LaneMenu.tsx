@@ -68,7 +68,12 @@ export interface UseSettingsMenuParams {
 
 export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuParams) {
   const { stateManager, boardModifiers } = useContext(KanbanContext);
+  const board = stateManager.useState();
   const [confirmAction, setConfirmAction] = useState<LaneAction>(null);
+
+  const completeLanesKey = board.children
+    .map((lane, index) => `${index}:${lane.data.title}:${!!lane.data.shouldMarkItemsComplete}`)
+    .join('|');
 
   const settingsMenu = useMemo(() => {
     const metadataSortOptions = new Set<string>();
@@ -363,7 +368,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     }
 
     return menu;
-  }, [stateManager, setConfirmAction, path, lane]);
+  }, [stateManager, setConfirmAction, path, lane, completeLanesKey]);
 
   return {
     settingsMenu,
