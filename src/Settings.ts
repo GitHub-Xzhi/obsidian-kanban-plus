@@ -62,6 +62,7 @@ export interface KanbanSettings {
   'date-time-display-format'?: string;
   'date-trigger'?: string;
   'default-complete-lane-title'?: string;
+  'default-complete-lane-titles'?: Record<string, string>;
   'completed-card-insertion-method'?: 'prepend' | 'append';
   'full-list-lane-width'?: boolean;
   'hide-card-count'?: boolean;
@@ -115,6 +116,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'date-time-display-format',
   'date-trigger',
   'default-complete-lane-title',
+  'default-complete-lane-titles',
   'completed-card-insertion-method',
   'full-list-lane-width',
   'hide-card-count',

@@ -4,19 +4,25 @@ import { t } from 'src/lang/helpers';
 
 export class CompleteLaneModal extends Modal {
   stateManager: StateManager;
+  sourceLaneIndex?: number;
   onSelect?: (laneIndex: number) => void;
 
-  constructor(stateManager: StateManager, onSelect?: (laneIndex: number) => void) {
+  constructor(
+    stateManager: StateManager,
+    sourceLaneIndex?: number,
+    onSelect?: (laneIndex: number) => void
+  ) {
     super(stateManager.app);
 
     this.stateManager = stateManager;
+    this.sourceLaneIndex = sourceLaneIndex;
     this.onSelect = onSelect;
   }
 
   onOpen() {
     const { contentEl } = this;
     const completeLanes = this.stateManager.getCompleteLaneOptions();
-    const defaultLaneIndex = this.stateManager.getDefaultCompleteLaneIndex();
+    const defaultLaneIndex = this.stateManager.getDefaultCompleteLaneIndex(this.sourceLaneIndex);
 
     contentEl.createEl('h3', { text: t('Default complete list') });
     contentEl.createEl('p', {
@@ -38,7 +44,7 @@ export class CompleteLaneModal extends Modal {
       radio.checked = index === defaultLaneIndex;
       radio.addEventListener('change', () => {
         if (radio.checked) {
-          this.stateManager.setDefaultCompleteLane(index);
+          this.stateManager.setDefaultCompleteLane(index, this.sourceLaneIndex);
           this.onSelect?.(index);
           this.close();
         }
@@ -53,7 +59,8 @@ export class CompleteLaneModal extends Modal {
 
 export function openCompleteLaneModal(
   stateManager: StateManager,
+  sourceLaneIndex?: number,
   onSelect?: (laneIndex: number) => void
 ) {
-  new CompleteLaneModal(stateManager, onSelect).open();
+  new CompleteLaneModal(stateManager, sourceLaneIndex, onSelect).open();
 }

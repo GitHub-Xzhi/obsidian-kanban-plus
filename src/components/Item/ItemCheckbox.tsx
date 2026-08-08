@@ -71,12 +71,12 @@ export const ItemCheckbox = memo(function ItemCheckbox({
         }
       };
 
-      const defaultCompleteLaneIndex = stateManager.getDefaultCompleteLaneIndex();
+      const defaultCompleteLaneIndex = stateManager.getDefaultCompleteLaneIndex(path[0]);
 
       if (defaultCompleteLaneIndex !== null) {
         moveToLane(defaultCompleteLaneIndex);
       } else {
-        openCompleteLaneModal(stateManager, moveToLane);
+        openCompleteLaneModal(stateManager, path[0], moveToLane);
       }
 
       return;

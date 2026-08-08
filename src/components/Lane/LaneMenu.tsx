@@ -74,6 +74,9 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
   const completeLanesKey = board.children
     .map((lane, index) => `${index}:${lane.data.title}:${!!lane.data.shouldMarkItemsComplete}`)
     .join('|');
+  const defaultCompleteLaneTitlesKey = JSON.stringify(
+    board.data.settings['default-complete-lane-titles'] || {}
+  );
 
   const settingsMenu = useMemo(() => {
     const metadataSortOptions = new Set<string>();
@@ -110,12 +113,15 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
 
     if (completeLanes.length > 1) {
       menu.addItem((item) => {
-        const submenu = (item as any)
-          .setIcon('lucide-check-check')
-          .setTitle(t('Change default complete list'))
-          .setSubmenu();
+        item.setIcon('lucide-check-check').setTitle(t('Change default complete list'));
 
-        const defaultLaneIndex = stateManager.getDefaultCompleteLaneIndex();
+        if (lane.data.shouldMarkItemsComplete) {
+          (item as any).setDisabled?.(true);
+          return;
+        }
+
+        const submenu = (item as any).setSubmenu();
+        const defaultLaneIndex = stateManager.getDefaultCompleteLaneIndex(path[0]);
 
         completeLanes.forEach(({ lane, index }) => {
           submenu.addItem((item: any) => {
@@ -123,7 +129,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
               .setIcon('lucide-list-checks')
               .setTitle(lane.data.title || t('Untitled'))
               .setChecked(index === defaultLaneIndex)
-              .onClick(() => stateManager.setDefaultCompleteLane(index));
+              .onClick(() => stateManager.setDefaultCompleteLane(index, path[0]));
           });
         });
       });
@@ -368,7 +374,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     }
 
     return menu;
-  }, [stateManager, setConfirmAction, path, lane, completeLanesKey]);
+  }, [stateManager, setConfirmAction, path, lane, completeLanesKey, defaultCompleteLaneTitlesKey]);
 
   return {
     settingsMenu,

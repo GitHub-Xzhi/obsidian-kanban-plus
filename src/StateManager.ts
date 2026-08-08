@@ -316,14 +316,18 @@ export class StateManager {
     }, []);
   }
 
-  getDefaultCompleteLaneIndex(): number | null {
+  getDefaultCompleteLaneIndex(sourceLaneIndex?: number): number | null {
     const completeLanes = this.getCompleteLaneOptions();
 
     if (completeLanes.length === 1) {
       return completeLanes[0].index;
     }
 
-    const defaultTitle = this.getSetting('default-complete-lane-title');
+    const sourceLaneTitle =
+      sourceLaneIndex !== undefined ? this.state.children[sourceLaneIndex]?.data.title : undefined;
+    const defaultTitle =
+      (sourceLaneTitle && this.getSetting('default-complete-lane-titles')?.[sourceLaneTitle]) ||
+      this.getSetting('default-complete-lane-title');
 
     if (!defaultTitle) {
       return null;
@@ -332,10 +336,35 @@ export class StateManager {
     return completeLanes.find((option) => option.lane.data.title === defaultTitle)?.index ?? null;
   }
 
-  setDefaultCompleteLane(index: number) {
+  setDefaultCompleteLane(index: number, sourceLaneIndex?: number) {
     const lane = this.state.children[index];
+    const sourceLane =
+      sourceLaneIndex !== undefined ? this.state.children[sourceLaneIndex] : undefined;
 
     if (!lane?.data.shouldMarkItemsComplete) {
+      return;
+    }
+
+    if (sourceLane && sourceLane.data.shouldMarkItemsComplete) {
+      return;
+    }
+
+    if (sourceLane) {
+      this.setState((board) =>
+        update(board, {
+          data: {
+            settings: {
+              'default-complete-lane-titles': {
+                $set: {
+                  ...(board.data.settings['default-complete-lane-titles'] || {}),
+                  [sourceLane.data.title]: lane.data.title,
+                },
+              },
+            },
+          },
+        })
+      );
+
       return;
     }
 
