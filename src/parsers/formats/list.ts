@@ -248,6 +248,7 @@ export function astToUnhydratedBoard(
 ): Board {
   const lanes: Lane[] = [];
   const archive: Item[] = [];
+  let laneIndex = 0;
   root.children.forEach((child, index) => {
     if (child.type === 'heading') {
       const isArchive = isArchiveLane(child, root.children, index);
@@ -293,12 +294,13 @@ export function astToUnhydratedBoard(
         lanes.push({
           ...LaneTemplate,
           children: [],
-          id: generateInstanceId(),
+          id: settings['lane-ids']?.[laneIndex] || generateInstanceId(),
           data: {
             ...parseLaneTitle(title),
             shouldMarkItemsComplete,
           },
         });
+        laneIndex += 1;
       } else {
         lanes.push({
           ...LaneTemplate,
@@ -310,12 +312,13 @@ export function astToUnhydratedBoard(
               data,
             };
           }),
-          id: generateInstanceId(),
+          id: settings['lane-ids']?.[laneIndex] || generateInstanceId(),
           data: {
             ...parseLaneTitle(title),
             shouldMarkItemsComplete,
           },
         });
+        laneIndex += 1;
       }
     }
   });
@@ -443,6 +446,16 @@ function archiveToMd(archive: Item[]) {
 }
 
 export function boardToMd(board: Board) {
+  board = update(board, {
+    data: {
+      settings: {
+        'lane-ids': {
+          $set: board.children.map((lane) => lane.id),
+        },
+      },
+    },
+  });
+
   const lanes = board.children.reduce((md, lane) => {
     return md + laneToMd(lane);
   }, '');

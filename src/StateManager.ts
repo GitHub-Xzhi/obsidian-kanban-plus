@@ -429,6 +429,7 @@ export class StateManager {
               $set: {
                 ...(nextBoard.data.settings['completed-card-sources'] || {}),
                 [blockId]: {
+                  sourceLaneId: sourceLane.id,
                   sourceLaneIndex: path[0],
                   sourceLaneTitle: sourceLane.data.title,
                   sourceItemIndex: path[1],
@@ -471,6 +472,7 @@ export class StateManager {
 
     const sourceLaneIndex = this.state.children.findIndex((lane) => {
       return (
+        (sourceRecord.sourceLaneId && lane.id === sourceRecord.sourceLaneId) ||
         lane.data.title === sourceRecord.sourceLaneTitle ||
         this.state.children[sourceRecord.sourceLaneIndex] === lane
       );
