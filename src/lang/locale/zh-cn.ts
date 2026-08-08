@@ -14,6 +14,11 @@ const lang: Partial<Lang> = {
   'Untitled Kanban': '未命名看板',
   'Toggle between Kanban and markdown mode': '在看板和 Markdown 模式之间进行切换',
 
+  'View as board': '看板视图',
+  'View as list': '列表视图',
+  'View as table': '表格视图',
+  'Board view': '看板视图',
+
   // KanbanView.tsx
   'Open as markdown': '打开为 Markdown 文件',
   'Open board settings': '打开看板设置',
@@ -68,6 +73,7 @@ const lang: Partial<Lang> = {
     '从看板卡片创建的笔记会放置到该文件夹中。如果为空，笔记将会放置到 Obsidian 的默认文件存放位置。',
   'Default folder': '默认文件夹',
   'List width': '列宽',
+  'Expand lists to full width in list view': '在列表视图中将列扩展为全宽',
   'Enter a number to set the list width in pixels.': '输入一个像素值来设置列的宽度',
   'Maximum number of archived cards': '单个看板内已归档卡片的最大数量',
   "Archived cards can be viewed in markdown mode. This setting will begin removing old cards once the limit is reached. Setting this value to -1 will allow a board's archive to grow infinitely.":
@@ -92,6 +98,26 @@ const lang: Partial<Lang> = {
   'Date display format': '日期展示格式',
   'This format will be used when displaying dates in Kanban cards.': '看板卡片会以该格式展示日期。',
   'Show relative date': '展示相对日期',
+  "When toggled, cards will display the distance between today and the card's date. eg. 'In 3 days', 'A month ago'. Relative dates will not be shown for dates from the Tasks and Dataview plugins.":
+    '打开时，卡片会显示今天与卡片日期之间的距离，例如“3 天后”、“1 个月前”。来自 Tasks 和 Dataview 插件的日期不会显示相对日期。',
+
+  'Move dates to card footer': '将日期移动到卡片页脚',
+  "When toggled, dates will be displayed in the card's footer instead of the card's body.":
+    '打开时，日期会显示在卡片页脚，而不是卡片正文中。',
+  'Move tags to card footer': '将标签移动到卡片页脚',
+  "When toggled, tags will be displayed in the card's footer instead of the card's body.":
+    '打开时，标签会显示在卡片页脚，而不是卡片正文中。',
+  'Move task data to card footer': '将任务数据移动到卡片页脚',
+  "When toggled, task data (from the Tasks plugin) will be displayed in the card's footer instead of the card's body.":
+    '打开时，来自 Tasks 插件的任务数据会显示在卡片页脚，而不是卡片正文中。',
+  Tags: '标签',
+  'Inline metadata position': '内联元数据位置',
+  'Controls where the inline metadata (from the Dataview plugin) will be displayed.':
+    '控制来自 Dataview 插件的内联元数据显示位置。',
+  'Card body': '卡片正文',
+  'Card footer': '卡片页脚',
+  'Merge with linked page metadata': '合并到链接页面元数据',
+
   'Hide card counts in list titles': '在列标题上隐藏卡片计数',
   'When toggled, card counts are hidden from the list title': '打开时，列标题上的卡片计数将隐藏',
   'Link dates to daily notes': '链接日期到日记',
@@ -100,12 +126,23 @@ const lang: Partial<Lang> = {
   'Add date and time to archived cards': '添加日期和时间到归档卡片',
   'When toggled, the current date and time will be added to the card title when it is archived. Eg. - [ ] 2021-05-14 10:00am My card title':
     '打开时，当前日期和时间会被添加到归档卡片的 frontmatter 上，例如“- [ ] 2021-05-14 10:00am 我的卡片标题”',
-  'Archive date/time separator': '归档日期或时间分隔符Archive date/time separator',
+  'Add archive date/time after card title': '将归档日期/时间添加到卡片标题后',
+  'When toggled, the archived date/time will be added after the card title, e.g.- [ ] My card title 2021-05-14 10:00am. By default, it is inserted before the title.':
+    '打开时，归档日期/时间会添加到卡片标题后，例如“- [ ] 我的卡片标题 2021-05-14 10:00am”。默认会插入到标题前。',
+  'Archive date/time separator': '归档日期/时间分隔符',
   'This will be used to separate the archived date/time from the title':
     '用于分隔标题与归档卡片的日期或时间',
   'Archive date/time format': '归档日期或时间格式',
   'Kanban Plugin': '看板插件',
+  'Tag click action': '标签点击动作',
+  'Search Kanban Board': '搜索看板',
+  'Search Obsidian Vault': '搜索 Obsidian 库',
+  'This setting controls whether clicking the tags displayed below the card title opens the Obsidian search or the Kanban board search.':
+    '此设置控制点击卡片标题下方标签时，打开 Obsidian 搜索还是看板搜索。',
+  'Tag colors': '标签颜色',
+  'Set colors for tags displayed in cards.': '设置卡片中显示标签的颜色。',
   'Linked Page Metadata': '连接的页面元数据',
+  'Inline Metadata': '内联元数据',
   'Display metadata for the first note linked within a card. Specify which metadata keys to display below. An optional label can be provided, and labels can be hidden altogether.':
     '展示卡片中第一个连接所对应的笔记元数据。请在下方指定哪些元数据可以展示。你可以选择展示哪些标志，所有标志都可以被隐藏。',
   'Board Header Buttons': '板头按钮',
@@ -118,6 +155,18 @@ const lang: Partial<Lang> = {
   Thursday: '周四',
   Friday: '周五',
   Saturday: '周六',
+  'Background color': '背景颜色',
+  Tag: '标签',
+  'Text color': '文字颜色',
+  'Date is': '日期为',
+  Today: '今天',
+  'After now': '晚于现在',
+  'Before now': '早于现在',
+  'Between now and': '从现在到',
+  'Display date colors': '显示日期颜色',
+  'Set colors for dates displayed in cards based on the rules below.':
+    '根据下面的规则设置卡片中显示日期的颜色。',
+  'Add date color': '添加日期颜色',
 
   // MetadataSettings.tsx
   'Metadata key': '元数据参数名',
@@ -126,11 +175,35 @@ const lang: Partial<Lang> = {
   'Drag to rearrange': '拖动以重排顺序',
   Delete: '删除',
   'Add key': '添加参数名',
+  'Add tag': '添加标签',
   'Field contains markdown': '字段包含 Markdown',
+  'Tag sort order': '标签排序顺序',
+  'Set an explicit sort order for the specified tags.': '为指定标签设置明确的排序顺序。',
+
+  // TagColorSettings.tsx
+  'Add tag color': '添加标签颜色',
+
+  // components/Table.tsx
+  List: '列表',
+  Card: '卡片',
+  Date: '日期',
+  Tags: '标签',
+
+  Priority: '优先级',
+  Start: '开始',
+  Created: '创建时间',
+  Scheduled: '计划时间',
+  Due: '截止时间',
+  Cancelled: '已取消',
+  Recurrence: '重复',
+  'Depends on': '依赖于',
+  ID: 'ID',
 
   // components/Item/Item.tsx
   'More options': '更多选项',
   Cancel: '取消',
+  Done: '完成',
+  Save: '保存',
 
   // components/Item/ItemContent.tsx
   today: '今天',
@@ -160,8 +233,10 @@ const lang: Partial<Lang> = {
   'Copy link to card': '复制链接至卡片',
   'Insert card before': '在上方插入卡片',
   'Insert card after': '在下方插入卡片',
+  'Add label': '添加标签',
   'Move to top': '移到顶部',
   'Move to bottom': '移至底部',
+  'Move to list': '移动到列',
 
   // components/Lane/LaneForm.tsx
   'Enter list title...': '输入新的列标题……',
@@ -194,6 +269,8 @@ const lang: Partial<Lang> = {
   'Insert list after': '在下方插入列',
   'Sort by card text': '以卡片文本排序',
   'Sort by date': '以日期排序',
+  'Sort by tags': '以标签排序',
+  'Sort by': '排序方式',
 
   // components/helpers/renderMarkdown.ts
   'Unable to find': '无法找到',
