@@ -23,6 +23,10 @@ import uk from './locale/tr';
 import zhCN from './locale/zh-cn';
 import zhTW from './locale/zh-tw';
 
+export type KanbanLanguage = 'en' | 'zh';
+
+const kanbanLanguageKey = 'kanban-language';
+
 const localeMap: { [k: string]: Partial<Lang> } = {
   ar,
   cz,
@@ -46,14 +50,40 @@ const localeMap: { [k: string]: Partial<Lang> } = {
   sq,
   tr,
   uk,
+  'zh-CN': zhCN,
+  'zh-cn': zhCN,
   'zh-TW': zhTW,
   zh: zhCN,
 };
 
-const lang = window.localStorage.getItem('language');
-const locale = localeMap[lang || 'en'];
+function normalizeLanguage(lang: string | null): KanbanLanguage | null {
+  if (!lang) return null;
+  if (lang.toLowerCase().startsWith('zh')) return 'zh';
+  if (lang.toLowerCase().startsWith('en')) return 'en';
+
+  return null;
+}
+
+export function getKanbanLanguage(): KanbanLanguage {
+  return (
+    normalizeLanguage(window.localStorage.getItem(kanbanLanguageKey)) ||
+    normalizeLanguage(window.localStorage.getItem('language')) ||
+    'en'
+  );
+}
+
+export function setKanbanLanguage(lang?: KanbanLanguage) {
+  if (lang) {
+    window.localStorage.setItem(kanbanLanguageKey, lang);
+  } else {
+    window.localStorage.removeItem(kanbanLanguageKey);
+  }
+}
 
 export function t(str: keyof typeof en): string {
+  const lang = getKanbanLanguage();
+  const locale = localeMap[lang || 'en'];
+
   if (!locale) {
     console.error('Error: kanban locale not found', lang);
   }

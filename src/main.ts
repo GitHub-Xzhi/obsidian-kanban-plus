@@ -18,7 +18,7 @@ import { StateManager } from './StateManager';
 import { DateSuggest, TimeSuggest } from './components/Editor/suggest';
 import { getParentWindow } from './dnd/util/getWindow';
 import { hasFrontmatterKey } from './helpers';
-import { t } from './lang/helpers';
+import { setKanbanLanguage, t } from './lang/helpers';
 import { basicFrontmatter, frontmatterKey } from './parsers/common';
 
 interface WindowRegistry {
@@ -97,6 +97,7 @@ export default class KanbanPlugin extends Plugin {
 
   async onload() {
     await this.loadSettings();
+    setKanbanLanguage(this.settings.language);
 
     this.MarkdownEditor = getEditorClass(this.app);
 
@@ -118,6 +119,7 @@ export default class KanbanPlugin extends Plugin {
     this.settingsTab = new KanbanSettingsTab(this, {
       onSettingsChange: async (newSettings) => {
         this.settings = newSettings;
+        setKanbanLanguage(this.settings.language);
         await this.saveSettings();
 
         // Force a complete re-render when settings change

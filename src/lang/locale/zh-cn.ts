@@ -53,6 +53,8 @@ const lang: Partial<Lang> = {
     '当前看板设置将会覆盖默认的看板设置。',
   'Set the default Kanban board settings. Settings can be overridden on a board-by-board basis.':
     '更改默认的看板设置。为每个看板单独进行设置将覆盖默认设置。',
+  Language: '语言',
+  'Select the Kanban plugin language.': '选择看板插件语言。',
   'Note template': '笔记模板',
   'This template will be used when creating new notes from Kanban cards.':
     '从看板卡片创建新笔记时会使用该模板。',

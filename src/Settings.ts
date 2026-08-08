@@ -30,7 +30,7 @@ import {
   TagSortSettingTemplate,
 } from './components/types';
 import { getParentWindow } from './dnd/util/getWindow';
-import { t } from './lang/helpers';
+import { KanbanLanguage, getKanbanLanguage, setKanbanLanguage, t } from './lang/helpers';
 import KanbanPlugin from './main';
 import { frontmatterKey } from './parsers/common';
 import {
@@ -65,6 +65,7 @@ export interface KanbanSettings {
   'hide-card-count'?: boolean;
   'inline-metadata-position'?: 'body' | 'footer' | 'metadata-table';
   'lane-width'?: number;
+  language?: KanbanLanguage;
   'link-date-to-daily-note'?: boolean;
   'list-collapse'?: boolean[];
   'max-archive-size'?: number;
@@ -113,6 +114,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'hide-card-count',
   'inline-metadata-position',
   'lane-width',
+  'language',
   'link-date-to-daily-note',
   'list-collapse',
   'max-archive-size',
@@ -205,6 +207,30 @@ export class SettingsManager {
           'Set the default Kanban board settings. Settings can be overridden on a board-by-board basis.'
         ),
       });
+    }
+
+    if (!local) {
+      new Setting(contentEl)
+        .setName(t('Language'))
+        .setDesc(t('Select the Kanban plugin language.'))
+        .addDropdown((dropdown) => {
+          dropdown.addOption('en', 'English');
+          dropdown.addOption('zh', '中文');
+
+          const [value] = this.getSetting('language', local);
+
+          dropdown.setValue((value as KanbanLanguage) || getKanbanLanguage());
+          dropdown.onChange((value) => {
+            const lang = value as KanbanLanguage;
+            setKanbanLanguage(lang);
+
+            this.applySettingsUpdate({
+              language: {
+                $set: lang,
+              },
+            });
+          });
+        });
     }
 
     new Setting(contentEl)
