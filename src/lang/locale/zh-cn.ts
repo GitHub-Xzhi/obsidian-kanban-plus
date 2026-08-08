@@ -220,6 +220,8 @@ const lang: Partial<Lang> = {
   'Edit card': '编辑卡片',
   'New note from card': '从卡片新建笔记',
   'Archive card': '归档卡片',
+  'Unarchive card': '取消归档卡片',
+  'Unable to find source list': '找不到来源列',
   'Delete card': '删除卡片',
   'Edit date': '编辑日期',
   'Add date': '添加日期',

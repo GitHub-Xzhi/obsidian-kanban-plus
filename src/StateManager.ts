@@ -643,7 +643,12 @@ export class StateManager {
   async archiveCompletedCards() {
     const board = this.state;
 
-    const archived: Item[] = [];
+    const archived: Array<{
+      item: Item;
+      sourceLane: Lane;
+      sourceLaneIndex: number;
+      sourceItemIndex: number;
+    }> = [];
     const shouldAppendArchiveDate = !!this.getSetting('archive-with-date');
     const archiveDateSeparator = this.getSetting('archive-date-separator');
     const archiveDateFormat = this.getSetting('archive-date-format');
@@ -663,13 +668,13 @@ export class StateManager {
       return this.parser.updateItemContent(item, titleRaw);
     };
 
-    const lanes = board.children.map((lane) => {
+    const lanes = board.children.map((lane, sourceLaneIndex) => {
       return update(lane, {
         children: {
-          $set: lane.children.filter((item) => {
+          $set: lane.children.filter((item, sourceItemIndex) => {
             const isComplete = item.data.checked && item.data.checkChar === getTaskStatusDone();
             if (lane.data.shouldMarkItemsComplete || isComplete) {
-              archived.push(item);
+              archived.push({ item, sourceLane: lane, sourceLaneIndex, sourceItemIndex });
             }
 
             return !isComplete && !lane.data.shouldMarkItemsComplete;
@@ -678,6 +683,27 @@ export class StateManager {
       });
     });
 
+    const archivedAt = Date.now();
+    const archivedSources: NonNullable<KanbanSettings['archived-card-sources']> = {};
+    const archivedItems = await Promise.all(
+      archived.map(({ item, sourceLane, sourceLaneIndex, sourceItemIndex }) => {
+        const blockId = item.data.blockId || generateInstanceId(6);
+        const itemWithBlockId = item.data.blockId
+          ? item
+          : update<Item>(item, { data: { blockId: { $set: blockId } } });
+
+        archivedSources[blockId] = {
+          sourceLaneId: sourceLane.id,
+          sourceLaneIndex,
+          sourceLaneTitle: sourceLane.data.title,
+          sourceItemIndex,
+          archivedAt,
+        };
+
+        return shouldAppendArchiveDate ? appendArchiveDate(itemWithBlockId) : itemWithBlockId;
+      })
+    );
+
     try {
       this.setState(
         update(board, {
@@ -685,10 +711,16 @@ export class StateManager {
             $set: lanes,
           },
           data: {
+            settings: {
+              'archived-card-sources': {
+                $set: {
+                  ...(board.data.settings['archived-card-sources'] || {}),
+                  ...archivedSources,
+                },
+              },
+            },
             archive: {
-              $push: shouldAppendArchiveDate
-                ? await Promise.all(archived.map((item) => appendArchiveDate(item)))
-                : archived,
+              $push: archivedItems,
             },
           },
         })

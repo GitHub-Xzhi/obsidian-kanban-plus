@@ -61,6 +61,16 @@ export interface KanbanSettings {
   'date-picker-week-start'?: number;
   'date-time-display-format'?: string;
   'date-trigger'?: string;
+  'archived-card-sources'?: Record<
+    string,
+    {
+      sourceLaneIndex: number;
+      sourceLaneId?: string;
+      sourceLaneTitle: string;
+      sourceItemIndex: number;
+      archivedAt: number;
+    }
+  >;
   'completed-card-sources'?: Record<
     string,
     {
@@ -126,6 +136,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'date-picker-week-start',
   'date-time-display-format',
   'date-trigger',
+  'archived-card-sources',
   'completed-card-sources',
   'default-complete-lane-title',
   'default-complete-lane-titles',

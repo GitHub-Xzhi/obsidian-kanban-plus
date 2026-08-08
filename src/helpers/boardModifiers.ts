@@ -1,5 +1,6 @@
 import update from 'immutability-helper';
-import { moment } from 'obsidian';
+import { Notice, moment } from 'obsidian';
+import { KanbanSettings } from 'src/Settings';
 import { KanbanView } from 'src/KanbanView';
 import { StateManager } from 'src/StateManager';
 import { Path } from 'src/dnd/types';
@@ -33,8 +34,11 @@ export interface BoardModifiers {
   deleteEntity: (path: Path) => void;
   updateItem: (path: Path, item: Item) => void;
   archiveItem: (path: Path) => void;
+  unarchiveItem: (archiveIndex: number) => void;
   duplicateEntity: (path: Path) => void;
 }
+
+type ArchivedCardSources = NonNullable<KanbanSettings['archived-card-sources']>;
 
 export function getBoardModifiers(view: KanbanView, stateManager: StateManager): BoardModifiers {
   const appendArchiveDate = (item: Item) => {
@@ -62,18 +66,83 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     return entity.children.flatMap(collectBlockIds);
   };
 
+  const archiveItemsWithSources = (
+    items: Item[],
+    sourceLane: Lane,
+    sourceLaneIndex: number,
+    getSourceItemIndex: (itemIndex: number) => number
+  ) => {
+    const archivedAt = Date.now();
+    const sources: ArchivedCardSources = {};
+    const archivedItems = items.map((item, itemIndex) => {
+      const blockId = item.data.blockId || generateInstanceId(6);
+      const itemWithBlockId = item.data.blockId
+        ? item
+        : update<Item>(item, { data: { blockId: { $set: blockId } } });
+
+      sources[blockId] = {
+        sourceLaneId: sourceLane.id,
+        sourceLaneIndex,
+        sourceLaneTitle: sourceLane.data.title,
+        sourceItemIndex: getSourceItemIndex(itemIndex),
+        archivedAt,
+      };
+
+      return stateManager.getSetting('archive-with-date')
+        ? appendArchiveDate(itemWithBlockId)
+        : itemWithBlockId;
+    });
+
+    return { items: archivedItems, sources };
+  };
+
+  const updateArchivedSources = (boardData: Board, sources: ArchivedCardSources) => {
+    if (!Object.keys(sources).length) {
+      return boardData;
+    }
+
+    return update<Board>(boardData, {
+      data: {
+        settings: {
+          'archived-card-sources': {
+            $set: {
+              ...(boardData.data.settings['archived-card-sources'] || {}),
+              ...sources,
+            },
+          },
+        },
+      },
+    });
+  };
+
+  const findArchivedSourceLaneIndex = (
+    boardData: Board,
+    source: ArchivedCardSources[string]
+  ) => {
+    if (source.sourceLaneId) {
+      return boardData.children.findIndex((lane) => lane.id === source.sourceLaneId);
+    }
+
+    return boardData.children.findIndex((lane, laneIndex) => {
+      return lane.data.title === source.sourceLaneTitle || laneIndex === source.sourceLaneIndex;
+    });
+  };
+
   const clearDeletedEntityReferences = (boardData: Board, entity: Item | Lane, path: Path) => {
     const blockIds = collectBlockIds(entity);
     const sources = boardData.data.settings['completed-card-sources'];
+    const archiveSources = boardData.data.settings['archived-card-sources'];
 
-    if (!sources && entity.type !== DataTypes.Lane) {
+    if (!sources && !archiveSources && entity.type !== DataTypes.Lane) {
       return boardData;
     }
 
     const deletedLaneIndex = entity.type === DataTypes.Lane ? path.last() : null;
     const deletedLaneId = entity.type === DataTypes.Lane ? entity.id : null;
     const nextSources = sources ? { ...sources } : undefined;
+    const nextArchiveSources = archiveSources ? { ...archiveSources } : undefined;
     let didUpdateSources = false;
+    let didUpdateArchiveSources = false;
 
     if (nextSources) {
       for (const blockId of blockIds) {
@@ -96,11 +165,28 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       }
     }
 
+    if (nextArchiveSources) {
+      for (const blockId of blockIds) {
+        if (nextArchiveSources[blockId]) {
+          delete nextArchiveSources[blockId];
+          didUpdateArchiveSources = true;
+        }
+      }
+    }
+
     if (entity.type !== DataTypes.Lane) {
-      return didUpdateSources
-        ? update<Board>(boardData, {
-            data: { settings: { 'completed-card-sources': { $set: nextSources } } },
-          })
+      const settingsSpec: any = {};
+
+      if (didUpdateSources) {
+        settingsSpec['completed-card-sources'] = { $set: nextSources };
+      }
+
+      if (didUpdateArchiveSources) {
+        settingsSpec['archived-card-sources'] = { $set: nextArchiveSources };
+      }
+
+      return Object.keys(settingsSpec).length
+        ? update<Board>(boardData, { data: { settings: settingsSpec } })
         : boardData;
     }
 
@@ -109,6 +195,10 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     if (didUpdateSources) {
       settingsSpec['completed-card-sources'] = { $set: nextSources };
+    }
+
+    if (didUpdateArchiveSources) {
+      settingsSpec['archived-card-sources'] = { $set: nextArchiveSources };
     }
 
     if (laneIds?.length) {
@@ -210,6 +300,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const items = lane.children;
 
         try {
+          const archived = archiveItemsWithSources(items, lane, path.last(), (itemIndex) => itemIndex);
           const collapseState = view.getViewState('list-collapse');
           const op = (collapseState: boolean[]) => {
             const newState = [...collapseState];
@@ -218,16 +309,14 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           };
           view.setViewState('list-collapse', undefined, op);
 
-          return update<Board>(removeEntity(boardData, path), {
+          return updateArchivedSources(update<Board>(removeEntity(boardData, path), {
             data: {
               settings: { 'list-collapse': { $set: op(collapseState) } },
               archive: {
-                $unshift: stateManager.getSetting('archive-with-date')
-                  ? items.map(appendArchiveDate)
-                  : items,
+                $unshift: archived.items,
               },
             },
-          });
+          }), archived.sources);
         } catch (e) {
           stateManager.setError(e);
           return boardData;
@@ -241,7 +330,9 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const items = lane.children;
 
         try {
-          return update(
+          const archived = archiveItemsWithSources(items, lane, path.last(), (itemIndex) => itemIndex);
+
+          return updateArchivedSources(update(
             updateEntity(boardData, path, {
               children: {
                 $set: [],
@@ -250,13 +341,11 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
             {
               data: {
                 archive: {
-                  $unshift: stateManager.getSetting('archive-with-date')
-                    ? items.map(appendArchiveDate)
-                    : items,
+                  $unshift: archived.items,
                 },
               },
             }
-          );
+          ), archived.sources);
         } catch (e) {
           stateManager.setError(e);
           return boardData;
@@ -303,6 +392,8 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       stateManager.setState((boardData) => {
         const item = getEntityFromPath(boardData, path);
         try {
+          const lane = boardData.children[path[0]];
+          const archived = archiveItemsWithSources([item], lane, path[0], () => path[1]);
           let nextBoard = removeEntity(boardData, path);
           const blockId = item.data.blockId;
 
@@ -321,12 +412,12 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
             });
           }
 
+          nextBoard = updateArchivedSources(nextBoard, archived.sources);
+
           return update(nextBoard, {
             data: {
               archive: {
-                $push: [
-                  stateManager.getSetting('archive-with-date') ? appendArchiveDate(item) : item,
-                ],
+                $push: archived.items,
               },
             },
           });
@@ -334,6 +425,55 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           stateManager.setError(e);
           return boardData;
         }
+      });
+    },
+
+    unarchiveItem: (archiveIndex: number) => {
+      stateManager.setState((boardData) => {
+        const item = boardData.data.archive[archiveIndex];
+
+        if (!item) {
+          return boardData;
+        }
+
+        const blockId = item.data.blockId;
+        const source = blockId ? boardData.data.settings['archived-card-sources']?.[blockId] : null;
+
+        if (!blockId || !source) {
+          new Notice(t('Unable to find source list'));
+          return boardData;
+        }
+
+        const sourceLaneIndex = findArchivedSourceLaneIndex(boardData, source);
+
+        if (sourceLaneIndex < 0 || !boardData.children[sourceLaneIndex]) {
+          new Notice(t('Unable to find source list'));
+          return boardData;
+        }
+
+        const sourceLane = boardData.children[sourceLaneIndex];
+        const destinationIndex = Math.min(
+          source.sourceItemIndex ?? sourceLane.children.length,
+          sourceLane.children.length
+        );
+        const nextSources = { ...(boardData.data.settings['archived-card-sources'] || {}) };
+        delete nextSources[blockId];
+
+        return update(insertEntity(update<Board>(boardData, {
+          data: {
+            archive: {
+              $splice: [[archiveIndex, 1]],
+            },
+          },
+        }), [sourceLaneIndex, destinationIndex], [item]), {
+          data: {
+            settings: {
+              'archived-card-sources': {
+                $set: nextSources,
+              },
+            },
+          },
+        });
       });
     },
 

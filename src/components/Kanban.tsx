@@ -154,13 +154,36 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
 
     if (typeof maxArchiveLength === 'number' && boardData?.data.archive.length > maxArchiveLength) {
       stateManager.setState((board) =>
-        update(board, {
-          data: {
-            archive: {
-              $set: board.data.archive.slice(maxArchiveLength * -1),
+        {
+          const nextArchive = board.data.archive.slice(maxArchiveLength * -1);
+          const removedArchive = board.data.archive.slice(0, board.data.archive.length - nextArchive.length);
+          const nextSources = { ...(board.data.settings['archived-card-sources'] || {}) };
+          let didUpdateSources = false;
+
+          removedArchive.forEach((item) => {
+            const blockId = item.data.blockId;
+
+            if (blockId && nextSources[blockId]) {
+              delete nextSources[blockId];
+              didUpdateSources = true;
+            }
+          });
+
+          return update(board, {
+            data: {
+              archive: {
+                $set: nextArchive,
+              },
+              settings: didUpdateSources
+                ? {
+                    'archived-card-sources': {
+                      $set: nextSources,
+                    },
+                  }
+                : {},
             },
-          },
-        })
+          });
+        }
       );
     }
   }, [boardData?.data.archive.length, maxArchiveLength]);
