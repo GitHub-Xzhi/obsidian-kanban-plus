@@ -158,7 +158,9 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
           const nextArchive = board.data.archive.slice(maxArchiveLength * -1);
           const removedArchive = board.data.archive.slice(0, board.data.archive.length - nextArchive.length);
           const nextSources = { ...(board.data.settings['archived-card-sources'] || {}) };
+          const nextCreatedTimes = { ...(board.data.settings['card-created-times'] || {}) };
           let didUpdateSources = false;
+          let didUpdateCreatedTimes = false;
 
           removedArchive.forEach((item) => {
             const blockId = item.data.blockId;
@@ -167,6 +169,11 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
               delete nextSources[blockId];
               didUpdateSources = true;
             }
+
+            if (blockId && nextCreatedTimes[blockId]) {
+              delete nextCreatedTimes[blockId];
+              didUpdateCreatedTimes = true;
+            }
           });
 
           return update(board, {
@@ -174,13 +181,22 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
               archive: {
                 $set: nextArchive,
               },
-              settings: didUpdateSources
-                ? {
-                    'archived-card-sources': {
-                      $set: nextSources,
-                    },
-                  }
-                : {},
+              settings: {
+                ...(didUpdateSources
+                  ? {
+                      'archived-card-sources': {
+                        $set: nextSources,
+                      },
+                    }
+                  : {}),
+                ...(didUpdateCreatedTimes
+                  ? {
+                      'card-created-times': {
+                        $set: nextCreatedTimes,
+                      },
+                    }
+                  : {}),
+              },
             },
           });
         }

@@ -235,6 +235,8 @@ export class StateManager {
 
     const archiveDateFormat =
       this.getSettingRaw('archive-date-format', suppliedSettings) || `${dateFormat} ${timeFormat}`;
+    const cardCreatedTimeFormat =
+      this.getSettingRaw('card-created-time-format', suppliedSettings) || 'YYYY-MM-DD HH:mm';
 
     this.compiledSettings = {
       [frontmatterKey]: this.getSettingRaw(frontmatterKey, suppliedSettings) || 'board',
@@ -266,6 +268,10 @@ export class StateManager {
       'tag-colors': this.getSettingRaw('tag-colors', suppliedSettings) ?? [],
       'tag-sort': this.getSettingRaw('tag-sort', suppliedSettings) ?? [],
       'date-colors': this.getSettingRaw('date-colors', suppliedSettings) ?? [],
+      'card-created-time-format': cardCreatedTimeFormat,
+      'card-created-times': this.getSettingRaw('card-created-times', suppliedSettings) ?? {},
+      'show-card-created-time':
+        this.getSettingRaw('show-card-created-time', suppliedSettings) ?? true,
       'tag-action': this.getSettingRaw('tag-action', suppliedSettings) ?? 'obsidian',
     };
   }

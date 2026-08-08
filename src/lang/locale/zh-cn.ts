@@ -97,6 +97,8 @@ const lang: Partial<Lang> = {
   'Time format': '时间格式',
   'Date display format': '日期展示格式',
   'This format will be used when displaying dates in Kanban cards.': '看板卡片会以该格式展示日期。',
+  'Created time format': '创建时间格式',
+  'This format will be used when displaying card created time.': '该格式会用于显示卡片创建时间。',
   'Show relative date': '展示相对日期',
   "When toggled, cards will display the distance between today and the card's date. eg. 'In 3 days', 'A month ago'. Relative dates will not be shown for dates from the Tasks and Dataview plugins.":
     '打开时，卡片会显示今天与卡片日期之间的距离，例如“3 天后”、“1 个月前”。来自 Tasks 和 Dataview 插件的日期不会显示相对日期。',
@@ -263,6 +265,8 @@ const lang: Partial<Lang> = {
   'Yes, archive cards': '是，归档所有卡片',
   'Edit list': '编辑列',
   'Archive cards': '归档卡片',
+  'Show created time': '显示创建时间',
+  'Hide created time': '隐藏创建时间',
   'Change default complete list': '修改默认完成列',
   'Only incomplete lists can set a default complete list': '只有非完成列可以设置默认完成列',
   'Archive list': '归档列',

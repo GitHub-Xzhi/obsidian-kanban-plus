@@ -40,6 +40,7 @@ export interface BoardModifiers {
 }
 
 type ArchivedCardSources = NonNullable<KanbanSettings['archived-card-sources']>;
+type CardCreatedTimes = NonNullable<KanbanSettings['card-created-times']>;
 
 export function getBoardModifiers(view: KanbanView, stateManager: StateManager): BoardModifiers {
   const appendArchiveDate = (item: Item) => {
@@ -65,6 +66,41 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     }
 
     return entity.children.flatMap(collectBlockIds);
+  };
+
+  const applySettingsSpec = (boardData: Board, settingsSpec: any) => {
+    return Object.keys(settingsSpec).length
+      ? update<Board>(boardData, { data: { settings: settingsSpec } })
+      : boardData;
+  };
+
+  const addCreatedTimes = (boardData: Board, items: Item[]) => {
+    const createdAt = Date.now();
+    const nextCreatedTimes: CardCreatedTimes = {
+      ...(boardData.data.settings['card-created-times'] || {}),
+    };
+    let didUpdateCreatedTimes = false;
+
+    const nextItems = items.map((item) => {
+      const blockId = item.data.blockId || generateInstanceId(6);
+      const itemWithBlockId = item.data.blockId
+        ? item
+        : update<Item>(item, { data: { blockId: { $set: blockId } } });
+
+      if (!nextCreatedTimes[blockId]) {
+        nextCreatedTimes[blockId] = createdAt;
+        didUpdateCreatedTimes = true;
+      }
+
+      return itemWithBlockId;
+    });
+
+    return {
+      items: nextItems,
+      settingsSpec: didUpdateCreatedTimes
+        ? { 'card-created-times': { $set: nextCreatedTimes } }
+        : {},
+    };
   };
 
   const archiveItemsWithSources = (
@@ -130,8 +166,9 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     const blockIds = collectBlockIds(entity);
     const sources = boardData.data.settings['completed-card-sources'];
     const archiveSources = boardData.data.settings['archived-card-sources'];
+    const createdTimes = boardData.data.settings['card-created-times'];
 
-    if (!sources && !archiveSources && entity.type !== DataTypes.Lane) {
+    if (!sources && !archiveSources && !createdTimes && entity.type !== DataTypes.Lane) {
       return boardData;
     }
 
@@ -139,8 +176,10 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     const deletedLaneId = entity.type === DataTypes.Lane ? entity.id : null;
     const nextSources = sources ? { ...sources } : undefined;
     const nextArchiveSources = archiveSources ? { ...archiveSources } : undefined;
+    const nextCreatedTimes = createdTimes ? { ...createdTimes } : undefined;
     let didUpdateSources = false;
     let didUpdateArchiveSources = false;
+    let didUpdateCreatedTimes = false;
 
     if (nextSources) {
       for (const blockId of blockIds) {
@@ -172,6 +211,15 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       }
     }
 
+    if (nextCreatedTimes) {
+      for (const blockId of blockIds) {
+        if (nextCreatedTimes[blockId]) {
+          delete nextCreatedTimes[blockId];
+          didUpdateCreatedTimes = true;
+        }
+      }
+    }
+
     if (entity.type !== DataTypes.Lane) {
       const settingsSpec: any = {};
 
@@ -183,9 +231,11 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         settingsSpec['archived-card-sources'] = { $set: nextArchiveSources };
       }
 
-      return Object.keys(settingsSpec).length
-        ? update<Board>(boardData, { data: { settings: settingsSpec } })
-        : boardData;
+      if (didUpdateCreatedTimes) {
+        settingsSpec['card-created-times'] = { $set: nextCreatedTimes };
+      }
+
+      return applySettingsSpec(boardData, settingsSpec);
     }
 
     const laneIds = boardData.data.settings['lane-ids'];
@@ -199,39 +249,69 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       settingsSpec['archived-card-sources'] = { $set: nextArchiveSources };
     }
 
+    if (didUpdateCreatedTimes) {
+      settingsSpec['card-created-times'] = { $set: nextCreatedTimes };
+    }
+
     if (laneIds?.length) {
       const nextLaneIds = [...laneIds];
       nextLaneIds.splice(path.last(), 1);
       settingsSpec['lane-ids'] = { $set: nextLaneIds };
     }
 
-    return Object.keys(settingsSpec).length
-      ? update<Board>(boardData, { data: { settings: settingsSpec } })
-      : boardData;
+    return applySettingsSpec(boardData, settingsSpec);
   };
 
   return {
     appendItems: (path: Path, items: Item[]) => {
-      stateManager.setState((boardData) => appendEntities(boardData, path, items));
+      stateManager.setState((boardData) => {
+        const created = addCreatedTimes(boardData, items);
+
+        return applySettingsSpec(
+          appendEntities(boardData, path, created.items),
+          created.settingsSpec
+        );
+      });
     },
 
     prependItems: (path: Path, items: Item[]) => {
-      stateManager.setState((boardData) => prependEntities(boardData, path, items));
+      stateManager.setState((boardData) => {
+        const created = addCreatedTimes(boardData, items);
+
+        return applySettingsSpec(
+          prependEntities(boardData, path, created.items),
+          created.settingsSpec
+        );
+      });
     },
 
     insertItems: (path: Path, items: Item[]) => {
-      stateManager.setState((boardData) => insertEntity(boardData, path, items));
+      stateManager.setState((boardData) => {
+        const created = addCreatedTimes(boardData, items);
+
+        return applySettingsSpec(insertEntity(boardData, path, created.items), created.settingsSpec);
+      });
     },
 
     replaceItem: (path: Path, items: Item[]) => {
-      stateManager.setState((boardData) =>
-        insertEntity(removeEntity(boardData, path), path, items)
-      );
+      stateManager.setState((boardData) => {
+        const created = addCreatedTimes(boardData, items);
+
+        return applySettingsSpec(
+          insertEntity(removeEntity(boardData, path), path, created.items),
+          created.settingsSpec
+        );
+      });
     },
 
     splitItem: (path: Path, items: Item[]) => {
       stateManager.setState((boardData) => {
-        return insertEntity(removeEntity(boardData, path), path, items);
+        const created = addCreatedTimes(boardData, items);
+
+        return applySettingsSpec(
+          insertEntity(removeEntity(boardData, path), path, created.items),
+          created.settingsSpec
+        );
       });
     },
 
@@ -527,7 +607,9 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           });
         }
 
-        return insertEntity(boardData, path, [entityWithNewID]);
+        const created = addCreatedTimes(boardData, [entityWithNewID as Item]);
+
+        return applySettingsSpec(insertEntity(boardData, path, created.items), created.settingsSpec);
       });
     },
   };

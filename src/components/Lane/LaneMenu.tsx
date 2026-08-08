@@ -70,6 +70,10 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
   const { stateManager, boardModifiers } = useContext(KanbanContext);
   const board = stateManager.useState();
   const [confirmAction, setConfirmAction] = useState<LaneAction>(null);
+  const showCardCreatedTime = stateManager.getSetting(
+    'show-card-created-time',
+    board.data.settings
+  );
 
   const completeLanesKey = board.children
     .map((lane, index) => `${index}:${lane.data.title}:${!!lane.data.shouldMarkItemsComplete}`)
@@ -109,6 +113,24 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           .setIcon('lucide-archive')
           .setTitle(t('Archive cards'))
           .onClick(() => setConfirmAction('archive-items'));
+      })
+      .addItem((item) => {
+        item
+          .setIcon('lucide-clock')
+          .setTitle(showCardCreatedTime ? t('Hide created time') : t('Show created time'))
+          .onClick(() => {
+            stateManager.setState((board) =>
+              update(board, {
+                data: {
+                  settings: {
+                    'show-card-created-time': {
+                      $set: !showCardCreatedTime,
+                    },
+                  },
+                },
+              })
+            );
+          });
       });
 
     if (completeLanes.length > 0) {
@@ -381,7 +403,15 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     }
 
     return menu;
-  }, [stateManager, setConfirmAction, path, lane, completeLanesKey, defaultCompleteLaneTitlesKey]);
+  }, [
+    stateManager,
+    setConfirmAction,
+    path,
+    lane,
+    completeLanesKey,
+    defaultCompleteLaneTitlesKey,
+    showCardCreatedTime,
+  ]);
 
   return {
     settingsMenu,

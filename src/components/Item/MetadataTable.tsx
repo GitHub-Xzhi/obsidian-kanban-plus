@@ -6,6 +6,7 @@ import { ComponentChild } from 'preact';
 import { memo, useContext, useMemo } from 'preact/compat';
 import { KanbanView } from 'src/KanbanView';
 import { StateManager } from 'src/StateManager';
+import { t } from 'src/lang/helpers';
 import { InlineField, taskFields } from 'src/parsers/helpers/inlineMetadata';
 
 import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
@@ -39,18 +40,42 @@ export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
   const mergeInlineMetadata =
     stateManager.useSetting('inline-metadata-position') === 'metadata-table';
   const metadataKeys = stateManager.useSetting('metadata-keys');
+  const cardCreatedTimes = stateManager.useSetting('card-created-times');
+  const showCardCreatedTime = stateManager.useSetting('show-card-created-time');
+  const cardCreatedTimeFormat = stateManager.useSetting('card-created-time-format');
   const { fileMetadata, fileMetadataOrder, inlineMetadata } = item.data.metadata;
+  const createdAt = item.data.blockId ? cardCreatedTimes?.[item.data.blockId] : undefined;
 
   const metadata = useMemo(() => {
-    const metadata = mergeInlineMetadata
+    let metadata = mergeInlineMetadata
       ? mergeMetadata(fileMetadata, inlineMetadata, metadataKeys || [])
       : fileMetadata;
+
+    if (showCardCreatedTime && createdAt) {
+      metadata = {
+        ...(metadata || {}),
+        'card-created-time': {
+          metadataKey: 'card-created-time',
+          label: t('Created'),
+          shouldHideLabel: false,
+          containsMarkdown: false,
+          value: moment(createdAt).format(cardCreatedTimeFormat),
+        },
+      };
+    }
 
     if (!metadata) return null;
     if (!Object.keys(metadata).length) return null;
 
     return metadata;
-  }, [fileMetadata, inlineMetadata, metadataKeys]);
+  }, [
+    fileMetadata,
+    inlineMetadata,
+    metadataKeys,
+    showCardCreatedTime,
+    createdAt,
+    cardCreatedTimeFormat,
+  ]);
 
   const order = useMemo(() => {
     const metadataOrder = new Set(fileMetadataOrder || []);
@@ -60,8 +85,12 @@ export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
       });
     }
 
+    if (showCardCreatedTime && createdAt) {
+      metadataOrder.add('card-created-time');
+    }
+
     return Array.from(metadataOrder);
-  }, [fileMetadataOrder, mergeInlineMetadata, inlineMetadata]);
+  }, [fileMetadataOrder, mergeInlineMetadata, inlineMetadata, showCardCreatedTime, createdAt]);
 
   if (!metadata) {
     return null;

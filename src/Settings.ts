@@ -71,6 +71,8 @@ export interface KanbanSettings {
       archivedAt: number;
     }
   >;
+  'card-created-time-format'?: string;
+  'card-created-times'?: Record<string, number>;
   'completed-card-sources'?: Record<
     string,
     {
@@ -105,6 +107,7 @@ export interface KanbanSettings {
   'show-archive-all'?: boolean;
   'show-archive-toggle'?: boolean;
   'show-board-settings'?: boolean;
+  'show-card-created-time'?: boolean;
   'show-checkboxes'?: boolean;
   'show-relative-date'?: boolean;
   'show-search'?: boolean;
@@ -137,6 +140,8 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'date-time-display-format',
   'date-trigger',
   'archived-card-sources',
+  'card-created-time-format',
+  'card-created-times',
   'completed-card-sources',
   'default-complete-lane-title',
   'default-complete-lane-titles',
@@ -162,6 +167,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'show-archive-all',
   'show-archive-toggle',
   'show-board-settings',
+  'show-card-created-time',
   'show-checkboxes',
   'show-relative-date',
   'show-search',
@@ -865,6 +871,56 @@ export class SettingsManager {
           } else {
             this.applySettingsUpdate({
               $unset: ['time-format'],
+            });
+          }
+        });
+      });
+    });
+
+    new Setting(contentEl).setName(t('Created time format')).then((setting) => {
+      setting.addMomentFormat((mf) => {
+        setting.descEl.appendChild(
+          createFragment((frag) => {
+            frag.appendText(t('This format will be used when displaying card created time.'));
+            frag.createEl('br');
+            frag.appendText(t('For more syntax, refer to') + ' ');
+            frag.createEl(
+              'a',
+              {
+                text: t('format reference'),
+                href: 'https://momentjs.com/docs/#/displaying/format/',
+              },
+              (a) => {
+                a.setAttr('target', '_blank');
+              }
+            );
+            frag.createEl('br');
+            frag.appendText(t('Your current syntax looks like this') + ': ');
+            mf.setSampleEl(frag.createEl('b', { cls: 'u-pop' }));
+            frag.createEl('br');
+          })
+        );
+
+        const [value, globalValue] = this.getSetting('card-created-time-format', local);
+        const defaultFormat = 'YYYY-MM-DD HH:mm';
+
+        mf.setPlaceholder(defaultFormat);
+        mf.setDefaultFormat(defaultFormat);
+
+        if (value || globalValue) {
+          mf.setValue((value || globalValue) as string);
+        }
+
+        mf.onChange((newValue) => {
+          if (newValue) {
+            this.applySettingsUpdate({
+              'card-created-time-format': {
+                $set: newValue,
+              },
+            });
+          } else {
+            this.applySettingsUpdate({
+              $unset: ['card-created-time-format'],
             });
           }
         });
