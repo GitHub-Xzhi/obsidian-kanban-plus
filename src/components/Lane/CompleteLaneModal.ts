@@ -38,9 +38,9 @@ export class CompleteLaneModal extends Modal {
       radio.checked = index === defaultLaneIndex;
       radio.addEventListener('change', () => {
         if (radio.checked) {
-            this.stateManager.setDefaultCompleteLane(index);
-            this.onSelect?.(index);
-            this.close();
+          this.stateManager.setDefaultCompleteLane(index);
+          this.onSelect?.(index);
+          this.close();
         }
       });
     });
