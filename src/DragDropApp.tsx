@@ -27,6 +27,35 @@ import {
   toggleTask,
 } from './parsers/helpers/inlineMetadata';
 
+function updateCompletedTime(board: Board, item: Item) {
+  const blockId = item.data.blockId;
+
+  if (!blockId) {
+    return board;
+  }
+
+  const nextCompletedTimes = { ...(board.data.settings['card-completed-times'] || {}) };
+  const isComplete = item.data.checked && item.data.checkChar === getTaskStatusDone();
+
+  if (isComplete && !nextCompletedTimes[blockId]) {
+    nextCompletedTimes[blockId] = Date.now();
+  } else if (!isComplete && nextCompletedTimes[blockId]) {
+    delete nextCompletedTimes[blockId];
+  } else {
+    return board;
+  }
+
+  return update<Board>(board, {
+    data: {
+      settings: {
+        'card-completed-times': {
+          $set: nextCompletedTimes,
+        },
+      },
+    },
+  });
+}
+
 export function createApp(win: Window, plugin: KanbanPlugin) {
   return <DragDropApp win={win} plugin={plugin} />;
 }
@@ -167,10 +196,14 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
             });
           }
 
-          if (entity.type === DataTypes.Item && dragPath[0] !== dropPath[0]) {
+          if (entity.type === DataTypes.Item) {
             const blockId = entity.data.blockId;
 
-            if (blockId && newBoard.data.settings['completed-card-sources']?.[blockId]) {
+            if (
+              dragPath[0] !== dropPath[0] &&
+              blockId &&
+              newBoard.data.settings['completed-card-sources']?.[blockId]
+            ) {
               const nextSources = { ...newBoard.data.settings['completed-card-sources'] };
               delete nextSources[blockId];
 
@@ -184,6 +217,8 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
                 },
               });
             }
+
+            newBoard = updateCompletedTime(newBoard, getEntityFromPath(newBoard, dropPath) as Item);
           }
 
           // Remove sorting in the destination lane
@@ -240,6 +275,12 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
             toInsert.push(entity);
           }
 
+          if (entity.type === DataTypes.Item) {
+            let nextDestinationBoard = insertEntity(destinationBoard, dropPath, toInsert);
+            nextDestinationBoard = updateCompletedTime(nextDestinationBoard, toInsert[0] as Item);
+            return nextDestinationBoard;
+          }
+
           if (entity.type === DataTypes.Lane) {
             const collapsedState = destinationView.getViewState('list-collapse');
             const val = sourceView.getViewState('list-collapse')[dragPath.last()];
@@ -254,8 +295,6 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
             return update<Board>(insertEntity(destinationBoard, dropPath, toInsert), {
               data: { settings: { 'list-collapse': { $set: op(collapsedState) } } },
             });
-          } else {
-            return insertEntity(destinationBoard, dropPath, toInsert);
           }
         });
 

@@ -41,10 +41,13 @@ export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
     stateManager.useSetting('inline-metadata-position') === 'metadata-table';
   const metadataKeys = stateManager.useSetting('metadata-keys');
   const cardCreatedTimes = stateManager.useSetting('card-created-times');
+  const cardCompletedTimes = stateManager.useSetting('card-completed-times');
   const showCardCreatedTime = stateManager.useSetting('show-card-created-time');
   const cardCreatedTimeFormat = stateManager.useSetting('card-created-time-format');
+  const cardCompletedTimeFormat = stateManager.useSetting('card-completed-time-format');
   const { fileMetadata, fileMetadataOrder, inlineMetadata } = item.data.metadata;
   const createdAt = item.data.blockId ? cardCreatedTimes?.[item.data.blockId] : undefined;
+  const completedAt = item.data.blockId ? cardCompletedTimes?.[item.data.blockId] : undefined;
 
   const metadata = useMemo(() => {
     let metadata = mergeInlineMetadata
@@ -64,6 +67,19 @@ export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
       };
     }
 
+    if (completedAt) {
+      metadata = {
+        ...(metadata || {}),
+        'card-completed-time': {
+          metadataKey: 'card-completed-time',
+          label: t('Completed'),
+          shouldHideLabel: false,
+          containsMarkdown: false,
+          value: moment(completedAt).format(cardCompletedTimeFormat),
+        },
+      };
+    }
+
     if (!metadata) return null;
     if (!Object.keys(metadata).length) return null;
 
@@ -75,6 +91,8 @@ export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
     showCardCreatedTime,
     createdAt,
     cardCreatedTimeFormat,
+    completedAt,
+    cardCompletedTimeFormat,
   ]);
 
   const order = useMemo(() => {
@@ -89,8 +107,19 @@ export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
       metadataOrder.add('card-created-time');
     }
 
+    if (completedAt) {
+      metadataOrder.add('card-completed-time');
+    }
+
     return Array.from(metadataOrder);
-  }, [fileMetadataOrder, mergeInlineMetadata, inlineMetadata, showCardCreatedTime, createdAt]);
+  }, [
+    fileMetadataOrder,
+    mergeInlineMetadata,
+    inlineMetadata,
+    showCardCreatedTime,
+    createdAt,
+    completedAt,
+  ]);
 
   if (!metadata) {
     return null;

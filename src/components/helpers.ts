@@ -69,7 +69,13 @@ export function maybeCompleteForMove(
 
     itemStrings.forEach((str, i) => {
       if (i === thisIndex) {
-        next = destinationStateManager.getNewItem(str, checkChars[i]);
+        next = update(destinationStateManager.getNewItem(str, checkChars[i]), {
+          data: {
+            blockId: {
+              $set: item.data.blockId || generateInstanceId(6),
+            },
+          },
+        });
       } else {
         replacement = destinationStateManager.getNewItem(str, checkChars[i]);
       }
@@ -82,6 +88,9 @@ export function maybeCompleteForMove(
   return {
     next: update(item, {
       data: {
+        blockId: {
+          $set: item.data.blockId || generateInstanceId(6),
+        },
         checked: {
           $set: newShouldComplete,
         },

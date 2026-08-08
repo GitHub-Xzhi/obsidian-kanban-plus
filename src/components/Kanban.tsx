@@ -153,54 +153,69 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
     }
 
     if (typeof maxArchiveLength === 'number' && boardData?.data.archive.length > maxArchiveLength) {
-      stateManager.setState((board) =>
-        {
-          const nextArchive = board.data.archive.slice(maxArchiveLength * -1);
-          const removedArchive = board.data.archive.slice(0, board.data.archive.length - nextArchive.length);
-          const nextSources = { ...(board.data.settings['archived-card-sources'] || {}) };
-          const nextCreatedTimes = { ...(board.data.settings['card-created-times'] || {}) };
-          let didUpdateSources = false;
-          let didUpdateCreatedTimes = false;
+      stateManager.setState((board) => {
+        const nextArchive = board.data.archive.slice(maxArchiveLength * -1);
+        const removedArchive = board.data.archive.slice(
+          0,
+          board.data.archive.length - nextArchive.length
+        );
+        const nextSources = { ...(board.data.settings['archived-card-sources'] || {}) };
+        const nextCreatedTimes = { ...(board.data.settings['card-created-times'] || {}) };
+        const nextCompletedTimes = { ...(board.data.settings['card-completed-times'] || {}) };
+        let didUpdateSources = false;
+        let didUpdateCreatedTimes = false;
+        let didUpdateCompletedTimes = false;
 
-          removedArchive.forEach((item) => {
-            const blockId = item.data.blockId;
+        removedArchive.forEach((item) => {
+          const blockId = item.data.blockId;
 
-            if (blockId && nextSources[blockId]) {
-              delete nextSources[blockId];
-              didUpdateSources = true;
-            }
+          if (blockId && nextSources[blockId]) {
+            delete nextSources[blockId];
+            didUpdateSources = true;
+          }
 
-            if (blockId && nextCreatedTimes[blockId]) {
-              delete nextCreatedTimes[blockId];
-              didUpdateCreatedTimes = true;
-            }
-          });
+          if (blockId && nextCreatedTimes[blockId]) {
+            delete nextCreatedTimes[blockId];
+            didUpdateCreatedTimes = true;
+          }
 
-          return update(board, {
-            data: {
-              archive: {
-                $set: nextArchive,
-              },
-              settings: {
-                ...(didUpdateSources
-                  ? {
-                      'archived-card-sources': {
-                        $set: nextSources,
-                      },
-                    }
-                  : {}),
-                ...(didUpdateCreatedTimes
-                  ? {
-                      'card-created-times': {
-                        $set: nextCreatedTimes,
-                      },
-                    }
-                  : {}),
-              },
+          if (blockId && nextCompletedTimes[blockId]) {
+            delete nextCompletedTimes[blockId];
+            didUpdateCompletedTimes = true;
+          }
+        });
+
+        return update(board, {
+          data: {
+            archive: {
+              $set: nextArchive,
             },
-          });
-        }
-      );
+            settings: {
+              ...(didUpdateSources
+                ? {
+                    'archived-card-sources': {
+                      $set: nextSources,
+                    },
+                  }
+                : {}),
+              ...(didUpdateCreatedTimes
+                ? {
+                    'card-created-times': {
+                      $set: nextCreatedTimes,
+                    },
+                  }
+                : {}),
+              ...(didUpdateCompletedTimes
+                ? {
+                    'card-completed-times': {
+                      $set: nextCompletedTimes,
+                    },
+                  }
+                : {}),
+            },
+          },
+        });
+      });
     }
   }, [boardData?.data.archive.length, maxArchiveLength]);
 

@@ -103,6 +103,9 @@ const en = {
   'Created time format': 'Created time format',
   'This format will be used when displaying card created time.':
     'This format will be used when displaying card created time.',
+  'Completed time format': 'Completed time format',
+  'This format will be used when displaying card completed time.':
+    'This format will be used when displaying card completed time.',
   'Show relative date': 'Show relative date',
   "When toggled, cards will display the distance between today and the card's date. eg. 'In 3 days', 'A month ago'. Relative dates will not be shown for dates from the Tasks and Dataview plugins.":
     "When toggled, cards will display the distance between today and the card's date. eg. 'In 3 days', 'A month ago'. Relative dates will not be shown for dates from the Tasks and Dataview plugins.",
@@ -200,6 +203,7 @@ const en = {
   Priority: 'Priority',
   Start: 'Start',
   Created: 'Created',
+  Completed: 'Completed',
   Scheduled: 'Scheduled',
   Due: 'Due',
   Cancelled: 'Cancelled',

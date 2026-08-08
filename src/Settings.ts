@@ -73,6 +73,8 @@ export interface KanbanSettings {
   >;
   'card-created-time-format'?: string;
   'card-created-times'?: Record<string, number>;
+  'card-completed-time-format'?: string;
+  'card-completed-times'?: Record<string, number>;
   'completed-card-sources'?: Record<
     string,
     {
@@ -142,6 +144,8 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'archived-card-sources',
   'card-created-time-format',
   'card-created-times',
+  'card-completed-time-format',
+  'card-completed-times',
   'completed-card-sources',
   'default-complete-lane-title',
   'default-complete-lane-titles',
@@ -921,6 +925,56 @@ export class SettingsManager {
           } else {
             this.applySettingsUpdate({
               $unset: ['card-created-time-format'],
+            });
+          }
+        });
+      });
+    });
+
+    new Setting(contentEl).setName(t('Completed time format')).then((setting) => {
+      setting.addMomentFormat((mf) => {
+        setting.descEl.appendChild(
+          createFragment((frag) => {
+            frag.appendText(t('This format will be used when displaying card completed time.'));
+            frag.createEl('br');
+            frag.appendText(t('For more syntax, refer to') + ' ');
+            frag.createEl(
+              'a',
+              {
+                text: t('format reference'),
+                href: 'https://momentjs.com/docs/#/displaying/format/',
+              },
+              (a) => {
+                a.setAttr('target', '_blank');
+              }
+            );
+            frag.createEl('br');
+            frag.appendText(t('Your current syntax looks like this') + ': ');
+            mf.setSampleEl(frag.createEl('b', { cls: 'u-pop' }));
+            frag.createEl('br');
+          })
+        );
+
+        const [value, globalValue] = this.getSetting('card-completed-time-format', local);
+        const defaultFormat = 'YYYY-MM-DD HH:mm';
+
+        mf.setPlaceholder(defaultFormat);
+        mf.setDefaultFormat(defaultFormat);
+
+        if (value || globalValue) {
+          mf.setValue((value || globalValue) as string);
+        }
+
+        mf.onChange((newValue) => {
+          if (newValue) {
+            this.applySettingsUpdate({
+              'card-completed-time-format': {
+                $set: newValue,
+              },
+            });
+          } else {
+            this.applySettingsUpdate({
+              $unset: ['card-completed-time-format'],
             });
           }
         });

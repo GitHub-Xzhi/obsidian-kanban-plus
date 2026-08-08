@@ -15,6 +15,7 @@ import {
   updateParentEntity,
 } from 'src/dnd/util/data';
 import { t } from 'src/lang/helpers';
+import { getTaskStatusDone } from 'src/parsers/helpers/inlineMetadata';
 
 import { generateInstanceId } from '../components/helpers';
 import { Board, DataTypes, Item, Lane } from '../components/types';
@@ -41,6 +42,7 @@ export interface BoardModifiers {
 
 type ArchivedCardSources = NonNullable<KanbanSettings['archived-card-sources']>;
 type CardCreatedTimes = NonNullable<KanbanSettings['card-created-times']>;
+type CardCompletedTimes = NonNullable<KanbanSettings['card-completed-times']>;
 
 export function getBoardModifiers(view: KanbanView, stateManager: StateManager): BoardModifiers {
   const appendArchiveDate = (item: Item) => {
@@ -101,6 +103,33 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         ? { 'card-created-times': { $set: nextCreatedTimes } }
         : {},
     };
+  };
+
+  const updateCompletedTimes = (boardData: Board, items: Item[]) => {
+    const nextCompletedTimes: CardCompletedTimes = {
+      ...(boardData.data.settings['card-completed-times'] || {}),
+    };
+    let didUpdateCompletedTimes = false;
+
+    items.forEach((item) => {
+      const blockId = item.data.blockId;
+
+      if (!blockId) {
+        return;
+      }
+
+      const isComplete = item.data.checked && item.data.checkChar === getTaskStatusDone();
+
+      if (isComplete && !nextCompletedTimes[blockId]) {
+        nextCompletedTimes[blockId] = Date.now();
+        didUpdateCompletedTimes = true;
+      } else if (!isComplete && nextCompletedTimes[blockId]) {
+        delete nextCompletedTimes[blockId];
+        didUpdateCompletedTimes = true;
+      }
+    });
+
+    return didUpdateCompletedTimes ? { 'card-completed-times': { $set: nextCompletedTimes } } : {};
   };
 
   const archiveItemsWithSources = (
@@ -167,8 +196,15 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     const sources = boardData.data.settings['completed-card-sources'];
     const archiveSources = boardData.data.settings['archived-card-sources'];
     const createdTimes = boardData.data.settings['card-created-times'];
+    const completedTimes = boardData.data.settings['card-completed-times'];
 
-    if (!sources && !archiveSources && !createdTimes && entity.type !== DataTypes.Lane) {
+    if (
+      !sources &&
+      !archiveSources &&
+      !createdTimes &&
+      !completedTimes &&
+      entity.type !== DataTypes.Lane
+    ) {
       return boardData;
     }
 
@@ -177,9 +213,11 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     const nextSources = sources ? { ...sources } : undefined;
     const nextArchiveSources = archiveSources ? { ...archiveSources } : undefined;
     const nextCreatedTimes = createdTimes ? { ...createdTimes } : undefined;
+    const nextCompletedTimes = completedTimes ? { ...completedTimes } : undefined;
     let didUpdateSources = false;
     let didUpdateArchiveSources = false;
     let didUpdateCreatedTimes = false;
+    let didUpdateCompletedTimes = false;
 
     if (nextSources) {
       for (const blockId of blockIds) {
@@ -220,6 +258,15 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       }
     }
 
+    if (nextCompletedTimes) {
+      for (const blockId of blockIds) {
+        if (nextCompletedTimes[blockId]) {
+          delete nextCompletedTimes[blockId];
+          didUpdateCompletedTimes = true;
+        }
+      }
+    }
+
     if (entity.type !== DataTypes.Lane) {
       const settingsSpec: any = {};
 
@@ -233,6 +280,10 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
       if (didUpdateCreatedTimes) {
         settingsSpec['card-created-times'] = { $set: nextCreatedTimes };
+      }
+
+      if (didUpdateCompletedTimes) {
+        settingsSpec['card-completed-times'] = { $set: nextCompletedTimes };
       }
 
       return applySettingsSpec(boardData, settingsSpec);
@@ -251,6 +302,10 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     if (didUpdateCreatedTimes) {
       settingsSpec['card-created-times'] = { $set: nextCreatedTimes };
+    }
+
+    if (didUpdateCompletedTimes) {
+      settingsSpec['card-completed-times'] = { $set: nextCompletedTimes };
     }
 
     if (laneIds?.length) {
@@ -289,7 +344,10 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       stateManager.setState((boardData) => {
         const created = addCreatedTimes(boardData, items);
 
-        return applySettingsSpec(insertEntity(boardData, path, created.items), created.settingsSpec);
+        return applySettingsSpec(
+          insertEntity(boardData, path, created.items),
+          created.settingsSpec
+        );
       });
     },
 
@@ -472,13 +530,21 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     updateItem: (path: Path, item: Item) => {
       stateManager.setState((boardData) => {
-        return updateParentEntity(boardData, path, {
-          children: {
-            [path[path.length - 1]]: {
-              $set: item,
+        const created = addCreatedTimes(boardData, [item]);
+
+        return applySettingsSpec(
+          updateParentEntity(boardData, path, {
+            children: {
+              [path[path.length - 1]]: {
+                $set: created.items[0],
+              },
             },
-          },
-        });
+          }),
+          {
+            ...created.settingsSpec,
+            ...updateCompletedTimes(boardData, created.items),
+          }
+        );
       });
     },
 
@@ -609,7 +675,10 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
         const created = addCreatedTimes(boardData, [entityWithNewID as Item]);
 
-        return applySettingsSpec(insertEntity(boardData, path, created.items), created.settingsSpec);
+        return applySettingsSpec(
+          insertEntity(boardData, path, created.items),
+          created.settingsSpec
+        );
       });
     },
   };

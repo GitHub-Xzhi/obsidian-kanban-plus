@@ -237,6 +237,8 @@ export class StateManager {
       this.getSettingRaw('archive-date-format', suppliedSettings) || `${dateFormat} ${timeFormat}`;
     const cardCreatedTimeFormat =
       this.getSettingRaw('card-created-time-format', suppliedSettings) || 'YYYY-MM-DD HH:mm';
+    const cardCompletedTimeFormat =
+      this.getSettingRaw('card-completed-time-format', suppliedSettings) || 'YYYY-MM-DD HH:mm';
 
     this.compiledSettings = {
       [frontmatterKey]: this.getSettingRaw(frontmatterKey, suppliedSettings) || 'board',
@@ -270,6 +272,8 @@ export class StateManager {
       'date-colors': this.getSettingRaw('date-colors', suppliedSettings) ?? [],
       'card-created-time-format': cardCreatedTimeFormat,
       'card-created-times': this.getSettingRaw('card-created-times', suppliedSettings) ?? {},
+      'card-completed-time-format': cardCompletedTimeFormat,
+      'card-completed-times': this.getSettingRaw('card-completed-times', suppliedSettings) ?? {},
       'show-card-created-time':
         this.getSettingRaw('show-card-created-time', suppliedSettings) ?? true,
       'tag-action': this.getSettingRaw('tag-action', suppliedSettings) ?? 'obsidian',
@@ -391,6 +395,50 @@ export class StateManager {
     );
   }
 
+  updateCompletedTime(board: Board, item: Item, isComplete: boolean) {
+    const blockId = item.data.blockId;
+
+    if (!blockId) {
+      return board;
+    }
+
+    const nextCompletedTimes = { ...(board.data.settings['card-completed-times'] || {}) };
+
+    if (isComplete) {
+      if (nextCompletedTimes[blockId]) {
+        return board;
+      }
+
+      nextCompletedTimes[blockId] = Date.now();
+
+      return update(board, {
+        data: {
+          settings: {
+            'card-completed-times': {
+              $set: nextCompletedTimes,
+            },
+          },
+        },
+      });
+    }
+
+    if (!nextCompletedTimes[blockId]) {
+      return board;
+    }
+
+    delete nextCompletedTimes[blockId];
+
+    return update(board, {
+      data: {
+        settings: {
+          'card-completed-times': {
+            $set: nextCompletedTimes,
+          },
+        },
+      },
+    });
+  }
+
   moveCompletedItemToLane(
     path: Path,
     replacements: Item[],
@@ -427,6 +475,7 @@ export class StateManager {
       const destinationIndex = insertionMethod === 'append' ? destinationLane.children.length : 0;
 
       nextBoard = insertEntity(nextBoard, [laneIndex, destinationIndex], [completedItem]);
+      nextBoard = this.updateCompletedTime(nextBoard, completedItem, true);
 
       nextBoard = update(nextBoard, {
         data: {
@@ -512,6 +561,7 @@ export class StateManager {
       );
 
       nextBoard = insertEntity(nextBoard, [sourceLaneIndex, destinationIndex], [returnedItem]);
+      nextBoard = this.updateCompletedTime(nextBoard, returnedItem, false);
 
       const nextSources = { ...(nextBoard.data.settings['completed-card-sources'] || {}) };
       delete nextSources[blockId];
