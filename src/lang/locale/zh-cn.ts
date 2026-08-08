@@ -187,7 +187,6 @@ const lang: Partial<Lang> = {
   List: '列表',
   Card: '卡片',
   Date: '日期',
-  Tags: '标签',
 
   Priority: '优先级',
   Start: '开始',
