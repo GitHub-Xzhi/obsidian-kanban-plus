@@ -111,7 +111,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           .onClick(() => setConfirmAction('archive-items'));
       });
 
-    if (completeLanes.length > 1) {
+    if (completeLanes.length > 0) {
       menu.addItem((item) => {
         item.setIcon('lucide-check-check').setTitle(t('Change default complete list'));
 
