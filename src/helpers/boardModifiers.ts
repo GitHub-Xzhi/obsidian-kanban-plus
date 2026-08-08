@@ -62,14 +62,27 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     return stateManager.updateItemContent(item, titleRaw);
   };
 
-  const removeArchiveDate = (item: Item, archivedAt?: number) => {
+  const getArchiveDateSettings = () => {
+    return {
+      archiveDateFormat: stateManager.getSetting('archive-date-format'),
+      archiveDateSeparator: stateManager.getSetting('archive-date-separator'),
+      archiveDateAfterTitle: stateManager.getSetting('append-archive-date'),
+    };
+  };
+
+  const removeArchiveDate = (item: Item, source: ArchivedCardSources[string]) => {
+    const archivedAt = source.archivedAt;
+
     if (!stateManager.getSetting('archive-with-date') || !archivedAt) {
       return item;
     }
 
-    const archiveDateFormat = stateManager.getSetting('archive-date-format');
-    const archiveDateSeparator = stateManager.getSetting('archive-date-separator');
-    const archiveDateAfterTitle = stateManager.getSetting('append-archive-date');
+    const fallbackSettings = getArchiveDateSettings();
+    const archiveDateFormat = source.archiveDateFormat || fallbackSettings.archiveDateFormat;
+    const archiveDateSeparator =
+      source.archiveDateSeparator ?? fallbackSettings.archiveDateSeparator;
+    const archiveDateAfterTitle =
+      source.archiveDateAfterTitle ?? fallbackSettings.archiveDateAfterTitle;
     const archiveDate = moment(archivedAt).format(archiveDateFormat);
     const separator = archiveDateSeparator ? ` ${archiveDateSeparator}` : '';
     const archiveText = `${archiveDate}${separator}`;
@@ -158,6 +171,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     getSourceItemIndex: (itemIndex: number) => number
   ) => {
     const archivedAt = Date.now();
+    const archiveDateSettings = getArchiveDateSettings();
     const sources: ArchivedCardSources = {};
     const archivedItems = items.map((item, itemIndex) => {
       const blockId = item.data.blockId || generateInstanceId(6);
@@ -171,6 +185,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         sourceLaneTitle: sourceLane.data.title,
         sourceItemIndex: getSourceItemIndex(itemIndex),
         archivedAt,
+        ...archiveDateSettings,
       };
 
       return stateManager.getSetting('archive-with-date')
@@ -636,7 +651,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           return boardData;
         }
 
-        const unarchivedItem = removeArchiveDate(item, source.archivedAt);
+        const unarchivedItem = removeArchiveDate(item, source);
         const sourceLane = boardData.children[sourceLaneIndex];
         const destinationIndex = Math.min(
           source.sourceItemIndex ?? sourceLane.children.length,

@@ -760,6 +760,9 @@ export class StateManager {
           sourceLaneTitle: sourceLane.data.title,
           sourceItemIndex,
           archivedAt,
+          archiveDateFormat,
+          archiveDateSeparator,
+          archiveDateAfterTitle,
         };
 
         return shouldAppendArchiveDate ? appendArchiveDate(itemWithBlockId) : itemWithBlockId;

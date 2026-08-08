@@ -69,6 +69,9 @@ export interface KanbanSettings {
       sourceLaneTitle: string;
       sourceItemIndex: number;
       archivedAt: number;
+      archiveDateFormat?: string;
+      archiveDateSeparator?: string;
+      archiveDateAfterTitle?: boolean;
     }
   >;
   'card-created-time-format'?: string;
