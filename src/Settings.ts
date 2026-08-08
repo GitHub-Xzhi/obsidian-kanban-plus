@@ -189,6 +189,12 @@ export class SettingsManager {
     }, 1000);
   }
 
+  applySettingsUpdateNow(spec: Spec<KanbanSettings>) {
+    this.win.clearTimeout(this.applyDebounceTimer);
+    this.settings = update(this.settings, spec);
+    this.config.onSettingsChange(this.settings);
+  }
+
   getSetting(key: keyof KanbanSettings, local: boolean) {
     if (local) {
       return [this.settings[key], this.plugin.settings[key]];
@@ -231,11 +237,13 @@ export class SettingsManager {
             const lang = value as KanbanLanguage;
             setKanbanLanguage(lang);
 
-            this.applySettingsUpdate({
+            this.applySettingsUpdateNow({
               language: {
                 $set: lang,
               },
             });
+
+            this.plugin.settingsTab.display();
           });
         });
     }
