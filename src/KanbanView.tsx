@@ -260,7 +260,7 @@ export class KanbanView extends TextFileView implements HoverParent {
       stateManager.viewSet.forEach((view) => {
         view.viewSettings[key] = globalUpdater(view.viewSettings[key]);
       });
-    } else if (val) {
+    } else if (val !== undefined) {
       this.viewSettings[key] = val;
     }
 
@@ -270,6 +270,7 @@ export class KanbanView extends TextFileView implements HoverParent {
   populateViewState(settings: KanbanSettings) {
     this.viewSettings['kanban-plugin'] ??= settings['kanban-plugin'] || 'board';
     this.viewSettings['list-collapse'] ??= settings['list-collapse'] || [];
+    this.viewSettings['show-archive'] ??= false;
   }
 
   getViewState<K extends keyof KanbanViewSettings>(key: K) {
@@ -462,6 +463,28 @@ export class KanbanView extends TextFileView implements HoverParent {
     ) {
       this.actionButtons['show-archive-all'].remove();
       delete this.actionButtons['show-archive-all'];
+    }
+
+    if (
+      stateManager.getSetting('show-archive-toggle') &&
+      !this.actionButtons['show-archive-toggle']
+    ) {
+      const btn = this.addAction('lucide-archive-restore', t('Show archived cards'), () => {
+        const showArchive = !this.getViewState('show-archive');
+
+        this.setViewState('show-archive', showArchive);
+        this.actionButtons['show-archive-toggle'].toggleClass('is-active', showArchive);
+        this.setBoard(this.getBoard(), false);
+      });
+
+      btn.toggleClass('is-active', !!this.getViewState('show-archive'));
+      this.actionButtons['show-archive-toggle'] = btn;
+    } else if (
+      !stateManager.getSetting('show-archive-toggle') &&
+      this.actionButtons['show-archive-toggle']
+    ) {
+      this.actionButtons['show-archive-toggle'].remove();
+      delete this.actionButtons['show-archive-toggle'];
     }
 
     if (stateManager.getSetting('show-add-list') && !this.actionButtons['show-add-list']) {

@@ -15,6 +15,7 @@ import { DndScope } from '../dnd/components/Scope';
 import { getBoardModifiers } from '../helpers/boardModifiers';
 import { frontmatterKey } from '../parsers/common';
 import { Icon } from './Icon/Icon';
+import { ArchiveLane } from './Lane/ArchiveLane';
 import { Lanes } from './Lane/Lane';
 import { LaneForm } from './Lane/LaneForm';
 import { TableView } from './Table/Table';
@@ -65,6 +66,7 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
   const dateColors = stateManager.useSetting('date-colors');
   const tagColors = stateManager.useSetting('tag-colors');
   const boardView = view.useViewState(frontmatterKey);
+  const showArchive = view.useViewState('show-archive');
 
   const closeLaneForm = useCallback(() => {
     if (boardData?.children.length > 0) {
@@ -279,6 +281,9 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
                 <div>
                   <Sortable axis={axis}>
                     <Lanes lanes={boardData.children} collapseDir={axis} />
+                    {showArchive && boardData.data.archive.length > 0 && (
+                      <ArchiveLane items={boardData.data.archive} collapseDir={axis} />
+                    )}
                     <SortPlaceholder
                       accepts={boardAccepts}
                       className={c('lane-placeholder')}

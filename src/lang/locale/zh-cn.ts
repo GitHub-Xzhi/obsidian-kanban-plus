@@ -18,6 +18,7 @@ const lang: Partial<Lang> = {
   'Open as markdown': '打开为 Markdown 文件',
   'Open board settings': '打开看板设置',
   'Archive completed cards': '归档已完成卡片',
+  'Show archived cards': '显示/隐藏已归档卡片',
   'Something went wrong': '出了点问题',
   'You may wish to open as markdown and inspect or edit the file.':
     '你可能希望以 Markdown 方式打开，并检查或编辑该文件。',

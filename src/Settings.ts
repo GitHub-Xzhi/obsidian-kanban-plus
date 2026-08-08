@@ -81,6 +81,7 @@ export interface KanbanSettings {
   'new-note-template'?: string;
   'show-add-list'?: boolean;
   'show-archive-all'?: boolean;
+  'show-archive-toggle'?: boolean;
   'show-board-settings'?: boolean;
   'show-checkboxes'?: boolean;
   'show-relative-date'?: boolean;
@@ -98,6 +99,7 @@ export interface KanbanSettings {
 export interface KanbanViewSettings {
   [frontmatterKey]?: KanbanFormat;
   'list-collapse'?: boolean[];
+  'show-archive'?: boolean;
 }
 
 export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
@@ -132,6 +134,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'new-note-template',
   'show-add-list',
   'show-archive-all',
+  'show-archive-toggle',
   'show-board-settings',
   'show-checkboxes',
   'show-relative-date',
@@ -1415,6 +1418,45 @@ export class SettingsManager {
 
               this.applySettingsUpdate({
                 $unset: ['show-archive-all'],
+              });
+            });
+        });
+    });
+
+    new Setting(contentEl).setName(t('Show archived cards')).then((setting) => {
+      let toggleComponent: ToggleComponent;
+
+      setting
+        .addToggle((toggle) => {
+          toggleComponent = toggle;
+
+          const [value, globalValue] = this.getSetting('show-archive-toggle', local);
+
+          if (value !== undefined && value !== null) {
+            toggle.setValue(value as boolean);
+          } else if (globalValue !== undefined && globalValue !== null) {
+            toggle.setValue(globalValue as boolean);
+          } else {
+            toggle.setValue(true);
+          }
+
+          toggle.onChange((newValue) => {
+            this.applySettingsUpdate({
+              'show-archive-toggle': {
+                $set: newValue,
+              },
+            });
+          });
+        })
+        .addExtraButton((b) => {
+          b.setIcon('lucide-rotate-ccw')
+            .setTooltip(t('Reset to default'))
+            .onClick(() => {
+              const [, globalValue] = this.getSetting('show-archive-toggle', local);
+              toggleComponent.setValue(!!globalValue);
+
+              this.applySettingsUpdate({
+                $unset: ['show-archive-toggle'],
               });
             });
         });
