@@ -112,9 +112,7 @@ export function useItemMenu({
             });
         })
         .addItem((i) => {
-          i.setIcon('lucide-link')
-            .setTitle(t('Copy link to card'))
-            .onClick(copyCardLink);
+          i.setIcon('lucide-link').setTitle(t('Copy link to card')).onClick(copyCardLink);
         })
         .addSeparator();
 
