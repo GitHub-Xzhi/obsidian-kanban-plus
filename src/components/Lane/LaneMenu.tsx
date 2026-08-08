@@ -10,7 +10,6 @@ import { anyToString } from '../Item/MetadataTable';
 import { KanbanContext } from '../context';
 import { c, generateInstanceId } from '../helpers';
 import { EditState, Lane, LaneSort, LaneTemplate } from '../types';
-import { openCompleteLaneModal } from './CompleteLaneModal';
 
 export type LaneAction = 'delete' | 'archive' | 'archive-items' | null;
 
@@ -106,10 +105,22 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
 
     if (completeLanes.length > 1) {
       menu.addItem((item) => {
-        item
+        const submenu = (item as any)
           .setIcon('lucide-check-check')
           .setTitle(t('Change default complete list'))
-          .onClick(() => openCompleteLaneModal(stateManager));
+          .setSubmenu();
+
+        const defaultLaneIndex = stateManager.getDefaultCompleteLaneIndex();
+
+        completeLanes.forEach(({ lane, index }) => {
+          submenu.addItem((item: any) => {
+            item
+              .setIcon('lucide-list-checks')
+              .setTitle(lane.data.title || t('Untitled'))
+              .setChecked(index === defaultLaneIndex)
+              .onClick(() => stateManager.setDefaultCompleteLane(index));
+          });
+        });
       });
     }
 
