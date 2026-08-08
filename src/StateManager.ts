@@ -455,7 +455,9 @@ export class StateManager {
       }
 
       const sourceLane = board.children[path[0]];
-      const blockId = replacements[completedIndex].data.blockId || generateInstanceId(6);
+      const sourceItem = board.children[path[0]].children[path[1]];
+      const blockId =
+        sourceItem.data.blockId || replacements[completedIndex].data.blockId || generateInstanceId(6);
       const completedItem = update(replacements[completedIndex], {
         data: {
           blockId: {
