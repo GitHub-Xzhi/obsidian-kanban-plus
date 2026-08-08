@@ -24,16 +24,25 @@ export class CompleteLaneModal extends Modal {
     });
 
     completeLanes.forEach(({ lane, index }) => {
-      new Setting(contentEl)
+      const setting = new Setting(contentEl)
         .setName(lane.data.title || t('Untitled'))
-        .setDesc(index === defaultLaneIndex ? t('default') : '')
-        .addButton((button) => {
-          button.setButtonText(t('Select')).onClick(() => {
+        .setDesc(index === defaultLaneIndex ? t('default') : '');
+
+      const radio = setting.controlEl.createEl('input', {
+        attr: {
+          type: 'radio',
+          name: 'kanban-default-complete-lane',
+        },
+      });
+
+      radio.checked = index === defaultLaneIndex;
+      radio.addEventListener('change', () => {
+        if (radio.checked) {
             this.stateManager.setDefaultCompleteLane(index);
             this.onSelect?.(index);
             this.close();
-          });
-        });
+        }
+      });
     });
   }
 
