@@ -474,7 +474,7 @@ export class KanbanView extends TextFileView implements HoverParent {
 
         this.setViewState('show-archive', showArchive);
         this.actionButtons['show-archive-toggle'].toggleClass('is-active', showArchive);
-        this.setBoard(this.getBoard(), false);
+        stateManager.softRefresh();
       });
 
       btn.toggleClass('is-active', !!this.getViewState('show-archive'));
