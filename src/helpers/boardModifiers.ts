@@ -54,6 +54,74 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     return stateManager.updateItemContent(item, titleRaw);
   };
 
+  const collectBlockIds = (entity: Item | Lane): string[] => {
+    if (entity.type === DataTypes.Item) {
+      return entity.data.blockId ? [entity.data.blockId] : [];
+    }
+
+    return entity.children.flatMap(collectBlockIds);
+  };
+
+  const clearDeletedEntityReferences = (boardData: Board, entity: Item | Lane, path: Path) => {
+    const blockIds = collectBlockIds(entity);
+    const sources = boardData.data.settings['completed-card-sources'];
+
+    if (!sources && entity.type !== DataTypes.Lane) {
+      return boardData;
+    }
+
+    const deletedLaneIndex = entity.type === DataTypes.Lane ? path.last() : null;
+    const deletedLaneId = entity.type === DataTypes.Lane ? entity.id : null;
+    const nextSources = sources ? { ...sources } : undefined;
+    let didUpdateSources = false;
+
+    if (nextSources) {
+      for (const blockId of blockIds) {
+        if (nextSources[blockId]) {
+          delete nextSources[blockId];
+          didUpdateSources = true;
+        }
+      }
+
+      if (entity.type === DataTypes.Lane) {
+        Object.entries(nextSources).forEach(([blockId, source]) => {
+          if (
+            source.sourceLaneId === deletedLaneId ||
+            source.sourceLaneIndex === deletedLaneIndex
+          ) {
+            delete nextSources[blockId];
+            didUpdateSources = true;
+          }
+        });
+      }
+    }
+
+    if (entity.type !== DataTypes.Lane) {
+      return didUpdateSources
+        ? update<Board>(boardData, {
+            data: { settings: { 'completed-card-sources': { $set: nextSources } } },
+          })
+        : boardData;
+    }
+
+    const laneIds = boardData.data.settings['lane-ids'];
+    const settingsSpec: any = {};
+
+    if (didUpdateSources) {
+      settingsSpec['completed-card-sources'] = { $set: nextSources };
+    }
+
+    if (laneIds?.length) {
+      const nextLaneIds = [...laneIds];
+      nextLaneIds.splice(path.last(), 1);
+      settingsSpec['lane-ids'] = { $set: nextLaneIds };
+    }
+
+    return Object.keys(settingsSpec).length
+      ? update<Board>(boardData, { data: { settings: settingsSpec } })
+      : boardData;
+  };
+
   return {
     appendItems: (path: Path, items: Item[]) => {
       stateManager.setState((boardData) => appendEntities(boardData, path, items));
@@ -199,6 +267,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     deleteEntity: (path: Path) => {
       stateManager.setState((boardData) => {
         const entity = getEntityFromPath(boardData, path);
+        const nextBoard = clearDeletedEntityReferences(removeEntity(boardData, path), entity, path);
 
         if (entity.type === DataTypes.Lane) {
           const collapseState = view.getViewState('list-collapse');
@@ -209,12 +278,12 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           };
           view.setViewState('list-collapse', undefined, op);
 
-          return update<Board>(removeEntity(boardData, path), {
+          return update<Board>(nextBoard, {
             data: { settings: { 'list-collapse': { $set: op(collapseState) } } },
           });
         }
 
-        return removeEntity(boardData, path);
+        return nextBoard;
       });
     },
 
