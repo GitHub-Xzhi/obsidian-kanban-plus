@@ -290,6 +290,8 @@ const en = {
   'Sort by card text': 'Sort by card text',
   'Sort by date': 'Sort by date',
   'Sort by tags': 'Sort by tags',
+  'Sort by created time': 'Sort by created time',
+  'Sort by completed time': 'Sort by completed time',
   'Sort by': 'Sort by',
 
   // components/helpers/renderMarkdown.ts

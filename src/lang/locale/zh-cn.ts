@@ -279,6 +279,8 @@ const lang: Partial<Lang> = {
   'Sort by card text': '以卡片文本排序',
   'Sort by date': '以日期排序',
   'Sort by tags': '以标签排序',
+  'Sort by created time': '以创建时间排序',
+  'Sort by completed time': '以完成时间排序',
   'Sort by': '排序方式',
 
   // components/helpers/renderMarkdown.ts

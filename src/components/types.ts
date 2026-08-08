@@ -11,6 +11,10 @@ export enum LaneSort {
   DateDsc,
   TagsAsc,
   TagsDsc,
+  CreatedAsc,
+  CreatedDsc,
+  CompletedAsc,
+  CompletedDsc,
 }
 
 export interface LaneData {

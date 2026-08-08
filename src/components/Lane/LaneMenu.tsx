@@ -87,6 +87,14 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     let canSortDate = false;
     let canSortTags = false;
     const completeLanes = stateManager.getCompleteLaneOptions();
+    const cardCreatedTimes = board.data.settings['card-created-times'] || {};
+    const cardCompletedTimes = board.data.settings['card-completed-times'] || {};
+    const canSortCreatedTime = lane.children.some(
+      (item) => !!item.data.blockId && !!cardCreatedTimes[item.data.blockId]
+    );
+    const canSortCompletedTime = lane.children.some(
+      (item) => !!item.data.blockId && !!cardCompletedTimes[item.data.blockId]
+    );
 
     lane.children.forEach((item) => {
       const taskData = item.data.metadata.inlineMetadata;
@@ -218,6 +226,48 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       .addSeparator();
 
     const addSortOptions = (menu: Menu) => {
+      const sortByTime = (
+        title: string,
+        times: Record<string, number>,
+        ascSort: LaneSort,
+        dscSort: LaneSort
+      ) => {
+        menu.addItem((item) => {
+          item
+            .setIcon('arrow-down-up')
+            .setTitle(title)
+            .onClick(() => {
+              const children = lane.children.slice();
+              const mod = lane.data.sorted === ascSort ? -1 : 1;
+
+              children.sort((a, b) => {
+                const aTime = a.data.blockId ? times[a.data.blockId] : undefined;
+                const bTime = b.data.blockId ? times[b.data.blockId] : undefined;
+
+                if (aTime && !bTime) return -1;
+                if (bTime && !aTime) return 1;
+                if (!aTime && !bTime) return 0;
+
+                return (aTime - bTime) * mod;
+              });
+
+              boardModifiers.updateLane(
+                path,
+                update(lane, {
+                  children: {
+                    $set: children,
+                  },
+                  data: {
+                    sorted: {
+                      $set: lane.data.sorted === ascSort ? dscSort : ascSort,
+                    },
+                  },
+                })
+              );
+            });
+        });
+      };
+
       menu.addItem((item) => {
         item
           .setIcon('arrow-down-up')
@@ -344,6 +394,24 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         });
       }
 
+      if (canSortCreatedTime) {
+        sortByTime(
+          t('Sort by created time'),
+          cardCreatedTimes,
+          LaneSort.CreatedAsc,
+          LaneSort.CreatedDsc
+        );
+      }
+
+      if (canSortCompletedTime) {
+        sortByTime(
+          t('Sort by completed time'),
+          cardCompletedTimes,
+          LaneSort.CompletedAsc,
+          LaneSort.CompletedDsc
+        );
+      }
+
       if (metadataSortOptions.size) {
         metadataSortOptions.forEach((k) => {
           menu.addItem((i) => {
@@ -411,6 +479,8 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     completeLanesKey,
     defaultCompleteLaneTitlesKey,
     showCardCreatedTime,
+    board.data.settings['card-created-times'],
+    board.data.settings['card-completed-times'],
   ]);
 
   return {
