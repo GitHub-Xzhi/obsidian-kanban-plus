@@ -45,14 +45,45 @@ type CardCreatedTimes = NonNullable<KanbanSettings['card-created-times']>;
 type CardCompletedTimes = NonNullable<KanbanSettings['card-completed-times']>;
 
 export function getBoardModifiers(view: KanbanView, stateManager: StateManager): BoardModifiers {
-  const appendArchiveDate = (item: Item) => {
-    const archiveDateFormat = stateManager.getSetting('archive-date-format');
-    const archiveDateSeparator = stateManager.getSetting('archive-date-separator');
-    const archiveDateAfterTitle = stateManager.getSetting('append-archive-date');
+  const getArchiveDateSettings = () => {
+    return {
+      archiveDateFormat: stateManager.getSetting('archive-date-format'),
+      archiveDateSeparator: stateManager.getSetting('archive-date-separator'),
+      archiveDateAfterTitle: stateManager.getSetting('append-archive-date'),
+    };
+  };
 
-    const newTitle = [moment().format(archiveDateFormat)];
+  const getArchiveDateText = ({
+    archiveDateFormat,
+    archiveDateSeparator,
+    archiveDateAfterTitle,
+    archivedAt,
+  }: {
+    archiveDateFormat: string;
+    archiveDateSeparator?: string;
+    archiveDateAfterTitle?: boolean;
+    archivedAt: number;
+  }) => {
+    const archiveDate = moment(archivedAt).format(archiveDateFormat);
 
-    if (archiveDateSeparator) newTitle.push(archiveDateSeparator);
+    if (!archiveDateSeparator) {
+      return archiveDate;
+    }
+
+    return archiveDateAfterTitle
+      ? `${archiveDateSeparator} ${archiveDate}`
+      : `${archiveDate} ${archiveDateSeparator}`;
+  };
+
+  const appendArchiveDate = (item: Item, archivedAt: number = Date.now()) => {
+    const archiveDateSettings = getArchiveDateSettings();
+    const archiveDateAfterTitle = archiveDateSettings.archiveDateAfterTitle;
+    const newTitle = [
+      getArchiveDateText({
+        ...archiveDateSettings,
+        archivedAt,
+      }),
+    ];
 
     newTitle.push(item.data.titleRaw);
 
@@ -60,14 +91,6 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     const titleRaw = newTitle.join(' ');
     return stateManager.updateItemContent(item, titleRaw);
-  };
-
-  const getArchiveDateSettings = () => {
-    return {
-      archiveDateFormat: stateManager.getSetting('archive-date-format'),
-      archiveDateSeparator: stateManager.getSetting('archive-date-separator'),
-      archiveDateAfterTitle: stateManager.getSetting('append-archive-date'),
-    };
   };
 
   const removeArchiveDate = (item: Item, source: ArchivedCardSources[string]) => {
@@ -83,9 +106,12 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       source.archiveDateSeparator ?? fallbackSettings.archiveDateSeparator;
     const archiveDateAfterTitle =
       source.archiveDateAfterTitle ?? fallbackSettings.archiveDateAfterTitle;
-    const archiveDate = moment(archivedAt).format(archiveDateFormat);
-    const separator = archiveDateSeparator ? ` ${archiveDateSeparator}` : '';
-    const archiveText = `${archiveDate}${separator}`;
+    const archiveText = getArchiveDateText({
+      archiveDateFormat,
+      archiveDateSeparator,
+      archiveDateAfterTitle,
+      archivedAt,
+    });
     const archiveRegExp = archiveDateAfterTitle
       ? new RegExp(`\\s+${escapeRegExpStr(archiveText)}$`)
       : new RegExp(`^${escapeRegExpStr(archiveText)}\\s+`);
@@ -189,7 +215,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       };
 
       return stateManager.getSetting('archive-with-date')
-        ? appendArchiveDate(itemWithBlockId)
+        ? appendArchiveDate(itemWithBlockId, archivedAt)
         : itemWithBlockId;
     });
 
