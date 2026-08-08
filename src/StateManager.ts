@@ -546,7 +546,13 @@ export class StateManager {
         return board;
       }
 
-      const returnedItem = replacements[completedIndex];
+      const returnedItem = update(replacements[completedIndex], {
+        data: {
+          blockId: {
+            $set: blockId,
+          },
+        },
+      });
       const sourceReplacements = replacements.filter((_, index) => index !== completedIndex);
       let nextBoard = removeEntity(board, path);
 
