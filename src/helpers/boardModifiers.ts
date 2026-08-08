@@ -530,19 +530,25 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     updateItem: (path: Path, item: Item) => {
       stateManager.setState((boardData) => {
-        const created = addCreatedTimes(boardData, [item]);
+        const previousItem = getEntityFromPath(boardData, path) as Item;
+        const itemWithBlockId =
+          previousItem.data.blockId && !item.data.blockId
+            ? update<Item>(item, { data: { blockId: { $set: previousItem.data.blockId } } })
+            : item;
+        const created = addCreatedTimes(boardData, [itemWithBlockId]);
+        const nextBoard = updateParentEntity(boardData, path, {
+          children: {
+            [path[path.length - 1]]: {
+              $set: created.items[0],
+            },
+          },
+        });
 
         return applySettingsSpec(
-          updateParentEntity(boardData, path, {
-            children: {
-              [path[path.length - 1]]: {
-                $set: created.items[0],
-              },
-            },
-          }),
+          nextBoard,
           {
             ...created.settingsSpec,
-            ...updateCompletedTimes(boardData, created.items),
+            ...updateCompletedTimes(nextBoard, created.items),
           }
         );
       });
