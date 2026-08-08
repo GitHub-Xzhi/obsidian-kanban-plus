@@ -121,7 +121,6 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           const menuItemEl = (item as any).dom as HTMLElement | undefined;
           if (menuItemEl) {
             const tooltip = t('Only incomplete lists can set a default complete list');
-            menuItemEl.setAttr('title', tooltip);
             setTooltip(menuItemEl, tooltip);
           }
 
