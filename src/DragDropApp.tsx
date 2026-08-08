@@ -6,7 +6,7 @@ import { KanbanView } from './KanbanView';
 import { DraggableItem } from './components/Item/Item';
 import { DraggableLane } from './components/Lane/Lane';
 import { KanbanContext } from './components/context';
-import { c, maybeCompleteForMove } from './components/helpers';
+import { c, clearCompletedMoveSource, maybeCompleteForMove } from './components/helpers';
 import { Board, DataTypes, Item, Lane } from './components/types';
 import { DndContext } from './dnd/components/DndContext';
 import { DragOverlay } from './dnd/components/DragOverlay';
@@ -126,7 +126,8 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
                   dropPath,
                   entity
                 );
-                return next;
+
+                return dragPath[0] === dropPath[0] ? next : clearCompletedMoveSource(next);
               }
               return entity;
             },
@@ -215,7 +216,7 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
               entity
             );
             replacementEntity = replacement;
-            toInsert.push(next);
+            toInsert.push(clearCompletedMoveSource(next));
           } else {
             toInsert.push(entity);
           }

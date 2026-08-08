@@ -4,7 +4,11 @@ import { useEffect, useState } from 'preact/compat';
 
 import { KanbanView } from './KanbanView';
 import { KanbanSettings, SettingRetrievers } from './Settings';
-import { getDefaultDateFormat, getDefaultTimeFormat } from './components/helpers';
+import {
+  clearCompletedMoveSource,
+  getDefaultDateFormat,
+  getDefaultTimeFormat,
+} from './components/helpers';
 import { Board, BoardTemplate, Item, Lane } from './components/types';
 import { Path } from './dnd/types';
 import { insertEntity, removeEntity, updateEntity } from './dnd/util/data';
@@ -396,7 +400,20 @@ export class StateManager {
         return board;
       }
 
-      const completedItem = replacements[completedIndex];
+      const sourceLane = board.children[path[0]];
+      const completedItem = update(replacements[completedIndex], {
+        data: {
+          completedFromLaneId: {
+            $set: sourceLane.id,
+          },
+          completedFromLaneIndex: {
+            $set: path[1],
+          },
+          completedFromLaneTitle: {
+            $set: sourceLane.data.title,
+          },
+        },
+      });
       const sourceReplacements = replacements.filter((_, index) => index !== completedIndex);
       let nextBoard = removeEntity(board, path);
 
@@ -419,6 +436,59 @@ export class StateManager {
       }
 
       return nextBoard;
+    });
+
+    return true;
+  }
+
+  moveItemBackToCompletedSourceLane(
+    path: Path,
+    replacements: Item[],
+    completedIndex: number,
+    originalItem: Item
+  ) {
+    const { completedFromLaneId, completedFromLaneIndex, completedFromLaneTitle } =
+      originalItem.data;
+
+    if (!completedFromLaneId && !completedFromLaneTitle) {
+      return false;
+    }
+
+    const sourceLaneIndex = this.state.children.findIndex((lane) => {
+      return (
+        (completedFromLaneId && lane.id === completedFromLaneId) ||
+        (completedFromLaneTitle && lane.data.title === completedFromLaneTitle)
+      );
+    });
+
+    if (
+      sourceLaneIndex < 0 ||
+      sourceLaneIndex === path[0] ||
+      this.state.children[sourceLaneIndex].data.shouldMarkItemsComplete
+    ) {
+      return false;
+    }
+
+    this.setState((board) => {
+      if (!board.children[path[0]]?.children[path[1]] || !board.children[sourceLaneIndex]) {
+        return board;
+      }
+
+      const returnedItem = clearCompletedMoveSource(replacements[completedIndex]);
+      const sourceReplacements = replacements.filter((_, index) => index !== completedIndex);
+      let nextBoard = removeEntity(board, path);
+
+      if (sourceReplacements.length) {
+        nextBoard = insertEntity(nextBoard, path, sourceReplacements);
+      }
+
+      const sourceLane = nextBoard.children[sourceLaneIndex];
+      const destinationIndex = Math.min(
+        completedFromLaneIndex ?? sourceLane.children.length,
+        sourceLane.children.length
+      );
+
+      return insertEntity(nextBoard, [sourceLaneIndex, destinationIndex], [returnedItem]);
     });
 
     return true;

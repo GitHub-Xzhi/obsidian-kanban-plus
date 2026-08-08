@@ -7,7 +7,12 @@ import { moveEntity } from 'src/dnd/util/data';
 import { t } from 'src/lang/helpers';
 
 import { BoardModifiers } from '../../helpers/boardModifiers';
-import { applyTemplate, escapeRegExpStr, generateInstanceId } from '../helpers';
+import {
+  applyTemplate,
+  clearCompletedMoveSource,
+  escapeRegExpStr,
+  generateInstanceId,
+} from '../helpers';
 import { EditState, Item } from '../types';
 import {
   constructDatePicker,
@@ -277,7 +282,11 @@ export function useItemMenu({
               .onClick(() => {
                 if (path[0] === i) return;
                 stateManager.setState((boardData) => {
-                  return moveEntity(boardData, path, [i, 0]);
+                  return moveEntity(boardData, path, [i, 0], (entity) => {
+                    return entity.type === item.type
+                      ? clearCompletedMoveSource(entity as Item)
+                      : entity;
+                  });
                 });
               })
           );

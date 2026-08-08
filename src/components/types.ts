@@ -79,6 +79,9 @@ export interface ItemMetadata {
 
 export interface ItemData {
   blockId?: string;
+  completedFromLaneId?: string;
+  completedFromLaneIndex?: number;
+  completedFromLaneTitle?: string;
   checked: boolean;
   checkChar: string;
   title: string;

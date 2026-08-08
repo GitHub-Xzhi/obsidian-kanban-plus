@@ -64,6 +64,14 @@ export const ItemCheckbox = memo(function ItemCheckbox({
     const completeLanes = stateManager.getCompleteLaneOptions();
     const sourceIsCompleteLane = completeLanes.some((option) => option.index === path[0]);
 
+    if (
+      isComplete &&
+      sourceIsCompleteLane &&
+      stateManager.moveItemBackToCompletedSourceLane(path, replacements, completedIndex, item)
+    ) {
+      return;
+    }
+
     if (!isComplete && completeLanes.length && !sourceIsCompleteLane) {
       const moveToLane = (laneIndex: number) => {
         if (!stateManager.moveCompletedItemToLane(path, replacements, completedIndex, laneIndex)) {
