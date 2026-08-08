@@ -18,6 +18,7 @@ import { Tags } from './ItemContent';
 export interface ItemMetadataProps {
   item: Item;
   searchQuery?: string;
+  shouldMarkItemsComplete?: boolean;
 }
 
 function mergeMetadata(
@@ -35,7 +36,7 @@ function mergeMetadata(
   }, fileMetadata || {});
 }
 
-export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
+export function ItemMetadata({ item, searchQuery, shouldMarkItemsComplete }: ItemMetadataProps) {
   const { stateManager } = useContext(KanbanContext);
   const mergeInlineMetadata =
     stateManager.useSetting('inline-metadata-position') === 'metadata-table';
@@ -43,18 +44,23 @@ export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
   const cardCreatedTimes = stateManager.useSetting('card-created-times');
   const cardCompletedTimes = stateManager.useSetting('card-completed-times');
   const showCardCreatedTime = stateManager.useSetting('show-card-created-time');
+  const showCardCreatedTimeInCompleteLane = stateManager.useSetting(
+    'show-card-created-time-in-complete-lane'
+  );
   const cardCreatedTimeFormat = stateManager.useSetting('card-created-time-format');
   const cardCompletedTimeFormat = stateManager.useSetting('card-completed-time-format');
   const { fileMetadata, fileMetadataOrder, inlineMetadata } = item.data.metadata;
   const createdAt = item.data.blockId ? cardCreatedTimes?.[item.data.blockId] : undefined;
   const completedAt = item.data.blockId ? cardCompletedTimes?.[item.data.blockId] : undefined;
+  const shouldShowCreatedTime =
+    showCardCreatedTime && (!shouldMarkItemsComplete || showCardCreatedTimeInCompleteLane);
 
   const metadata = useMemo(() => {
     let metadata = mergeInlineMetadata
       ? mergeMetadata(fileMetadata, inlineMetadata, metadataKeys || [])
       : fileMetadata;
 
-    if (showCardCreatedTime && createdAt) {
+    if (shouldShowCreatedTime && createdAt) {
       metadata = {
         ...(metadata || {}),
         'card-created-time': {
@@ -90,7 +96,7 @@ export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
     fileMetadata,
     inlineMetadata,
     metadataKeys,
-    showCardCreatedTime,
+    shouldShowCreatedTime,
     createdAt,
     cardCreatedTimeFormat,
     completedAt,
@@ -105,7 +111,7 @@ export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
       });
     }
 
-    if (showCardCreatedTime && createdAt) {
+    if (shouldShowCreatedTime && createdAt) {
       metadataOrder.add('card-created-time');
     }
 
@@ -118,7 +124,7 @@ export function ItemMetadata({ item, searchQuery }: ItemMetadataProps) {
     fileMetadataOrder,
     mergeInlineMetadata,
     inlineMetadata,
-    showCardCreatedTime,
+    shouldShowCreatedTime,
     createdAt,
     completedAt,
   ]);

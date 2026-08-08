@@ -103,6 +103,9 @@ const en = {
   'Created time format': 'Created time format',
   'This format will be used when displaying card created time.':
     'This format will be used when displaying card created time.',
+  'Show created time in complete lists': 'Show created time in complete lists',
+  'When toggled, created time will be displayed on cards in complete lists.':
+    'When toggled, created time will be displayed on cards in complete lists.',
   'Completed time format': 'Completed time format',
   'This format will be used when displaying card completed time.':
     'This format will be used when displaying card completed time.',

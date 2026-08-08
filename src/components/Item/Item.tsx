@@ -132,7 +132,11 @@ const ItemInner = memo(function ItemInner({
         />
         <ItemMenuButton editState={editState} setEditState={setEditState} showMenu={showItemMenu} />
       </div>
-      <ItemMetadata searchQuery={isMatch ? searchQuery : undefined} item={item} />
+      <ItemMetadata
+        searchQuery={isMatch ? searchQuery : undefined}
+        item={item}
+        shouldMarkItemsComplete={shouldMarkItemsComplete}
+      />
     </div>
   );
 });

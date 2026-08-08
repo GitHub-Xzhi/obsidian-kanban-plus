@@ -276,6 +276,8 @@ export class StateManager {
       'card-completed-times': this.getSettingRaw('card-completed-times', suppliedSettings) ?? {},
       'show-card-created-time':
         this.getSettingRaw('show-card-created-time', suppliedSettings) ?? true,
+      'show-card-created-time-in-complete-lane':
+        this.getSettingRaw('show-card-created-time-in-complete-lane', suppliedSettings) ?? false,
       'tag-action': this.getSettingRaw('tag-action', suppliedSettings) ?? 'obsidian',
     };
   }

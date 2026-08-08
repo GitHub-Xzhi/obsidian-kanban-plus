@@ -99,6 +99,9 @@ const lang: Partial<Lang> = {
   'This format will be used when displaying dates in Kanban cards.': '看板卡片会以该格式展示日期。',
   'Created time format': '创建时间格式',
   'This format will be used when displaying card created time.': '该格式会用于显示卡片创建时间。',
+  'Show created time in complete lists': '在完成列显示创建时间',
+  'When toggled, created time will be displayed on cards in complete lists.':
+    '打开时，完成列中的卡片会显示创建时间。',
   'Completed time format': '完成时间格式',
   'This format will be used when displaying card completed time.': '该格式会用于显示卡片完成时间。',
   'Show relative date': '展示相对日期',

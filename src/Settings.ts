@@ -113,6 +113,7 @@ export interface KanbanSettings {
   'show-archive-toggle'?: boolean;
   'show-board-settings'?: boolean;
   'show-card-created-time'?: boolean;
+  'show-card-created-time-in-complete-lane'?: boolean;
   'show-checkboxes'?: boolean;
   'show-relative-date'?: boolean;
   'show-search'?: boolean;
@@ -175,6 +176,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'show-archive-toggle',
   'show-board-settings',
   'show-card-created-time',
+  'show-card-created-time-in-complete-lane',
   'show-checkboxes',
   'show-relative-date',
   'show-search',
@@ -933,6 +935,52 @@ export class SettingsManager {
         });
       });
     });
+
+    new Setting(contentEl)
+      .setName(t('Show created time in complete lists'))
+      .setDesc(t('When toggled, created time will be displayed on cards in complete lists.'))
+      .then((setting) => {
+        let toggleComponent: ToggleComponent;
+
+        setting
+          .addToggle((toggle) => {
+            toggleComponent = toggle;
+
+            const [value, globalValue] = this.getSetting(
+              'show-card-created-time-in-complete-lane',
+              local
+            );
+
+            if (value !== undefined) {
+              toggle.setValue(value as boolean);
+            } else if (globalValue !== undefined) {
+              toggle.setValue(globalValue as boolean);
+            }
+
+            toggle.onChange((newValue) => {
+              this.applySettingsUpdate({
+                'show-card-created-time-in-complete-lane': {
+                  $set: newValue,
+                },
+              });
+            });
+          })
+          .addExtraButton((b) => {
+            b.setIcon('lucide-rotate-ccw')
+              .setTooltip(t('Reset to default'))
+              .onClick(() => {
+                const [, globalValue] = this.getSetting(
+                  'show-card-created-time-in-complete-lane',
+                  local
+                );
+                toggleComponent.setValue(!!globalValue);
+
+                this.applySettingsUpdate({
+                  $unset: ['show-card-created-time-in-complete-lane'],
+                });
+              });
+          });
+      });
 
     new Setting(contentEl).setName(t('Completed time format')).then((setting) => {
       setting.addMomentFormat((mf) => {
