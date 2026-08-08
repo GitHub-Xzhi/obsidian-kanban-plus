@@ -228,7 +228,9 @@ export function listItemToItemData(stateManager: StateManager, md: string, item:
 }
 
 function isArchiveLane(child: Content, children: Content[], currentIndex: number) {
-  if (child.type !== 'heading' || toString(child, { includeImageAlt: false }) !== t('Archive')) {
+  const headingText = toString(child, { includeImageAlt: false });
+
+  if (child.type !== 'heading' || (headingText !== 'Archive' && headingText !== t('Archive'))) {
     return false;
   }
 
@@ -264,7 +266,7 @@ export function astToUnhydratedBoard(
             return false;
           }
 
-          if (childStr === t('Complete')) {
+          if (childStr === 'Complete' || childStr === t('Complete')) {
             shouldMarkItemsComplete = true;
             return true;
           }
@@ -428,7 +430,7 @@ function laneToMd(lane: Lane) {
 
 function archiveToMd(archive: Item[]) {
   if (archive.length) {
-    const lines: string[] = [archiveString, '', `## ${t('Archive')}`, ''];
+    const lines: string[] = [archiveString, '', '## Archive', ''];
 
     archive.forEach((item) => {
       lines.push(itemToMd(item));
