@@ -51,7 +51,7 @@ export function LaneForm({ onNewLane, closeLaneForm }: LaneFormProps) {
       setShouldMarkAsComplete(false);
       onNewLane();
     },
-    [onNewLane, setShouldMarkAsComplete, boardModifiers]
+    [onNewLane, setShouldMarkAsComplete, boardModifiers, shouldMarkAsComplete]
   );
 
   const editState = useMemo(() => ({ x: 0, y: 0 }), []);
