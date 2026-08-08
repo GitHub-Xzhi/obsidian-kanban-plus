@@ -270,6 +270,8 @@ const en = {
   'Edit list': 'Edit list',
   'Archive cards': 'Archive cards',
   'Change default complete list': 'Change default complete list',
+  'Only incomplete lists can set a default complete list':
+    'Only incomplete lists can set a default complete list',
   'Archive list': 'Archive list',
   'Delete list': 'Delete list',
   'Insert list before': 'Insert list before',

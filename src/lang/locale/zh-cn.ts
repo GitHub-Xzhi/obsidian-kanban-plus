@@ -262,6 +262,7 @@ const lang: Partial<Lang> = {
   'Edit list': '编辑列',
   'Archive cards': '归档卡片',
   'Change default complete list': '修改默认完成列',
+  'Only incomplete lists can set a default complete list': '只有非完成列可以设置默认完成列',
   'Archive list': '归档列',
   'Delete list': '删除列',
   'Insert list before': '在上方插入列',

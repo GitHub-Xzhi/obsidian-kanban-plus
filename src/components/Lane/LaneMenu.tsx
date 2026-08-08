@@ -1,5 +1,5 @@
 import update from 'immutability-helper';
-import { Menu, Platform } from 'obsidian';
+import { Menu, Platform, setTooltip } from 'obsidian';
 import { Dispatch, StateUpdater, useContext, useEffect, useMemo, useState } from 'preact/hooks';
 import { Path } from 'src/dnd/types';
 import { defaultSort } from 'src/helpers/util';
@@ -116,7 +116,15 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         item.setIcon('lucide-check-check').setTitle(t('Change default complete list'));
 
         if (lane.data.shouldMarkItemsComplete) {
-          (item as any).setDisabled?.(true);
+          item.setDisabled(true);
+
+          const menuItemEl = (item as any).dom as HTMLElement | undefined;
+          if (menuItemEl) {
+            const tooltip = t('Only incomplete lists can set a default complete list');
+            menuItemEl.setAttr('title', tooltip);
+            setTooltip(menuItemEl, tooltip);
+          }
+
           return;
         }
 
