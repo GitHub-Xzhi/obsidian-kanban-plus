@@ -257,12 +257,16 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     const archiveSources = boardData.data.settings['archived-card-sources'];
     const createdTimes = boardData.data.settings['card-created-times'];
     const completedTimes = boardData.data.settings['card-completed-times'];
+    const defaultCompleteLaneTitles = boardData.data.settings['default-complete-lane-titles'];
+    const defaultCompleteLaneTitle = boardData.data.settings['default-complete-lane-title'];
 
     if (
       !sources &&
       !archiveSources &&
       !createdTimes &&
       !completedTimes &&
+      !defaultCompleteLaneTitles &&
+      !defaultCompleteLaneTitle &&
       entity.type !== DataTypes.Lane
     ) {
       return boardData;
@@ -270,6 +274,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     const deletedLaneIndex = entity.type === DataTypes.Lane ? path.last() : null;
     const deletedLaneId = entity.type === DataTypes.Lane ? entity.id : null;
+    const deletedLaneTitle = entity.type === DataTypes.Lane ? entity.data.title : null;
     const nextSources = sources ? { ...sources } : undefined;
     const nextArchiveSources = archiveSources ? { ...archiveSources } : undefined;
     const nextCreatedTimes = createdTimes ? { ...createdTimes } : undefined;
@@ -352,6 +357,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     const laneIds = boardData.data.settings['lane-ids'];
     const laneBackgroundColors = boardData.data.settings['lane-background-colors'];
     const settingsSpec: any = {};
+    const unsetSettings: string[] = [];
 
     if (didUpdateSources) {
       settingsSpec['completed-card-sources'] = { $set: nextSources };
@@ -369,6 +375,39 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       settingsSpec['card-completed-times'] = { $set: nextCompletedTimes };
     }
 
+    if (deletedLaneTitle !== null) {
+      if (defaultCompleteLaneTitles) {
+        const nextDefaultCompleteLaneTitles = { ...defaultCompleteLaneTitles };
+        let didUpdateDefaultCompleteLaneTitles = false;
+
+        if (Object.prototype.hasOwnProperty.call(nextDefaultCompleteLaneTitles, deletedLaneTitle)) {
+          delete nextDefaultCompleteLaneTitles[deletedLaneTitle];
+          didUpdateDefaultCompleteLaneTitles = true;
+        }
+
+        Object.entries(nextDefaultCompleteLaneTitles).forEach(([sourceTitle, targetTitle]) => {
+          if (targetTitle === deletedLaneTitle) {
+            delete nextDefaultCompleteLaneTitles[sourceTitle];
+            didUpdateDefaultCompleteLaneTitles = true;
+          }
+        });
+
+        if (didUpdateDefaultCompleteLaneTitles) {
+          if (Object.keys(nextDefaultCompleteLaneTitles).length) {
+            settingsSpec['default-complete-lane-titles'] = {
+              $set: nextDefaultCompleteLaneTitles,
+            };
+          } else {
+            unsetSettings.push('default-complete-lane-titles');
+          }
+        }
+      }
+
+      if (defaultCompleteLaneTitle === deletedLaneTitle) {
+        unsetSettings.push('default-complete-lane-title');
+      }
+    }
+
     if (laneIds?.length) {
       const nextLaneIds = [...laneIds];
       nextLaneIds.splice(path.last(), 1);
@@ -379,6 +418,10 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       const nextLaneBackgroundColors = { ...laneBackgroundColors };
       delete nextLaneBackgroundColors[entity.id];
       settingsSpec['lane-background-colors'] = { $set: nextLaneBackgroundColors };
+    }
+
+    if (unsetSettings.length) {
+      settingsSpec.$unset = unsetSettings;
     }
 
     return applySettingsSpec(boardData, settingsSpec);
