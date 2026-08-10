@@ -257,6 +257,7 @@ const en = {
 
   // components/Lane/LaneForm.tsx
   'Enter list title...': 'Enter list title...',
+  'List background color': 'List background color',
   'Mark cards in this list as complete': 'Mark cards in this list as complete',
   'Add list': 'Add list',
   'Add a list': 'Add a list',

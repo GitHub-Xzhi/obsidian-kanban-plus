@@ -315,7 +315,7 @@ button.kanban-plugin__search-cancel-button .kanban-plugin__icon {
   width: 100%;
   display: flex;
   flex-direction: column;
-  background-color: var(--background-secondary);
+  background-color: var(--lane-background-color, var(--background-secondary));
   border-radius: 6px;
   border: 1px solid var(--background-modifier-border);
 
@@ -681,6 +681,9 @@ button.kanban-plugin__lane-settings-button + button.kanban-plugin__lane-settings
   .kanban-plugin__lane-input-wrapper
   button.kanban-plugin__item-submit-button {
   display: none;
+}
+.kanban-plugin__lane-setting-input-wrapper {
+  margin-block-end: var(--size-4-2);
 }
 
 button.kanban-plugin__new-item-button {

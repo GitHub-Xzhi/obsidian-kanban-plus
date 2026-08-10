@@ -92,6 +92,7 @@ export interface KanbanSettings {
   'default-complete-lane-titles'?: Record<string, string>;
   'completed-card-insertion-method'?: 'prepend' | 'append';
   'lane-ids'?: string[];
+  'lane-background-colors'?: Record<string, string>;
   'full-list-lane-width'?: boolean;
   'hide-card-count'?: boolean;
   'inline-metadata-position'?: 'body' | 'footer' | 'metadata-table';
@@ -155,6 +156,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'default-complete-lane-titles',
   'completed-card-insertion-method',
   'lane-ids',
+  'lane-background-colors',
   'full-list-lane-width',
   'hide-card-count',
   'inline-metadata-position',

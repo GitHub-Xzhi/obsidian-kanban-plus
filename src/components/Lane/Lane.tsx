@@ -47,15 +47,26 @@ function DraggableLaneRaw({
 
   const boardView = view.useViewState(frontmatterKey);
   const path = useNestedEntityPath(laneIndex);
+  const laneBackgroundColors = stateManager.useSetting('lane-background-colors');
+  const laneBackgroundColor = laneBackgroundColors?.[lane.id];
   const laneWidth = stateManager.useSetting('lane-width');
   const fullWidth = boardView === 'list' && stateManager.useSetting('full-list-lane-width');
   const insertionMethod = stateManager.useSetting('new-card-insertion-method');
   const laneStyles = useMemo(
-    () =>
-      !(isCollapsed && collapseDir === 'horizontal') && (fullWidth || laneWidth)
-        ? { width: fullWidth ? '100%' : `${laneWidth}px` }
-        : undefined,
-    [fullWidth, laneWidth, isCollapsed]
+    () => {
+      const styles: Record<string, string> = {};
+
+      if (!(isCollapsed && collapseDir === 'horizontal') && (fullWidth || laneWidth)) {
+        styles.width = fullWidth ? '100%' : `${laneWidth}px`;
+      }
+
+      if (laneBackgroundColor) {
+        styles['--lane-background-color'] = laneBackgroundColor;
+      }
+
+      return Object.keys(styles).length ? styles : undefined;
+    },
+    [fullWidth, laneWidth, isCollapsed, laneBackgroundColor]
   );
 
   const elementRef = useRef<HTMLDivElement>(null);

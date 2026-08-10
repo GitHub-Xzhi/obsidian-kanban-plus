@@ -249,6 +249,7 @@ const lang: Partial<Lang> = {
 
   // components/Lane/LaneForm.tsx
   'Enter list title...': '输入新的列标题……',
+  'List background color': '列背景色',
   'Mark cards in this list as complete': '将该列设置为完成列',
   'Add list': '添加',
   'Add a list': '添加列',

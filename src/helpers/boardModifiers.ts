@@ -350,6 +350,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     }
 
     const laneIds = boardData.data.settings['lane-ids'];
+    const laneBackgroundColors = boardData.data.settings['lane-background-colors'];
     const settingsSpec: any = {};
 
     if (didUpdateSources) {
@@ -372,6 +373,12 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       const nextLaneIds = [...laneIds];
       nextLaneIds.splice(path.last(), 1);
       settingsSpec['lane-ids'] = { $set: nextLaneIds };
+    }
+
+    if (laneBackgroundColors?.[entity.id]) {
+      const nextLaneBackgroundColors = { ...laneBackgroundColors };
+      delete nextLaneBackgroundColors[entity.id];
+      settingsSpec['lane-background-colors'] = { $set: nextLaneBackgroundColors };
     }
 
     return applySettingsSpec(boardData, settingsSpec);
