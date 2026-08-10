@@ -284,6 +284,8 @@ const en = {
   'Archive cards': 'Archive cards',
   'Show created time': 'Show created time',
   'Hide created time': 'Hide created time',
+  'Show completed time': 'Show completed time',
+  'Hide completed time': 'Hide completed time',
   'Change default complete list': 'Change default complete list',
   'Clear default complete list': 'Clear default complete list',
   'Only incomplete lists can set a default complete list':

@@ -115,6 +115,7 @@ export interface KanbanSettings {
   'show-board-settings'?: boolean;
   'show-card-created-time'?: boolean;
   'show-card-created-time-in-complete-lane'?: boolean;
+  'show-card-completed-time-in-complete-lane'?: boolean;
   'show-checkboxes'?: boolean;
   'show-relative-date'?: boolean;
   'show-search'?: boolean;
@@ -179,6 +180,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'show-board-settings',
   'show-card-created-time',
   'show-card-created-time-in-complete-lane',
+  'show-card-completed-time-in-complete-lane',
   'show-checkboxes',
   'show-relative-date',
   'show-search',

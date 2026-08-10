@@ -70,8 +70,12 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
   const { stateManager, boardModifiers } = useContext(KanbanContext);
   const board = stateManager.useState();
   const [confirmAction, setConfirmAction] = useState<LaneAction>(null);
-  const showCardCreatedTime = stateManager.getSetting(
-    'show-card-created-time',
+  const showCardCreatedTimeInCompleteLane = stateManager.getSetting(
+    'show-card-created-time-in-complete-lane',
+    board.data.settings
+  );
+  const showCardCompletedTimeInCompleteLane = stateManager.getSetting(
+    'show-card-completed-time-in-complete-lane',
     board.data.settings
   );
 
@@ -121,25 +125,53 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           .setIcon('lucide-archive')
           .setTitle(t('Archive cards'))
           .onClick(() => setConfirmAction('archive-items'));
-      })
-      .addItem((item) => {
-        item
-          .setIcon('lucide-clock')
-          .setTitle(showCardCreatedTime ? t('Hide created time') : t('Show created time'))
-          .onClick(() => {
-            stateManager.setState((board) =>
-              update(board, {
-                data: {
-                  settings: {
-                    'show-card-created-time': {
-                      $set: !showCardCreatedTime,
+      });
+
+    if (lane.data.shouldMarkItemsComplete) {
+      menu
+        .addItem((item) => {
+          item
+            .setIcon('lucide-clock')
+            .setTitle(
+              showCardCreatedTimeInCompleteLane ? t('Hide created time') : t('Show created time')
+            )
+            .onClick(() => {
+              stateManager.setState((board) =>
+                update(board, {
+                  data: {
+                    settings: {
+                      'show-card-created-time-in-complete-lane': {
+                        $set: !showCardCreatedTimeInCompleteLane,
+                      },
                     },
                   },
-                },
-              })
-            );
-          });
-      });
+                })
+              );
+            });
+        })
+        .addItem((item) => {
+          item
+            .setIcon('lucide-circle-check')
+            .setTitle(
+              showCardCompletedTimeInCompleteLane
+                ? t('Hide completed time')
+                : t('Show completed time')
+            )
+            .onClick(() => {
+              stateManager.setState((board) =>
+                update(board, {
+                  data: {
+                    settings: {
+                      'show-card-completed-time-in-complete-lane': {
+                        $set: !showCardCompletedTimeInCompleteLane,
+                      },
+                    },
+                  },
+                })
+              );
+            });
+        });
+    }
 
     if (completeLanes.length > 0) {
       menu.addItem((item) => {
@@ -489,7 +521,8 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     lane,
     completeLanesKey,
     defaultCompleteLaneTitlesKey,
-    showCardCreatedTime,
+    showCardCreatedTimeInCompleteLane,
+    showCardCompletedTimeInCompleteLane,
     board.data.settings['card-created-times'],
     board.data.settings['card-completed-times'],
   ]);

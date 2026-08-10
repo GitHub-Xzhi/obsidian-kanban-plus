@@ -47,13 +47,17 @@ export function ItemMetadata({ item, searchQuery, shouldMarkItemsComplete }: Ite
   const showCardCreatedTimeInCompleteLane = stateManager.useSetting(
     'show-card-created-time-in-complete-lane'
   );
+  const showCardCompletedTimeInCompleteLane = stateManager.useSetting(
+    'show-card-completed-time-in-complete-lane'
+  );
   const cardCreatedTimeFormat = stateManager.useSetting('card-created-time-format');
   const cardCompletedTimeFormat = stateManager.useSetting('card-completed-time-format');
   const { fileMetadata, fileMetadataOrder, inlineMetadata } = item.data.metadata;
   const createdAt = item.data.blockId ? cardCreatedTimes?.[item.data.blockId] : undefined;
   const completedAt = item.data.blockId ? cardCompletedTimes?.[item.data.blockId] : undefined;
   const shouldShowCreatedTime =
-    showCardCreatedTime && (!shouldMarkItemsComplete || showCardCreatedTimeInCompleteLane);
+    shouldMarkItemsComplete ? showCardCreatedTimeInCompleteLane : showCardCreatedTime;
+  const shouldShowCompletedTime = shouldMarkItemsComplete && showCardCompletedTimeInCompleteLane;
 
   const metadata = useMemo(() => {
     let metadata = mergeInlineMetadata
@@ -74,7 +78,7 @@ export function ItemMetadata({ item, searchQuery, shouldMarkItemsComplete }: Ite
       };
     }
 
-    if (completedAt) {
+    if (shouldShowCompletedTime && completedAt) {
       metadata = {
         ...(metadata || {}),
         'card-completed-time': {
@@ -100,6 +104,7 @@ export function ItemMetadata({ item, searchQuery, shouldMarkItemsComplete }: Ite
     createdAt,
     cardCreatedTimeFormat,
     completedAt,
+    shouldShowCompletedTime,
     cardCompletedTimeFormat,
   ]);
 
@@ -115,7 +120,7 @@ export function ItemMetadata({ item, searchQuery, shouldMarkItemsComplete }: Ite
       metadataOrder.add('card-created-time');
     }
 
-    if (completedAt) {
+    if (shouldShowCompletedTime && completedAt) {
       metadataOrder.add('card-completed-time');
     }
 
@@ -127,6 +132,7 @@ export function ItemMetadata({ item, searchQuery, shouldMarkItemsComplete }: Ite
     shouldShowCreatedTime,
     createdAt,
     completedAt,
+    shouldShowCompletedTime,
   ]);
 
   if (!metadata) {

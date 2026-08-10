@@ -274,6 +274,8 @@ const lang: Partial<Lang> = {
   'Archive cards': '归档卡片',
   'Show created time': '显示创建时间',
   'Hide created time': '隐藏创建时间',
+  'Show completed time': '显示完成时间',
+  'Hide completed time': '隐藏完成时间',
   'Change default complete list': '修改默认完成列',
   'Clear default complete list': '取消默认完成列',
   'Only incomplete lists can set a default complete list': '只有非完成列可以设置默认完成列',
