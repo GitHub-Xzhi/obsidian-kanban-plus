@@ -1,11 +1,10 @@
 {
-	"id": "obsidian-kanban-Xzhi",
-	"name": "Xzhi Kanban",
-	"version": "2.0.51",
+	"id": "kanban-plus",
+	"name": "Kanban Plus",
+	"version": "1.0.0",
 	"minAppVersion": "1.0.0",
-	"description": "Create markdown-backed Kanban boards in Obsidian.",
-	"author": "mgmeyers",
-	"authorUrl": "https://github.com/mgmeyers/obsidian-kanban",
-	"helpUrl": "https://publish.obsidian.md/kanban/Obsidian+Kanban+Plugin",
+	"description": "EN: Enhanced Kanban fork with automatic complete-list movement, source tracking, unarchive support, card time records, time sorting, custom list colors and more. | 中文: Kanban 增强版，支持完成列自动流转、来源追踪、取消归档、卡片时间记录、时间排序与自定义列背景色等功能。",
+	"author": "Xzhi & mgmeyers",
+	"authorUrl": "https://github.com/GitHub-Xzhi",
 	"isDesktopOnly": false
 }
