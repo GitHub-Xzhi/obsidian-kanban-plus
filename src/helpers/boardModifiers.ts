@@ -648,7 +648,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const item = getEntityFromPath(boardData, path);
         try {
           const lane = boardData.children[path[0]];
-          const archived = archiveItemsWithSources([item], lane, path[0], () => path[1]);
+          const archived = archiveItemsWithSources([item], lane, () => path[1]);
           let nextBoard = removeEntity(boardData, path);
           const blockId = item.data.blockId;
 
