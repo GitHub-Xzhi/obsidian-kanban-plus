@@ -160,6 +160,17 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         const submenu = (item as any).setSubmenu();
         const defaultLaneIndex = stateManager.getDefaultCompleteLaneIndex(path[0]);
 
+        if (defaultLaneIndex !== null) {
+          submenu.addItem((item: any) => {
+            item
+              .setIcon('lucide-x')
+              .setTitle(t('Clear default complete list'))
+              .onClick(() => stateManager.clearDefaultCompleteLane(path[0]));
+          });
+
+          submenu.addSeparator();
+        }
+
         completeLanes.forEach(({ lane, index }) => {
           submenu.addItem((item: any) => {
             item

@@ -275,6 +275,7 @@ const lang: Partial<Lang> = {
   'Show created time': '显示创建时间',
   'Hide created time': '隐藏创建时间',
   'Change default complete list': '修改默认完成列',
+  'Clear default complete list': '取消默认完成列',
   'Only incomplete lists can set a default complete list': '只有非完成列可以设置默认完成列',
   'Archive list': '归档列',
   'Delete list': '删除列',

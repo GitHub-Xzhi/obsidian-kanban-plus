@@ -397,6 +397,59 @@ export class StateManager {
     );
   }
 
+  clearDefaultCompleteLane(sourceLaneIndex?: number) {
+    const sourceLane =
+      sourceLaneIndex !== undefined ? this.state.children[sourceLaneIndex] : undefined;
+
+    if (sourceLane && sourceLane.data.shouldMarkItemsComplete) {
+      return;
+    }
+
+    if (sourceLane) {
+      this.setState((board) => {
+        const nextTitles = { ...(board.data.settings['default-complete-lane-titles'] || {}) };
+        const hadSourceDefault = nextTitles[sourceLane.data.title] !== undefined;
+
+        delete nextTitles[sourceLane.data.title];
+
+        const settingsSpec: any = {
+          'default-complete-lane-titles': {
+            $set: nextTitles,
+          },
+        };
+
+        if (!hadSourceDefault) {
+          return update(board, {
+            data: {
+              settings: {
+                ...settingsSpec,
+                $unset: ['default-complete-lane-title'],
+              },
+            },
+          });
+        }
+
+        return update(board, {
+          data: {
+            settings: settingsSpec,
+          },
+        });
+      });
+
+      return;
+    }
+
+    this.setState((board) =>
+      update(board, {
+        data: {
+          settings: {
+            $unset: ['default-complete-lane-title'],
+          },
+        },
+      })
+    );
+  }
+
   updateCompletedTime(board: Board, item: Item, isComplete: boolean) {
     const blockId = item.data.blockId;
 

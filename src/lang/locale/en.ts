@@ -285,6 +285,7 @@ const en = {
   'Show created time': 'Show created time',
   'Hide created time': 'Hide created time',
   'Change default complete list': 'Change default complete list',
+  'Clear default complete list': 'Clear default complete list',
   'Only incomplete lists can set a default complete list':
     'Only incomplete lists can set a default complete list',
   'Archive list': 'Archive list',
