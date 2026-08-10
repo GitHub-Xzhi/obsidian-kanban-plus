@@ -90,9 +90,8 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
   const completeLanesKey = board.children
     .map((lane, index) => `${index}:${lane.data.title}:${!!lane.data.shouldMarkItemsComplete}`)
     .join('|');
-  const defaultCompleteLaneTitlesKey = JSON.stringify(
-    board.data.settings['default-complete-lane-titles'] || {}
-  );
+  const defaultCompleteLaneIdsKey = JSON.stringify(board.data.settings['default-complete-lane-ids'] || {});
+  const defaultCompleteLaneIdKey = board.data.settings['default-complete-lane-id'] || '';
 
   const settingsMenu = useMemo(() => {
     const metadataSortOptions = new Set<string>();
@@ -547,7 +546,8 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     path,
     lane,
     completeLanesKey,
-    defaultCompleteLaneTitlesKey,
+    defaultCompleteLaneIdsKey,
+    defaultCompleteLaneIdKey,
     showCardCreatedTime,
     showCardCreatedTimeInCompleteLane,
     showCardCompletedTimeInCompleteLane,

@@ -88,8 +88,8 @@ export interface KanbanSettings {
       movedAt: number;
     }
   >;
-  'default-complete-lane-title'?: string;
-  'default-complete-lane-titles'?: Record<string, string>;
+  'default-complete-lane-id'?: string;
+  'default-complete-lane-ids'?: Record<string, string>;
   'completed-card-insertion-method'?: 'prepend' | 'append';
   'lane-ids'?: string[];
   'lane-background-colors'?: Record<string, string>;
@@ -153,8 +153,8 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'card-completed-time-format',
   'card-completed-times',
   'completed-card-sources',
-  'default-complete-lane-title',
-  'default-complete-lane-titles',
+  'default-complete-lane-id',
+  'default-complete-lane-ids',
   'completed-card-insertion-method',
   'lane-ids',
   'lane-background-colors',

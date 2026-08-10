@@ -341,17 +341,17 @@ export class StateManager {
       return completeLanes[0].index;
     }
 
-    const sourceLaneTitle =
-      sourceLaneIndex !== undefined ? this.state.children[sourceLaneIndex]?.data.title : undefined;
-    const defaultTitle =
-      (sourceLaneTitle && this.getSetting('default-complete-lane-titles')?.[sourceLaneTitle]) ||
-      this.getSetting('default-complete-lane-title');
+    const sourceLaneId =
+      sourceLaneIndex !== undefined ? this.state.children[sourceLaneIndex]?.id : undefined;
+    const defaultLaneId =
+      (sourceLaneId && this.getSetting('default-complete-lane-ids')?.[sourceLaneId]) ||
+      this.getSetting('default-complete-lane-id');
 
-    if (!defaultTitle) {
+    if (!defaultLaneId) {
       return null;
     }
 
-    return completeLanes.find((option) => option.lane.data.title === defaultTitle)?.index ?? null;
+    return completeLanes.find((option) => option.lane.id === defaultLaneId)?.index ?? null;
   }
 
   setDefaultCompleteLane(index: number, sourceLaneIndex?: number) {
@@ -372,12 +372,13 @@ export class StateManager {
         update(board, {
           data: {
             settings: {
-              'default-complete-lane-titles': {
+              'default-complete-lane-ids': {
                 $set: {
-                  ...(board.data.settings['default-complete-lane-titles'] || {}),
-                  [sourceLane.data.title]: lane.data.title,
+                  ...(board.data.settings['default-complete-lane-ids'] || {}),
+                  [sourceLane.id]: lane.id,
                 },
               },
+              $unset: ['default-complete-lane-titles'],
             },
           },
         })
@@ -390,9 +391,10 @@ export class StateManager {
       update(board, {
         data: {
           settings: {
-            'default-complete-lane-title': {
-              $set: lane.data.title,
+            'default-complete-lane-id': {
+              $set: lane.id,
             },
+            $unset: ['default-complete-lane-title'],
           },
         },
       })
@@ -409,15 +411,16 @@ export class StateManager {
 
     if (sourceLane) {
       this.setState((board) => {
-        const nextTitles = { ...(board.data.settings['default-complete-lane-titles'] || {}) };
-        const hadSourceDefault = nextTitles[sourceLane.data.title] !== undefined;
+        const nextIds = { ...(board.data.settings['default-complete-lane-ids'] || {}) };
+        const hadSourceDefault = nextIds[sourceLane.id] !== undefined;
 
-        delete nextTitles[sourceLane.data.title];
+        delete nextIds[sourceLane.id];
 
         const settingsSpec: any = {
-          'default-complete-lane-titles': {
-            $set: nextTitles,
+          'default-complete-lane-ids': {
+            $set: nextIds,
           },
+          $unset: ['default-complete-lane-titles'],
         };
 
         if (!hadSourceDefault) {
@@ -425,7 +428,7 @@ export class StateManager {
             data: {
               settings: {
                 ...settingsSpec,
-                $unset: ['default-complete-lane-title'],
+                $unset: ['default-complete-lane-id', 'default-complete-lane-title'],
               },
             },
           });
@@ -445,7 +448,7 @@ export class StateManager {
       update(board, {
         data: {
           settings: {
-            $unset: ['default-complete-lane-title'],
+            $unset: ['default-complete-lane-id', 'default-complete-lane-title'],
           },
         },
       })
