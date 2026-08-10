@@ -5,6 +5,7 @@ import {
   Modal,
   PluginSettingTab,
   Setting,
+  TextComponent,
   ToggleComponent,
 } from 'obsidian';
 
@@ -1300,27 +1301,46 @@ export class SettingsManager {
     new Setting(contentEl)
       .setName(t('Archive date/time separator'))
       .setDesc(t('This will be used to separate the archived date/time from the title'))
-      .addText((text) => {
-        const [value, globalValue] = this.getSetting('archive-date-separator', local);
+      .then((setting) => {
+        let textComponent: TextComponent;
 
-        text.inputEl.placeholder = globalValue ? `${globalValue} (default)` : '';
-        text.inputEl.value = value ? (value as string) : '';
+        setting
+          .addText((text) => {
+            textComponent = text;
 
-        text.onChange((val) => {
-          if (val) {
-            this.applySettingsUpdate({
-              'archive-date-separator': {
-                $set: val,
-              },
+            const [value, globalValue] = this.getSetting('archive-date-separator', local);
+
+            text.inputEl.placeholder = globalValue ? `${globalValue} (default)` : '';
+            text.inputEl.value = value ? (value as string) : '';
+
+            text.onChange((val) => {
+              if (val) {
+                this.applySettingsUpdate({
+                  'archive-date-separator': {
+                    $set: val,
+                  },
+                });
+
+                return;
+              }
+
+              this.applySettingsUpdate({
+                $unset: ['archive-date-separator'],
+              });
             });
+          })
+          .addExtraButton((b) => {
+            b.setIcon('lucide-rotate-ccw')
+              .setTooltip(t('Reset to default'))
+              .onClick(() => {
+                const [, globalValue] = this.getSetting('archive-date-separator', local);
+                textComponent.setValue((globalValue as string) || '');
 
-            return;
-          }
-
-          this.applySettingsUpdate({
-            $unset: ['archive-date-separator'],
+                this.applySettingsUpdate({
+                  $unset: ['archive-date-separator'],
+                });
+              });
           });
-        });
       });
 
     new Setting(contentEl).setName(t('Archive date/time format')).then((setting) => {
