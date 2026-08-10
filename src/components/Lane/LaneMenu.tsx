@@ -53,7 +53,7 @@ export function ConfirmAction({ action, cancel, onAction, lane }: ConfirmActionP
           {actionLabels[action].confirm}
         </button>
         <button onClick={cancel} className={c('cancel-action-button')}>
-          Cancel
+          {t('Cancel')}
         </button>
       </div>
     </div>
