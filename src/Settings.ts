@@ -50,6 +50,11 @@ const numberRegEx = /^\d+(?:\.\d+)?$/;
 
 export type KanbanFormat = 'basic' | 'board' | 'table' | 'list';
 
+export interface PersistedLaneSetting {
+  id: string;
+  'list-collapse'?: boolean;
+}
+
 export interface KanbanSettings {
   [frontmatterKey]?: KanbanFormat;
   'append-archive-date'?: boolean;
@@ -65,9 +70,7 @@ export interface KanbanSettings {
   'archived-card-sources'?: Record<
     string,
     {
-      sourceLaneIndex: number;
-      sourceLaneId?: string;
-      sourceLaneTitle: string;
+      sourceLaneId: string;
       sourceItemIndex: number;
       archivedAt: number;
       archiveDateFormat?: string;
@@ -82,9 +85,7 @@ export interface KanbanSettings {
   'completed-card-sources'?: Record<
     string,
     {
-      sourceLaneIndex: number;
-      sourceLaneId?: string;
-      sourceLaneTitle: string;
+      sourceLaneId: string;
       sourceItemIndex: number;
       movedAt: number;
     }
@@ -92,7 +93,7 @@ export interface KanbanSettings {
   'default-complete-lane-id'?: string;
   'default-complete-lane-ids'?: Record<string, string>;
   'completed-card-insertion-method'?: 'prepend' | 'append';
-  'lane-ids'?: string[];
+  lanes?: PersistedLaneSetting[];
   'lane-background-colors'?: Record<string, string>;
   'full-list-lane-width'?: boolean;
   'hide-card-count'?: boolean;
@@ -157,7 +158,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'default-complete-lane-id',
   'default-complete-lane-ids',
   'completed-card-insertion-method',
-  'lane-ids',
+  'lanes',
   'lane-background-colors',
   'full-list-lane-width',
   'hide-card-count',
@@ -165,7 +166,6 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'lane-width',
   'language',
   'link-date-to-daily-note',
-  'list-collapse',
   'max-archive-size',
   'metadata-keys',
   'move-dates',

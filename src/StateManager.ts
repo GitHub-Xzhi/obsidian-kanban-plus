@@ -547,8 +547,6 @@ export class StateManager {
                 ...(nextBoard.data.settings['completed-card-sources'] || {}),
                 [blockId]: {
                   sourceLaneId: sourceLane.id,
-                  sourceLaneIndex: path[0],
-                  sourceLaneTitle: sourceLane.data.title,
                   sourceItemIndex: path[1],
                   movedAt: Date.now(),
                 },
@@ -587,13 +585,9 @@ export class StateManager {
       return false;
     }
 
-    const sourceLaneIndex = this.state.children.findIndex((lane) => {
-      return (
-        (sourceRecord.sourceLaneId && lane.id === sourceRecord.sourceLaneId) ||
-        lane.data.title === sourceRecord.sourceLaneTitle ||
-        this.state.children[sourceRecord.sourceLaneIndex] === lane
-      );
-    });
+    const sourceLaneIndex = this.state.children.findIndex(
+      (lane) => lane.id === sourceRecord.sourceLaneId
+    );
 
     if (
       sourceLaneIndex < 0 ||
@@ -770,7 +764,6 @@ export class StateManager {
     const archived: Array<{
       item: Item;
       sourceLane: Lane;
-      sourceLaneIndex: number;
       sourceItemIndex: number;
     }> = [];
     const shouldAppendArchiveDate = !!this.getSetting('archive-with-date');
@@ -798,7 +791,7 @@ export class StateManager {
           $set: lane.children.filter((item, sourceItemIndex) => {
             const isComplete = item.data.checked && item.data.checkChar === getTaskStatusDone();
             if (lane.data.shouldMarkItemsComplete || isComplete) {
-              archived.push({ item, sourceLane: lane, sourceLaneIndex, sourceItemIndex });
+              archived.push({ item, sourceLane: lane, sourceItemIndex });
             }
 
             return !isComplete && !lane.data.shouldMarkItemsComplete;
@@ -810,7 +803,7 @@ export class StateManager {
     const archivedAt = Date.now();
     const archivedSources: NonNullable<KanbanSettings['archived-card-sources']> = {};
     const archivedItems = await Promise.all(
-      archived.map(({ item, sourceLane, sourceLaneIndex, sourceItemIndex }) => {
+      archived.map(({ item, sourceLane, sourceItemIndex }) => {
         const blockId = item.data.blockId || generateInstanceId(6);
         const itemWithBlockId = item.data.blockId
           ? item
@@ -818,8 +811,6 @@ export class StateManager {
 
         archivedSources[blockId] = {
           sourceLaneId: sourceLane.id,
-          sourceLaneIndex,
-          sourceLaneTitle: sourceLane.data.title,
           sourceItemIndex,
           archivedAt,
           archiveDateFormat,

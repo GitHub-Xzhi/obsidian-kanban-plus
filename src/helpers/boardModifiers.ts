@@ -193,7 +193,6 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
   const archiveItemsWithSources = (
     items: Item[],
     sourceLane: Lane,
-    sourceLaneIndex: number,
     getSourceItemIndex: (itemIndex: number) => number
   ) => {
     const archivedAt = Date.now();
@@ -207,8 +206,6 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
       sources[blockId] = {
         sourceLaneId: sourceLane.id,
-        sourceLaneIndex,
-        sourceLaneTitle: sourceLane.data.title,
         sourceItemIndex: getSourceItemIndex(itemIndex),
         archivedAt,
         ...archiveDateSettings,
@@ -242,13 +239,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
   };
 
   const findArchivedSourceLaneIndex = (boardData: Board, source: ArchivedCardSources[string]) => {
-    if (source.sourceLaneId) {
-      return boardData.children.findIndex((lane) => lane.id === source.sourceLaneId);
-    }
-
-    return boardData.children.findIndex((lane, laneIndex) => {
-      return lane.data.title === source.sourceLaneTitle || laneIndex === source.sourceLaneIndex;
-    });
+    return boardData.children.findIndex((lane) => lane.id === source.sourceLaneId);
   };
 
   const clearDeletedEntityReferences = (boardData: Board, entity: Item | Lane, path: Path) => {
@@ -272,7 +263,6 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       return boardData;
     }
 
-    const deletedLaneIndex = entity.type === DataTypes.Lane ? path.last() : null;
     const deletedLaneId = entity.type === DataTypes.Lane ? entity.id : null;
     const nextSources = sources ? { ...sources } : undefined;
     const nextArchiveSources = archiveSources ? { ...archiveSources } : undefined;
@@ -293,10 +283,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
       if (entity.type === DataTypes.Lane) {
         Object.entries(nextSources).forEach(([blockId, source]) => {
-          if (
-            source.sourceLaneId === deletedLaneId ||
-            source.sourceLaneIndex === deletedLaneIndex
-          ) {
+          if (source.sourceLaneId === deletedLaneId) {
             delete nextSources[blockId];
             didUpdateSources = true;
           }
@@ -353,7 +340,6 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       return applySettingsSpec(boardData, settingsSpec);
     }
 
-    const laneIds = boardData.data.settings['lane-ids'];
     const laneBackgroundColors = boardData.data.settings['lane-background-colors'];
     const settingsSpec: any = {};
     const unsetSettings: string[] = [];
@@ -407,12 +393,6 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       }
 
       unsetSettings.push('default-complete-lane-title', 'default-complete-lane-titles');
-    }
-
-    if (laneIds?.length) {
-      const nextLaneIds = [...laneIds];
-      nextLaneIds.splice(path.last(), 1);
-      settingsSpec['lane-ids'] = { $set: nextLaneIds };
     }
 
     if (laneBackgroundColors?.[entity.id]) {
@@ -550,7 +530,6 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           const archived = archiveItemsWithSources(
             items,
             lane,
-            path.last(),
             (itemIndex) => itemIndex
           );
           const collapseState = view.getViewState('list-collapse');
@@ -588,7 +567,6 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           const archived = archiveItemsWithSources(
             items,
             lane,
-            path.last(),
             (itemIndex) => itemIndex
           );
 

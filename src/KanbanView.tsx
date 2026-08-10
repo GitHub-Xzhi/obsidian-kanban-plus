@@ -269,7 +269,8 @@ export class KanbanView extends TextFileView implements HoverParent {
 
   populateViewState(settings: KanbanSettings) {
     this.viewSettings['kanban-plugin'] ??= settings['kanban-plugin'] || 'board';
-    this.viewSettings['list-collapse'] ??= settings['list-collapse'] || [];
+    this.viewSettings['list-collapse'] ??=
+      settings['list-collapse'] || settings.lanes?.map((lane) => !!lane['list-collapse']) || [];
     this.viewSettings['show-archive'] ??= false;
   }
 

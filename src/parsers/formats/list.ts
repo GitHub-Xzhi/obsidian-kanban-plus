@@ -3,7 +3,7 @@ import { Content, List, Parent, Root } from 'mdast';
 import { ListItem } from 'mdast-util-from-markdown/lib';
 import { toString } from 'mdast-util-to-string';
 import { stringifyYaml } from 'obsidian';
-import { KanbanSettings } from 'src/Settings';
+import { KanbanSettings, PersistedLaneSetting } from 'src/Settings';
 import { StateManager } from 'src/StateManager';
 import { generateInstanceId } from 'src/components/helpers';
 import {
@@ -239,6 +239,124 @@ function isArchiveLane(child: Content, children: Content[], currentIndex: number
   return prev && prev.type === 'thematicBreak';
 }
 
+function sanitizeCompletedCardSources(
+  sources: Record<string, any> | undefined
+): KanbanSettings['completed-card-sources'] {
+  if (!sources) {
+    return undefined;
+  }
+
+  const nextSources = Object.entries(sources).reduce((acc, [blockId, source]) => {
+    if (!source?.sourceLaneId) {
+      return acc;
+    }
+
+    acc[blockId] = {
+      sourceLaneId: source.sourceLaneId,
+      sourceItemIndex: source.sourceItemIndex,
+      movedAt: source.movedAt,
+    };
+
+    return acc;
+  }, {} as NonNullable<KanbanSettings['completed-card-sources']>);
+
+  return Object.keys(nextSources).length ? nextSources : undefined;
+}
+
+function sanitizeArchivedCardSources(
+  sources: Record<string, any> | undefined
+): KanbanSettings['archived-card-sources'] {
+  if (!sources) {
+    return undefined;
+  }
+
+  const nextSources = Object.entries(sources).reduce((acc, [blockId, source]) => {
+    if (!source?.sourceLaneId) {
+      return acc;
+    }
+
+    acc[blockId] = {
+      sourceLaneId: source.sourceLaneId,
+      sourceItemIndex: source.sourceItemIndex,
+      archivedAt: source.archivedAt,
+      archiveDateFormat: source.archiveDateFormat,
+      archiveDateSeparator: source.archiveDateSeparator,
+      archiveDateAfterTitle: source.archiveDateAfterTitle,
+    };
+
+    return acc;
+  }, {} as NonNullable<KanbanSettings['archived-card-sources']>);
+
+  return Object.keys(nextSources).length ? nextSources : undefined;
+}
+
+function buildRuntimeSettings(settings: KanbanSettings, collapseState: boolean[]): KanbanSettings {
+  const rawSettings = settings as KanbanSettings & Record<string, any>;
+  const {
+    lanes: _persistedLanes,
+    'lane-ids': _legacyLaneIds,
+    'list-collapse': _legacyCollapseState,
+    'default-complete-lane-title': _legacyDefaultCompleteLaneTitle,
+    'default-complete-lane-titles': _legacyDefaultCompleteLaneTitles,
+    ...runtimeSettings
+  } = rawSettings;
+
+  const nextSettings: KanbanSettings = {
+    ...runtimeSettings,
+    'completed-card-sources': sanitizeCompletedCardSources(rawSettings['completed-card-sources']),
+    'archived-card-sources': sanitizeArchivedCardSources(rawSettings['archived-card-sources']),
+    'list-collapse': collapseState,
+  };
+
+  if (!nextSettings['completed-card-sources']) {
+    delete (nextSettings as Record<string, any>)['completed-card-sources'];
+  }
+
+  if (!nextSettings['archived-card-sources']) {
+    delete (nextSettings as Record<string, any>)['archived-card-sources'];
+  }
+
+  return nextSettings;
+}
+
+function buildPersistedLaneSettings(board: Board): PersistedLaneSetting[] {
+  const collapseState = board.data.settings['list-collapse'] || [];
+
+  return board.children.map((lane, laneIndex) => ({
+    id: lane.id,
+    'list-collapse': !!collapseState[laneIndex],
+  }));
+}
+
+function buildPersistedSettings(board: Board): KanbanSettings {
+  const rawSettings = board.data.settings as KanbanSettings & Record<string, any>;
+  const {
+    lanes: _persistedLanes,
+    'lane-ids': _legacyLaneIds,
+    'list-collapse': _runtimeCollapseState,
+    'default-complete-lane-title': _legacyDefaultCompleteLaneTitle,
+    'default-complete-lane-titles': _legacyDefaultCompleteLaneTitles,
+    ...persistedSettings
+  } = rawSettings;
+
+  const nextSettings: KanbanSettings = {
+    ...persistedSettings,
+    'completed-card-sources': sanitizeCompletedCardSources(rawSettings['completed-card-sources']),
+    'archived-card-sources': sanitizeArchivedCardSources(rawSettings['archived-card-sources']),
+    lanes: buildPersistedLaneSettings(board),
+  };
+
+  if (!nextSettings['completed-card-sources']) {
+    delete (nextSettings as Record<string, any>)['completed-card-sources'];
+  }
+
+  if (!nextSettings['archived-card-sources']) {
+    delete (nextSettings as Record<string, any>)['archived-card-sources'];
+  }
+
+  return nextSettings;
+}
+
 export function astToUnhydratedBoard(
   stateManager: StateManager,
   settings: KanbanSettings,
@@ -248,6 +366,8 @@ export function astToUnhydratedBoard(
 ): Board {
   const lanes: Lane[] = [];
   const archive: Item[] = [];
+  const persistedLanes = settings['lanes'] || [];
+  const collapseState: boolean[] = [];
   let laneIndex = 0;
   root.children.forEach((child, index) => {
     if (child.type === 'heading') {
@@ -291,10 +411,13 @@ export function astToUnhydratedBoard(
       }
 
       if (!list) {
+        const persistedLane = persistedLanes[laneIndex];
+        collapseState[laneIndex] = persistedLane?.['list-collapse'] ?? false;
+
         lanes.push({
           ...LaneTemplate,
           children: [],
-          id: settings['lane-ids']?.[laneIndex] || generateInstanceId(),
+          id: persistedLane?.id || generateInstanceId(),
           data: {
             ...parseLaneTitle(title),
             shouldMarkItemsComplete,
@@ -302,6 +425,9 @@ export function astToUnhydratedBoard(
         });
         laneIndex += 1;
       } else {
+        const persistedLane = persistedLanes[laneIndex];
+        collapseState[laneIndex] = persistedLane?.['list-collapse'] ?? false;
+
         lanes.push({
           ...LaneTemplate,
           children: (list as List).children.map((listItem) => {
@@ -312,7 +438,7 @@ export function astToUnhydratedBoard(
               data,
             };
           }),
-          id: settings['lane-ids']?.[laneIndex] || generateInstanceId(),
+          id: persistedLane?.id || generateInstanceId(),
           data: {
             ...parseLaneTitle(title),
             shouldMarkItemsComplete,
@@ -328,7 +454,7 @@ export function astToUnhydratedBoard(
     id: stateManager.file.path,
     children: lanes,
     data: {
-      settings,
+      settings: buildRuntimeSettings(settings, collapseState),
       frontmatter,
       archive,
       isSearching: false,
@@ -449,9 +575,7 @@ export function boardToMd(board: Board) {
   board = update(board, {
     data: {
       settings: {
-        'lane-ids': {
-          $set: board.children.map((lane) => lane.id),
-        },
+        $set: buildPersistedSettings(board),
       },
     },
   });
