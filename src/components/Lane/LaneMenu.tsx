@@ -13,20 +13,22 @@ import { EditState, Lane, LaneSort, LaneTemplate } from '../types';
 
 export type LaneAction = 'delete' | 'archive' | 'archive-items' | null;
 
-const actionLabels = {
-  delete: {
-    description: t('Are you sure you want to delete this list and all its cards?'),
-    confirm: t('Yes, delete list'),
-  },
-  archive: {
-    description: t('Are you sure you want to archive this list and all its cards?'),
-    confirm: t('Yes, archive list'),
-  },
-  'archive-items': {
-    description: t('Are you sure you want to archive all cards in this list?'),
-    confirm: t('Yes, archive cards'),
-  },
-};
+function getActionLabels() {
+  return {
+    delete: {
+      description: t('Are you sure you want to delete this list and all its cards?'),
+      confirm: t('Yes, delete list'),
+    },
+    archive: {
+      description: t('Are you sure you want to archive this list and all its cards?'),
+      confirm: t('Yes, archive list'),
+    },
+    'archive-items': {
+      description: t('Are you sure you want to archive all cards in this list?'),
+      confirm: t('Yes, archive cards'),
+    },
+  };
+}
 
 export interface ConfirmActionProps {
   lane: Lane;
@@ -36,6 +38,8 @@ export interface ConfirmActionProps {
 }
 
 export function ConfirmAction({ action, cancel, onAction, lane }: ConfirmActionProps) {
+  const actionLabels = getActionLabels();
+
   useEffect(() => {
     // Immediately execute action if lane is empty
     if (action && lane.children.length === 0) {
