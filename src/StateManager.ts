@@ -19,6 +19,7 @@ import {
 } from './components/types';
 import { Path } from './dnd/types';
 import { insertEntity, moveEntity, removeEntity, updateEntity } from './dnd/util/data';
+import { getCard, sanitizeCards, upsertCard } from './helpers/cardSettings';
 import { defaultSort } from './helpers/util';
 import { ListFormat } from './parsers/List';
 import { BaseFormat, frontmatterKey, shouldRefreshBoard } from './parsers/common';
@@ -280,10 +281,9 @@ export class StateManager {
       'tag-colors': this.getSettingRaw('tag-colors', suppliedSettings) ?? [],
       'tag-sort': this.getSettingRaw('tag-sort', suppliedSettings) ?? [],
       'date-colors': this.getSettingRaw('date-colors', suppliedSettings) ?? [],
+      cards: sanitizeCards(this.getSettingRaw('cards', suppliedSettings)) ?? [],
       'card-created-time-format': cardCreatedTimeFormat,
-      'card-created-times': this.getSettingRaw('card-created-times', suppliedSettings) ?? {},
       'card-completed-time-format': cardCompletedTimeFormat,
-      'card-completed-times': this.getSettingRaw('card-completed-times', suppliedSettings) ?? {},
       'show-card-created-time':
         this.getSettingRaw('show-card-created-time', suppliedSettings) ?? true,
       'show-card-created-time-in-complete-lane':
@@ -445,37 +445,42 @@ export class StateManager {
       return board;
     }
 
-    const nextCompletedTimes = { ...(board.data.settings['card-completed-times'] || {}) };
-
     if (isComplete) {
-      if (nextCompletedTimes[blockId]) {
+      if (getCard(board.data.settings, blockId)?.['completed-time']) {
         return board;
       }
-
-      nextCompletedTimes[blockId] = Date.now();
 
       return update(board, {
         data: {
           settings: {
-            'card-completed-times': {
-              $set: nextCompletedTimes,
+            cards: {
+              $set: upsertCard(board.data.settings, blockId, (card) => ({
+                ...card,
+                'completed-time': Date.now(),
+              })),
             },
           },
         },
       });
     }
 
-    if (!nextCompletedTimes[blockId]) {
+    if (!getCard(board.data.settings, blockId)?.['completed-time']) {
       return board;
     }
-
-    delete nextCompletedTimes[blockId];
 
     return update(board, {
       data: {
         settings: {
-          'card-completed-times': {
-            $set: nextCompletedTimes,
+          cards: {
+            $set: upsertCard(board.data.settings, blockId, (card) => {
+              const nextCard = { ...card };
+              delete nextCard['completed-time'];
+              delete nextCard.sourceLaneId;
+              delete nextCard.sourceItemIndex;
+              delete nextCard.targetLaneId;
+
+              return Object.keys(nextCard).length > 1 || nextCard.archived ? nextCard : undefined;
+            }),
           },
         },
       },
@@ -537,8 +542,8 @@ export class StateManager {
     }
 
     const direction = sortRule.order === 'desc' ? -1 : 1;
-    const createdTimes = board.data.settings['card-created-times'] || {};
-    const completedTimes = board.data.settings['card-completed-times'] || {};
+    const cards = sanitizeCards(board.data.settings.cards) || [];
+    const cardMap = new Map(cards.map((card) => [card.id, card]));
     const children = lane.children.slice().sort((a, b) => {
       switch (sorted) {
         case LaneSort.TitleAsc:
@@ -569,8 +574,8 @@ export class StateManager {
         }
         case LaneSort.CreatedAsc:
         case LaneSort.CreatedDsc: {
-          const aTime = a.data.blockId ? createdTimes[a.data.blockId] : undefined;
-          const bTime = b.data.blockId ? createdTimes[b.data.blockId] : undefined;
+          const aTime = a.data.blockId ? cardMap.get(a.data.blockId)?.['created-time'] : undefined;
+          const bTime = b.data.blockId ? cardMap.get(b.data.blockId)?.['created-time'] : undefined;
 
           if (aTime && !bTime) return -1;
           if (bTime && !aTime) return 1;
@@ -580,8 +585,8 @@ export class StateManager {
         }
         case LaneSort.CompletedAsc:
         case LaneSort.CompletedDsc: {
-          const aTime = a.data.blockId ? completedTimes[a.data.blockId] : undefined;
-          const bTime = b.data.blockId ? completedTimes[b.data.blockId] : undefined;
+          const aTime = a.data.blockId ? cardMap.get(a.data.blockId)?.['completed-time'] : undefined;
+          const bTime = b.data.blockId ? cardMap.get(b.data.blockId)?.['completed-time'] : undefined;
 
           if (aTime && !bTime) return -1;
           if (bTime && !aTime) return 1;

@@ -30,6 +30,7 @@ import {
   TagSortSetting,
   TagSortSettingTemplate,
 } from './components/types';
+import { PersistedCard } from './helpers/cardSettings';
 import { getParentWindow } from './dnd/util/getWindow';
 import { KanbanLanguage, getKanbanLanguage, setKanbanLanguage, t } from './lang/helpers';
 import KanbanPlugin from './main';
@@ -71,35 +72,15 @@ export interface KanbanSettings {
   'archive-date-format'?: string;
   'archive-date-separator'?: string;
   'archive-with-date'?: boolean;
+  cards?: PersistedCard[];
   'date-colors'?: DateColor[];
   'date-display-format'?: string;
   'date-format'?: string;
   'date-picker-week-start'?: number;
   'date-time-display-format'?: string;
   'date-trigger'?: string;
-  'archived-card-sources'?: Record<
-    string,
-    {
-      sourceLaneId: string;
-      sourceItemIndex: number;
-      archivedAt: number;
-      archiveDateFormat?: string;
-      archiveDateSeparator?: string;
-      archiveDateAfterTitle?: boolean;
-    }
-  >;
   'card-created-time-format'?: string;
-  'card-created-times'?: Record<string, number>;
   'card-completed-time-format'?: string;
-  'card-completed-times'?: Record<string, number>;
-  'completed-card-sources'?: Record<
-    string,
-    {
-      sourceLaneId: string;
-      sourceItemIndex: number;
-      movedAt: number;
-    }
-  >;
   'manual-completed-card-insertion-method'?: 'prepend' | 'append';
   'default-complete-lane-id'?: string;
   'default-complete-lane-ids'?: Record<string, string>;
@@ -155,18 +136,15 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'archive-date-format',
   'archive-date-separator',
   'archive-with-date',
+  'cards',
   'date-colors',
   'date-display-format',
   'date-format',
   'date-picker-week-start',
   'date-time-display-format',
   'date-trigger',
-  'archived-card-sources',
   'card-created-time-format',
-  'card-created-times',
   'card-completed-time-format',
-  'card-completed-times',
-  'completed-card-sources',
   'manual-completed-card-insertion-method',
   'default-complete-lane-id',
   'default-complete-lane-ids',

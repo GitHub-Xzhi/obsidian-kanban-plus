@@ -18,6 +18,7 @@ import {
   completedTimeDescSortRule,
   manualSortRule,
 } from 'src/components/types';
+import { sanitizeCards } from 'src/helpers/cardSettings';
 import { laneTitleWithMaxItems } from 'src/helpers';
 import { defaultSort } from 'src/helpers/util';
 import { t } from 'src/lang/helpers';
@@ -242,63 +243,6 @@ function isArchiveLane(child: Content, children: Content[], currentIndex: number
   return prev && prev.type === 'thematicBreak';
 }
 
-function sanitizeCompletedCardSources(
-  sources: Record<string, any> | undefined
-): KanbanSettings['completed-card-sources'] {
-  if (!sources) {
-    return undefined;
-  }
-
-  const nextSources = Object.entries(sources).reduce(
-    (acc, [blockId, source]) => {
-      if (!source?.sourceLaneId) {
-        return acc;
-      }
-
-      acc[blockId] = {
-        sourceLaneId: source.sourceLaneId,
-        sourceItemIndex: source.sourceItemIndex,
-        movedAt: source.movedAt,
-      };
-
-      return acc;
-    },
-    {} as NonNullable<KanbanSettings['completed-card-sources']>
-  );
-
-  return Object.keys(nextSources).length ? nextSources : undefined;
-}
-
-function sanitizeArchivedCardSources(
-  sources: Record<string, any> | undefined
-): KanbanSettings['archived-card-sources'] {
-  if (!sources) {
-    return undefined;
-  }
-
-  const nextSources = Object.entries(sources).reduce(
-    (acc, [blockId, source]) => {
-      if (!source?.sourceLaneId) {
-        return acc;
-      }
-
-      acc[blockId] = {
-        sourceLaneId: source.sourceLaneId,
-        sourceItemIndex: source.sourceItemIndex,
-        archivedAt: source.archivedAt,
-        archiveDateFormat: source.archiveDateFormat,
-        archiveDateSeparator: source.archiveDateSeparator,
-        archiveDateAfterTitle: source.archiveDateAfterTitle,
-      };
-
-      return acc;
-    },
-    {} as NonNullable<KanbanSettings['archived-card-sources']>
-  );
-
-  return Object.keys(nextSources).length ? nextSources : undefined;
-}
-
 function buildRuntimeSettings(settings: KanbanSettings, collapseState: boolean[]): KanbanSettings {
   const rawSettings = settings as KanbanSettings & Record<string, any>;
   const {
@@ -312,17 +256,12 @@ function buildRuntimeSettings(settings: KanbanSettings, collapseState: boolean[]
 
   const nextSettings: KanbanSettings = {
     ...runtimeSettings,
-    'completed-card-sources': sanitizeCompletedCardSources(rawSettings['completed-card-sources']),
-    'archived-card-sources': sanitizeArchivedCardSources(rawSettings['archived-card-sources']),
+    cards: sanitizeCards(rawSettings.cards),
     'list-collapse': collapseState,
   };
 
-  if (!nextSettings['completed-card-sources']) {
-    delete (nextSettings as Record<string, any>)['completed-card-sources'];
-  }
-
-  if (!nextSettings['archived-card-sources']) {
-    delete (nextSettings as Record<string, any>)['archived-card-sources'];
+  if (!nextSettings.cards) {
+    delete (nextSettings as Record<string, any>).cards;
   }
 
   return nextSettings;
@@ -507,17 +446,12 @@ function buildPersistedSettings(board: Board): KanbanSettings {
 
   const nextSettings: KanbanSettings = {
     ...persistedSettings,
-    'completed-card-sources': sanitizeCompletedCardSources(rawSettings['completed-card-sources']),
-    'archived-card-sources': sanitizeArchivedCardSources(rawSettings['archived-card-sources']),
+    cards: sanitizeCards(rawSettings.cards),
     lanes: buildPersistedLaneSettings(board),
   };
 
-  if (!nextSettings['completed-card-sources']) {
-    delete (nextSettings as Record<string, any>)['completed-card-sources'];
-  }
-
-  if (!nextSettings['archived-card-sources']) {
-    delete (nextSettings as Record<string, any>)['archived-card-sources'];
+  if (!nextSettings.cards) {
+    delete (nextSettings as Record<string, any>).cards;
   }
 
   return nextSettings;
