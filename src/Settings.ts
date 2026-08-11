@@ -1754,7 +1754,7 @@ export class SettingsManager {
         });
     });
 
-    new Setting(contentEl).setName(t('Toggle all created times')).then((setting) => {
+    new Setting(contentEl).setName(t('Show/hide all created times')).then((setting) => {
       let toggleComponent: ToggleComponent;
 
       setting
@@ -1793,7 +1793,7 @@ export class SettingsManager {
         });
     });
 
-    new Setting(contentEl).setName(t('Toggle all completed times')).then((setting) => {
+    new Setting(contentEl).setName(t('Show/hide all completed times')).then((setting) => {
       let toggleComponent: ToggleComponent;
 
       setting
