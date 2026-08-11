@@ -26,6 +26,10 @@ export interface LaneData {
   defaultCompleteLaneId?: string;
   backgroundColor?: string;
   sorted?: LaneSort | string;
+  sortRule?: {
+    type: string;
+    order: 'asc' | 'desc';
+  };
   showCreatedTime?: boolean;
   showCompletedTime?: boolean;
 }

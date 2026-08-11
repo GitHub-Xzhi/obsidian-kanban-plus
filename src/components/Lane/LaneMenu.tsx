@@ -13,6 +13,41 @@ import { EditState, Lane, LaneSort, LaneTemplate } from '../types';
 
 export type LaneAction = 'delete' | 'archive' | 'archive-items' | null;
 
+function getLaneSortRule(sorted: LaneSort | string): Lane['data']['sortRule'] {
+  const bySort = (type: string, order: 'asc' | 'desc') => ({ type, order });
+
+  switch (sorted) {
+    case LaneSort.TitleAsc:
+      return bySort('card-text', 'asc');
+    case LaneSort.TitleDsc:
+      return bySort('card-text', 'desc');
+    case LaneSort.DateAsc:
+      return bySort('date', 'asc');
+    case LaneSort.DateDsc:
+      return bySort('date', 'desc');
+    case LaneSort.TagsAsc:
+      return bySort('tags', 'asc');
+    case LaneSort.TagsDsc:
+      return bySort('tags', 'desc');
+    case LaneSort.CreatedAsc:
+      return bySort('created-time', 'asc');
+    case LaneSort.CreatedDsc:
+      return bySort('created-time', 'desc');
+    case LaneSort.CompletedAsc:
+      return bySort('completed-time', 'asc');
+    case LaneSort.CompletedDsc:
+      return bySort('completed-time', 'desc');
+  }
+
+  if (sorted.endsWith('-asc')) {
+    return bySort(sorted.slice(0, -4), 'asc');
+  }
+
+  if (sorted.endsWith('-desc')) {
+    return bySort(sorted.slice(0, -5), 'desc');
+  }
+}
+
 function getActionLabels() {
   return {
     delete: {
@@ -278,6 +313,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
             .onClick(() => {
               const children = lane.children.slice();
               const mod = lane.data.sorted === ascSort ? -1 : 1;
+              const nextSort = lane.data.sorted === ascSort ? dscSort : ascSort;
 
               children.sort((a, b) => {
                 const aTime = a.data.blockId ? times[a.data.blockId] : undefined;
@@ -298,7 +334,10 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
                   },
                   data: {
                     sorted: {
-                      $set: lane.data.sorted === ascSort ? dscSort : ascSort,
+                      $set: nextSort,
+                    },
+                    sortRule: {
+                      $set: getLaneSortRule(nextSort),
                     },
                   },
                 })
@@ -314,6 +353,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           .onClick(() => {
             const children = lane.children.slice();
             const isAsc = lane.data.sorted === LaneSort.TitleAsc;
+            const nextSort = isAsc ? LaneSort.TitleDsc : LaneSort.TitleAsc;
 
             children.sort((a, b) => {
               if (isAsc) {
@@ -331,10 +371,10 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
                 },
                 data: {
                   sorted: {
-                    $set:
-                      lane.data.sorted === LaneSort.TitleAsc
-                        ? LaneSort.TitleDsc
-                        : LaneSort.TitleAsc,
+                    $set: nextSort,
+                  },
+                  sortRule: {
+                    $set: getLaneSortRule(nextSort),
                   },
                 },
               })
@@ -350,6 +390,8 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
             .onClick(() => {
               const children = lane.children.slice();
               const mod = lane.data.sorted === LaneSort.DateAsc ? -1 : 1;
+              const nextSort =
+                lane.data.sorted === LaneSort.DateAsc ? LaneSort.DateDsc : LaneSort.DateAsc;
 
               children.sort((a, b) => {
                 const aDate: moment.Moment | undefined =
@@ -372,8 +414,10 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
                   },
                   data: {
                     sorted: {
-                      $set:
-                        lane.data.sorted === LaneSort.DateAsc ? LaneSort.DateDsc : LaneSort.DateAsc,
+                      $set: nextSort,
+                    },
+                    sortRule: {
+                      $set: getLaneSortRule(nextSort),
                     },
                   },
                 })
@@ -391,6 +435,8 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
               const tagSortOrder = stateManager.getSetting('tag-sort');
               const children = lane.children.slice();
               const desc = lane.data.sorted === LaneSort.TagsAsc ? true : false;
+              const nextSort =
+                lane.data.sorted === LaneSort.TagsAsc ? LaneSort.TagsDsc : LaneSort.TagsAsc;
 
               children.sort((a, b) => {
                 const tagsA = a.data.metadata.tags;
@@ -423,8 +469,10 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
                   },
                   data: {
                     sorted: {
-                      $set:
-                        lane.data.sorted === LaneSort.TagsAsc ? LaneSort.TagsDsc : LaneSort.TagsAsc,
+                      $set: nextSort,
+                    },
+                    sortRule: {
+                      $set: getLaneSortRule(nextSort),
                     },
                   },
                 })
@@ -459,6 +507,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
               .onClick(() => {
                 const children = lane.children.slice();
                 const desc = lane.data.sorted === k + '-asc' ? true : false;
+                const nextSort = lane.data.sorted === k + '-asc' ? k + '-desc' : k + '-asc';
 
                 children.sort((a, b) => {
                   const valA = a.data.metadata.inlineMetadata?.find((m) => m.key === k);
@@ -488,7 +537,10 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
                     },
                     data: {
                       sorted: {
-                        $set: lane.data.sorted === k + '-asc' ? k + '-desc' : k + '-asc',
+                        $set: nextSort,
+                      },
+                      sortRule: {
+                        $set: getLaneSortRule(nextSort),
                       },
                     },
                   })

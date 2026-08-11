@@ -369,6 +369,10 @@ function laneSortToRule(sorted: Lane['data']['sorted']): PersistedLaneSetting['s
   }
 }
 
+function getLaneSortRule(lane: Lane): PersistedLaneSetting['sort-rule'] {
+  return lane.data.sortRule || laneSortToRule(lane.data.sorted);
+}
+
 function ruleToLaneSort(rule?: PersistedLaneSetting['sort-rule']): Lane['data']['sorted'] {
   if (!rule?.type || !rule.order) {
     return undefined;
@@ -419,13 +423,16 @@ function getPersistedLaneData(
   persistedLane: PersistedLaneSetting | undefined,
   laneId: string
 ) {
+  const sortRule = normalizeLaneSortRule(persistedLane?.['sort-rule']);
+
   return {
     defaultCompleteLaneId:
       persistedLane?.['default-complete-lane-id'] ||
       settings['default-complete-lane-ids']?.[laneId],
     backgroundColor:
       persistedLane?.['background-color'] || settings['lane-background-colors']?.[laneId],
-    sorted: ruleToLaneSort(normalizeLaneSortRule(persistedLane?.['sort-rule'])),
+    sorted: ruleToLaneSort(sortRule),
+    sortRule,
     showCreatedTime: persistedLane?.['show-created-time'],
     showCompletedTime: persistedLane?.['show-completed-time'],
   };
@@ -445,7 +452,7 @@ function buildPersistedLaneSettings(board: Board): PersistedLaneSetting[] {
     const defaultCompleteLaneId =
       lane.data.defaultCompleteLaneId || defaultCompleteLaneIds[lane.id];
     const backgroundColor = lane.data.backgroundColor || laneBackgroundColors[lane.id];
-    const sortRule = laneSortToRule(lane.data.sorted);
+    const sortRule = getLaneSortRule(lane);
 
     if (defaultCompleteLaneId) {
       persistedLane['default-complete-lane-id'] = defaultCompleteLaneId;
