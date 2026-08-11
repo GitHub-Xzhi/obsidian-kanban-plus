@@ -19,6 +19,7 @@ import {
 } from './components/types';
 import { Path } from './dnd/types';
 import { insertEntity, moveEntity, removeEntity, updateEntity } from './dnd/util/data';
+import { defaultSort } from './helpers/util';
 import { ListFormat } from './parsers/List';
 import { BaseFormat, frontmatterKey, shouldRefreshBoard } from './parsers/common';
 import { getTaskStatusDone } from './parsers/helpers/inlineMetadata';
@@ -481,23 +482,112 @@ export class StateManager {
     });
   }
 
-  sortCompletedLaneByCompletedTime(board: Board, laneIndex: number) {
+  getLaneSortFromRule(lane: Lane): LaneSort | string {
+    const sortRule = lane.data.sortRule || completedTimeDescSortRule;
+
+    switch (`${sortRule.type}:${sortRule.order}`) {
+      case 'card-text:asc':
+        return LaneSort.TitleAsc;
+      case 'card-text:desc':
+        return LaneSort.TitleDsc;
+      case 'date:asc':
+        return LaneSort.DateAsc;
+      case 'date:desc':
+        return LaneSort.DateDsc;
+      case 'tags:asc':
+        return LaneSort.TagsAsc;
+      case 'tags:desc':
+        return LaneSort.TagsDsc;
+      case 'created-time:asc':
+        return LaneSort.CreatedAsc;
+      case 'created-time:desc':
+        return LaneSort.CreatedDsc;
+      case 'completed-time:asc':
+        return LaneSort.CompletedAsc;
+      case 'completed-time:desc':
+        return LaneSort.CompletedDsc;
+      default:
+        return `${sortRule.type}-${sortRule.order}`;
+    }
+  }
+
+  sortCompletedLaneByCurrentRule(board: Board, laneIndex: number) {
     const lane = board.children[laneIndex];
 
     if (!lane?.data.shouldMarkItemsComplete) {
       return board;
     }
 
+    const sorted = this.getLaneSortFromRule(lane);
+    const sortRule = lane.data.sortRule || completedTimeDescSortRule;
+    const direction = sortRule.order === 'desc' ? -1 : 1;
+    const createdTimes = board.data.settings['card-created-times'] || {};
     const completedTimes = board.data.settings['card-completed-times'] || {};
     const children = lane.children.slice().sort((a, b) => {
-      const aTime = a.data.blockId ? completedTimes[a.data.blockId] : undefined;
-      const bTime = b.data.blockId ? completedTimes[b.data.blockId] : undefined;
+      switch (sorted) {
+        case LaneSort.TitleAsc:
+          return a.data.title.localeCompare(b.data.title);
+        case LaneSort.TitleDsc:
+          return b.data.title.localeCompare(a.data.title);
+        case LaneSort.DateAsc:
+        case LaneSort.DateDsc: {
+          const aDate = a.data.metadata.time || a.data.metadata.date;
+          const bDate = b.data.metadata.time || b.data.metadata.date;
 
-      if (aTime && !bTime) return -1;
-      if (bTime && !aTime) return 1;
-      if (!aTime && !bTime) return 0;
+          if (aDate && !bDate) return -1 * direction;
+          if (bDate && !aDate) return 1 * direction;
+          if (!aDate && !bDate) return 0;
 
-      return bTime - aTime;
+          return (aDate.isBefore(bDate) ? -1 : 1) * direction;
+        }
+        case LaneSort.TagsAsc:
+        case LaneSort.TagsDsc: {
+          const tagsA = a.data.metadata.tags;
+          const tagsB = b.data.metadata.tags;
+
+          if (!tagsA?.length && !tagsB?.length) return 0;
+          if (!tagsA?.length) return 1;
+          if (!tagsB?.length) return -1;
+
+          return defaultSort(tagsA.join(''), tagsB.join('')) * direction;
+        }
+        case LaneSort.CreatedAsc:
+        case LaneSort.CreatedDsc: {
+          const aTime = a.data.blockId ? createdTimes[a.data.blockId] : undefined;
+          const bTime = b.data.blockId ? createdTimes[b.data.blockId] : undefined;
+
+          if (aTime && !bTime) return -1;
+          if (bTime && !aTime) return 1;
+          if (!aTime && !bTime) return 0;
+
+          return (aTime - bTime) * direction;
+        }
+        case LaneSort.CompletedAsc:
+        case LaneSort.CompletedDsc: {
+          const aTime = a.data.blockId ? completedTimes[a.data.blockId] : undefined;
+          const bTime = b.data.blockId ? completedTimes[b.data.blockId] : undefined;
+
+          if (aTime && !bTime) return -1;
+          if (bTime && !aTime) return 1;
+          if (!aTime && !bTime) return 0;
+
+          return (aTime - bTime) * direction;
+        }
+      }
+
+      if (typeof sorted !== 'string') {
+        return 0;
+      }
+
+      const metadataKey = sorted.replace(/-(?:asc|desc)$/, '');
+      const aValue = a.data.metadata.inlineMetadata?.find((m) => m.key === metadataKey)?.value;
+      const bValue = b.data.metadata.inlineMetadata?.find((m) => m.key === metadataKey)?.value;
+
+      if (aValue === undefined && bValue === undefined) return 0;
+      if (aValue === undefined) return 1;
+      if (bValue === undefined) return -1;
+
+      return defaultSort(String(aValue), String(bValue)) * direction;
     });
 
     return updateEntity(board, [laneIndex], {
@@ -506,10 +596,10 @@ export class StateManager {
       },
       data: {
         sorted: {
-          $set: LaneSort.CompletedDsc,
+          $set: sorted,
         },
         sortRule: {
-          $set: completedTimeDescSortRule,
+          $set: sortRule,
         },
       },
     });
@@ -573,7 +663,7 @@ export class StateManager {
         },
       });
 
-      return this.sortCompletedLaneByCompletedTime(nextBoard, laneIndex);
+      return this.sortCompletedLaneByCurrentRule(nextBoard, laneIndex);
     });
 
     return true;
