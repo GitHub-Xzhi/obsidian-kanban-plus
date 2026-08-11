@@ -50,9 +50,19 @@ const numberRegEx = /^\d+(?:\.\d+)?$/;
 
 export type KanbanFormat = 'basic' | 'board' | 'table' | 'list';
 
+export interface PersistedLaneSortRule {
+  type: string;
+  order: 'asc' | 'desc';
+}
+
 export interface PersistedLaneSetting {
   id: string;
   'list-collapse'?: boolean;
+  'default-complete-lane-id'?: string;
+  'background-color'?: string;
+  'sort-rule'?: PersistedLaneSortRule;
+  'show-created-time'?: boolean;
+  'show-completed-time'?: boolean;
 }
 
 export interface KanbanSettings {

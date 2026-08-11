@@ -74,24 +74,24 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
   const { stateManager, boardModifiers } = useContext(KanbanContext);
   const board = stateManager.useState();
   const [confirmAction, setConfirmAction] = useState<LaneAction>(null);
-  const showCardCreatedTime = stateManager.getSetting(
-    'show-card-created-time',
-    board.data.settings
-  );
-  const showCardCreatedTimeInCompleteLane = stateManager.getSetting(
-    'show-card-created-time-in-complete-lane',
-    board.data.settings
-  );
-  const showCardCompletedTimeInCompleteLane = stateManager.getSetting(
-    'show-card-completed-time-in-complete-lane',
-    board.data.settings
-  );
+  const getShowCreatedTime = (lane: Lane) =>
+    lane.data.showCreatedTime ??
+    (lane.data.shouldMarkItemsComplete
+      ? stateManager.getSetting('show-card-created-time-in-complete-lane', board.data.settings)
+      : stateManager.getSetting('show-card-created-time', board.data.settings));
+  const getShowCompletedTime = (lane: Lane) =>
+    lane.data.showCompletedTime ??
+    (lane.data.shouldMarkItemsComplete &&
+      stateManager.getSetting('show-card-completed-time-in-complete-lane', board.data.settings));
+  const showCreatedTimeInAllLanes = board.children.every(getShowCreatedTime);
+  const showCompletedTimeInAllLanes = board.children.every(getShowCompletedTime);
 
   const completeLanesKey = board.children
-    .map((lane, index) => `${index}:${lane.data.title}:${!!lane.data.shouldMarkItemsComplete}`)
+    .map(
+      (lane, index) =>
+        `${index}:${lane.data.title}:${!!lane.data.shouldMarkItemsComplete}:${lane.data.defaultCompleteLaneId || ''}:${lane.data.showCreatedTime}:${lane.data.showCompletedTime}`
+    )
     .join('|');
-  const defaultCompleteLaneIdsKey = JSON.stringify(board.data.settings['default-complete-lane-ids'] || {});
-  const defaultCompleteLaneIdKey = board.data.settings['default-complete-lane-id'] || '';
 
   const settingsMenu = useMemo(() => {
     const metadataSortOptions = new Set<string>();
@@ -134,70 +134,57 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           .onClick(() => setConfirmAction('archive-items'));
       });
 
-    if (!lane.data.shouldMarkItemsComplete) {
-      menu.addItem((item) => {
+    menu
+      .addItem((item) => {
         item
           .setIcon('lucide-clock')
-          .setTitle(showCardCreatedTime ? t('Hide created time') : t('Show created time'))
+          .setTitle(showCreatedTimeInAllLanes ? t('Hide created time') : t('Show created time'))
           .onClick(() => {
+            const nextShowCreatedTime = !showCreatedTimeInAllLanes;
+
             stateManager.setState((board) =>
               update(board, {
-                data: {
-                  settings: {
-                    'show-card-created-time': {
-                      $set: !showCardCreatedTime,
-                    },
-                  },
+                children: {
+                  $set: board.children.map((lane) =>
+                    update(lane, {
+                      data: {
+                        showCreatedTime: {
+                          $set: nextShowCreatedTime,
+                        },
+                      },
+                    })
+                  ),
+                },
+              })
+            );
+          });
+      })
+      .addItem((item) => {
+        item
+          .setIcon('lucide-circle-check')
+          .setTitle(
+            showCompletedTimeInAllLanes ? t('Hide completed time') : t('Show completed time')
+          )
+          .onClick(() => {
+            const nextShowCompletedTime = !showCompletedTimeInAllLanes;
+
+            stateManager.setState((board) =>
+              update(board, {
+                children: {
+                  $set: board.children.map((lane) =>
+                    update(lane, {
+                      data: {
+                        showCompletedTime: {
+                          $set: nextShowCompletedTime,
+                        },
+                      },
+                    })
+                  ),
                 },
               })
             );
           });
       });
-    } else {
-      menu
-        .addItem((item) => {
-          item
-            .setIcon('lucide-clock')
-            .setTitle(
-              showCardCreatedTimeInCompleteLane ? t('Hide created time') : t('Show created time')
-            )
-            .onClick(() => {
-              stateManager.setState((board) =>
-                update(board, {
-                  data: {
-                    settings: {
-                      'show-card-created-time-in-complete-lane': {
-                        $set: !showCardCreatedTimeInCompleteLane,
-                      },
-                    },
-                  },
-                })
-              );
-            });
-        })
-        .addItem((item) => {
-          item
-            .setIcon('lucide-circle-check')
-            .setTitle(
-              showCardCompletedTimeInCompleteLane
-                ? t('Hide completed time')
-                : t('Show completed time')
-            )
-            .onClick(() => {
-              stateManager.setState((board) =>
-                update(board, {
-                  data: {
-                    settings: {
-                      'show-card-completed-time-in-complete-lane': {
-                        $set: !showCardCompletedTimeInCompleteLane,
-                      },
-                    },
-                  },
-                })
-              );
-            });
-        });
-    }
 
     if (completeLanes.length > 0) {
       menu.addItem((item) => {
@@ -546,11 +533,8 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     path,
     lane,
     completeLanesKey,
-    defaultCompleteLaneIdsKey,
-    defaultCompleteLaneIdKey,
-    showCardCreatedTime,
-    showCardCreatedTimeInCompleteLane,
-    showCardCompletedTimeInCompleteLane,
+    showCreatedTimeInAllLanes,
+    showCompletedTimeInAllLanes,
     board.data.settings['card-created-times'],
     board.data.settings['card-completed-times'],
   ]);

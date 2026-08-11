@@ -29,12 +29,16 @@ export interface DraggableItemProps {
   itemIndex: number;
   isStatic?: boolean;
   shouldMarkItemsComplete?: boolean;
+  showCreatedTime?: boolean;
+  showCompletedTime?: boolean;
 }
 
 export interface ItemInnerProps {
   item: Item;
   isStatic?: boolean;
   shouldMarkItemsComplete?: boolean;
+  showCreatedTime?: boolean;
+  showCompletedTime?: boolean;
   isMatch?: boolean;
   searchQuery?: string;
 }
@@ -42,6 +46,8 @@ export interface ItemInnerProps {
 const ItemInner = memo(function ItemInner({
   item,
   shouldMarkItemsComplete,
+  showCreatedTime,
+  showCompletedTime,
   isMatch,
   searchQuery,
   isStatic,
@@ -136,6 +142,8 @@ const ItemInner = memo(function ItemInner({
         searchQuery={isMatch ? searchQuery : undefined}
         item={item}
         shouldMarkItemsComplete={shouldMarkItemsComplete}
+        showCreatedTime={showCreatedTime}
+        showCompletedTime={showCompletedTime}
       />
     </div>
   );
@@ -189,9 +197,17 @@ interface ItemsProps {
   isStatic?: boolean;
   items: Item[];
   shouldMarkItemsComplete: boolean;
+  showCreatedTime?: boolean;
+  showCompletedTime?: boolean;
 }
 
-export const Items = memo(function Items({ isStatic, items, shouldMarkItemsComplete }: ItemsProps) {
+export const Items = memo(function Items({
+  isStatic,
+  items,
+  shouldMarkItemsComplete,
+  showCreatedTime,
+  showCompletedTime,
+}: ItemsProps) {
   const search = useContext(SearchContext);
   const { view } = useContext(KanbanContext);
   const boardView = view.useViewState(frontmatterKey);
@@ -205,6 +221,8 @@ export const Items = memo(function Items({ isStatic, items, shouldMarkItemsCompl
             item={item}
             itemIndex={i}
             shouldMarkItemsComplete={shouldMarkItemsComplete}
+            showCreatedTime={showCreatedTime}
+            showCompletedTime={showCompletedTime}
             isStatic={isStatic}
           />
         );

@@ -47,27 +47,22 @@ function DraggableLaneRaw({
 
   const boardView = view.useViewState(frontmatterKey);
   const path = useNestedEntityPath(laneIndex);
-  const laneBackgroundColors = stateManager.useSetting('lane-background-colors');
-  const laneBackgroundColor = laneBackgroundColors?.[lane.id];
   const laneWidth = stateManager.useSetting('lane-width');
   const fullWidth = boardView === 'list' && stateManager.useSetting('full-list-lane-width');
   const insertionMethod = stateManager.useSetting('new-card-insertion-method');
-  const laneStyles = useMemo(
-    () => {
-      const styles: Record<string, string> = {};
+  const laneStyles = useMemo(() => {
+    const styles: Record<string, string> = {};
 
-      if (!(isCollapsed && collapseDir === 'horizontal') && (fullWidth || laneWidth)) {
-        styles.width = fullWidth ? '100%' : `${laneWidth}px`;
-      }
+    if (!(isCollapsed && collapseDir === 'horizontal') && (fullWidth || laneWidth)) {
+      styles.width = fullWidth ? '100%' : `${laneWidth}px`;
+    }
 
-      if (laneBackgroundColor) {
-        styles['--lane-background-color'] = laneBackgroundColor;
-      }
+    if (lane.data.backgroundColor) {
+      styles['--lane-background-color'] = lane.data.backgroundColor;
+    }
 
-      return Object.keys(styles).length ? styles : undefined;
-    },
-    [fullWidth, laneWidth, isCollapsed, laneBackgroundColor]
-  );
+    return Object.keys(styles).length ? styles : undefined;
+  }, [fullWidth, laneWidth, isCollapsed, lane.data.backgroundColor]);
 
   const elementRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
@@ -206,6 +201,8 @@ function DraggableLaneRaw({
                       items={lane.children}
                       isStatic={isStatic}
                       shouldMarkItemsComplete={shouldMarkItemsComplete}
+                      showCreatedTime={lane.data.showCreatedTime}
+                      showCompletedTime={lane.data.showCompletedTime}
                     />
                     <SortPlaceholder
                       accepts={laneAccepts}

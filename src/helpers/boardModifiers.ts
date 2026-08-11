@@ -361,6 +361,22 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     }
 
     if (deletedLaneId !== null) {
+      boardData = update<Board>(boardData, {
+        children: {
+          $set: boardData.children.map((lane) => {
+            if (lane.id === deletedLaneId || lane.data.defaultCompleteLaneId !== deletedLaneId) {
+              return lane;
+            }
+
+            return update(lane, {
+              data: {
+                $unset: ['defaultCompleteLaneId'],
+              },
+            });
+          }),
+        },
+      });
+
       if (defaultCompleteLaneIds) {
         const nextDefaultCompleteLaneIds = { ...defaultCompleteLaneIds };
         let didUpdateDefaultCompleteLaneIds = false;
@@ -527,11 +543,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const items = lane.children;
 
         try {
-          const archived = archiveItemsWithSources(
-            items,
-            lane,
-            (itemIndex) => itemIndex
-          );
+          const archived = archiveItemsWithSources(items, lane, (itemIndex) => itemIndex);
           const collapseState = view.getViewState('list-collapse');
           const op = (collapseState: boolean[]) => {
             const newState = [...collapseState];
@@ -564,11 +576,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const items = lane.children;
 
         try {
-          const archived = archiveItemsWithSources(
-            items,
-            lane,
-            (itemIndex) => itemIndex
-          );
+          const archived = archiveItemsWithSources(items, lane, (itemIndex) => itemIndex);
 
           return updateArchivedSources(
             update(
@@ -633,13 +641,10 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           },
         });
 
-        return applySettingsSpec(
-          nextBoard,
-          {
-            ...created.settingsSpec,
-            ...updateCompletedTimes(nextBoard, created.items),
-          }
-        );
+        return applySettingsSpec(nextBoard, {
+          ...created.settingsSpec,
+          ...updateCompletedTimes(nextBoard, created.items),
+        });
       });
     },
 

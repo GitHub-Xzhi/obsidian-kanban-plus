@@ -23,7 +23,11 @@ export interface LaneData {
   maxItems?: number;
   dom?: HTMLDivElement;
   forceEditMode?: boolean;
+  defaultCompleteLaneId?: string;
+  backgroundColor?: string;
   sorted?: LaneSort | string;
+  showCreatedTime?: boolean;
+  showCompletedTime?: boolean;
 }
 
 export interface DataKey {

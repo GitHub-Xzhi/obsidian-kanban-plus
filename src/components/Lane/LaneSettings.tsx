@@ -17,9 +17,8 @@ export interface LaneSettingsProps {
 }
 
 export function LaneSettings({ lane, lanePath, editState }: LaneSettingsProps) {
-  const { boardModifiers, stateManager } = useContext(KanbanContext);
-  const laneBackgroundColors = stateManager.useSetting('lane-background-colors');
-  const laneBackgroundColor = laneBackgroundColors?.[lane.id] || '';
+  const { boardModifiers } = useContext(KanbanContext);
+  const laneBackgroundColor = lane.data.backgroundColor || '';
 
   if (!isEditing(editState)) return null;
 
@@ -37,20 +36,14 @@ export function LaneSettings({ lane, lanePath, editState }: LaneSettingsProps) {
 
             if (!nextColor) {
               inputEl.removeClass('error');
-              stateManager.setState((board) => {
-                const nextColors = { ...(board.data.settings['lane-background-colors'] || {}) };
-                delete nextColors[lane.id];
-
-                return update(board, {
+              boardModifiers.updateLane(
+                lanePath,
+                update(lane, {
                   data: {
-                    settings: {
-                      'lane-background-colors': {
-                        $set: nextColors,
-                      },
-                    },
+                    $unset: ['backgroundColor'],
                   },
-                });
-              });
+                })
+              );
               return;
             }
 
@@ -60,20 +53,16 @@ export function LaneSettings({ lane, lanePath, editState }: LaneSettingsProps) {
             }
 
             inputEl.removeClass('error');
-            stateManager.setState((board) => {
-              return update(board, {
+            boardModifiers.updateLane(
+              lanePath,
+              update(lane, {
                 data: {
-                  settings: {
-                    'lane-background-colors': {
-                      $set: {
-                        ...(board.data.settings['lane-background-colors'] || {}),
-                        [lane.id]: nextColor,
-                      },
-                    },
+                  backgroundColor: {
+                    $set: nextColor,
                   },
                 },
-              });
-            });
+              })
+            );
           }}
         />
       </div>

@@ -344,6 +344,8 @@ export class StateManager {
     const sourceLaneId =
       sourceLaneIndex !== undefined ? this.state.children[sourceLaneIndex]?.id : undefined;
     const defaultLaneId =
+      (sourceLaneIndex !== undefined &&
+        this.state.children[sourceLaneIndex]?.data.defaultCompleteLaneId) ||
       (sourceLaneId && this.getSetting('default-complete-lane-ids')?.[sourceLaneId]) ||
       this.getSetting('default-complete-lane-id');
 
@@ -369,16 +371,10 @@ export class StateManager {
 
     if (sourceLane) {
       this.setState((board) =>
-        update(board, {
+        updateEntity(board, [sourceLaneIndex], {
           data: {
-            settings: {
-              'default-complete-lane-ids': {
-                $set: {
-                  ...(board.data.settings['default-complete-lane-ids'] || {}),
-                  [sourceLane.id]: lane.id,
-                },
-              },
-              $unset: ['default-complete-lane-titles'],
+            defaultCompleteLaneId: {
+              $set: lane.id,
             },
           },
         })
@@ -410,36 +406,13 @@ export class StateManager {
     }
 
     if (sourceLane) {
-      this.setState((board) => {
-        const nextIds = { ...(board.data.settings['default-complete-lane-ids'] || {}) };
-        const hadSourceDefault = nextIds[sourceLane.id] !== undefined;
-
-        delete nextIds[sourceLane.id];
-
-        const settingsSpec: any = {
-          'default-complete-lane-ids': {
-            $set: nextIds,
-          },
-          $unset: ['default-complete-lane-titles'],
-        };
-
-        if (!hadSourceDefault) {
-          return update(board, {
-            data: {
-              settings: {
-                ...settingsSpec,
-                $unset: ['default-complete-lane-id', 'default-complete-lane-title'],
-              },
-            },
-          });
-        }
-
-        return update(board, {
+      this.setState((board) =>
+        updateEntity(board, [sourceLaneIndex], {
           data: {
-            settings: settingsSpec,
+            $unset: ['defaultCompleteLaneId'],
           },
-        });
-      });
+        })
+      );
 
       return;
     }
@@ -517,7 +490,9 @@ export class StateManager {
       const sourceLane = board.children[path[0]];
       const sourceItem = board.children[path[0]].children[path[1]];
       const blockId =
-        sourceItem.data.blockId || replacements[completedIndex].data.blockId || generateInstanceId(6);
+        sourceItem.data.blockId ||
+        replacements[completedIndex].data.blockId ||
+        generateInstanceId(6);
       const completedItem = update(replacements[completedIndex], {
         data: {
           blockId: {

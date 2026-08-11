@@ -13,6 +13,7 @@ import {
   ItemData,
   ItemTemplate,
   Lane,
+  LaneSort,
   LaneTemplate,
 } from 'src/components/types';
 import { laneTitleWithMaxItems } from 'src/helpers';
@@ -246,19 +247,22 @@ function sanitizeCompletedCardSources(
     return undefined;
   }
 
-  const nextSources = Object.entries(sources).reduce((acc, [blockId, source]) => {
-    if (!source?.sourceLaneId) {
+  const nextSources = Object.entries(sources).reduce(
+    (acc, [blockId, source]) => {
+      if (!source?.sourceLaneId) {
+        return acc;
+      }
+
+      acc[blockId] = {
+        sourceLaneId: source.sourceLaneId,
+        sourceItemIndex: source.sourceItemIndex,
+        movedAt: source.movedAt,
+      };
+
       return acc;
-    }
-
-    acc[blockId] = {
-      sourceLaneId: source.sourceLaneId,
-      sourceItemIndex: source.sourceItemIndex,
-      movedAt: source.movedAt,
-    };
-
-    return acc;
-  }, {} as NonNullable<KanbanSettings['completed-card-sources']>);
+    },
+    {} as NonNullable<KanbanSettings['completed-card-sources']>
+  );
 
   return Object.keys(nextSources).length ? nextSources : undefined;
 }
@@ -270,22 +274,25 @@ function sanitizeArchivedCardSources(
     return undefined;
   }
 
-  const nextSources = Object.entries(sources).reduce((acc, [blockId, source]) => {
-    if (!source?.sourceLaneId) {
+  const nextSources = Object.entries(sources).reduce(
+    (acc, [blockId, source]) => {
+      if (!source?.sourceLaneId) {
+        return acc;
+      }
+
+      acc[blockId] = {
+        sourceLaneId: source.sourceLaneId,
+        sourceItemIndex: source.sourceItemIndex,
+        archivedAt: source.archivedAt,
+        archiveDateFormat: source.archiveDateFormat,
+        archiveDateSeparator: source.archiveDateSeparator,
+        archiveDateAfterTitle: source.archiveDateAfterTitle,
+      };
+
       return acc;
-    }
-
-    acc[blockId] = {
-      sourceLaneId: source.sourceLaneId,
-      sourceItemIndex: source.sourceItemIndex,
-      archivedAt: source.archivedAt,
-      archiveDateFormat: source.archiveDateFormat,
-      archiveDateSeparator: source.archiveDateSeparator,
-      archiveDateAfterTitle: source.archiveDateAfterTitle,
-    };
-
-    return acc;
-  }, {} as NonNullable<KanbanSettings['archived-card-sources']>);
+    },
+    {} as NonNullable<KanbanSettings['archived-card-sources']>
+  );
 
   return Object.keys(nextSources).length ? nextSources : undefined;
 }
@@ -319,13 +326,135 @@ function buildRuntimeSettings(settings: KanbanSettings, collapseState: boolean[]
   return nextSettings;
 }
 
+function laneSortToRule(sorted: Lane['data']['sorted']): PersistedLaneSetting['sort-rule'] {
+  if (sorted === undefined) {
+    return undefined;
+  }
+
+  const bySort = (type: string, order: 'asc' | 'desc') => ({ type, order });
+
+  switch (sorted) {
+    case LaneSort.TitleAsc:
+      return bySort('card-text', 'asc');
+    case LaneSort.TitleDsc:
+      return bySort('card-text', 'desc');
+    case LaneSort.DateAsc:
+      return bySort('date', 'asc');
+    case LaneSort.DateDsc:
+      return bySort('date', 'desc');
+    case LaneSort.TagsAsc:
+      return bySort('tags', 'asc');
+    case LaneSort.TagsDsc:
+      return bySort('tags', 'desc');
+    case LaneSort.CreatedAsc:
+      return bySort('created-time', 'asc');
+    case LaneSort.CreatedDsc:
+      return bySort('created-time', 'desc');
+    case LaneSort.CompletedAsc:
+      return bySort('completed-time', 'asc');
+    case LaneSort.CompletedDsc:
+      return bySort('completed-time', 'desc');
+  }
+
+  if (typeof sorted !== 'string') {
+    return undefined;
+  }
+
+  if (sorted.endsWith('-asc')) {
+    return bySort(sorted.slice(0, -4), 'asc');
+  }
+
+  if (sorted.endsWith('-desc')) {
+    return bySort(sorted.slice(0, -5), 'desc');
+  }
+}
+
+function ruleToLaneSort(rule?: PersistedLaneSetting['sort-rule']): Lane['data']['sorted'] {
+  if (!rule?.type || !rule.order) {
+    return undefined;
+  }
+
+  switch (`${rule.type}:${rule.order}`) {
+    case 'card-text:asc':
+      return LaneSort.TitleAsc;
+    case 'card-text:desc':
+      return LaneSort.TitleDsc;
+    case 'date:asc':
+      return LaneSort.DateAsc;
+    case 'date:desc':
+      return LaneSort.DateDsc;
+    case 'tags:asc':
+      return LaneSort.TagsAsc;
+    case 'tags:desc':
+      return LaneSort.TagsDsc;
+    case 'created-time:asc':
+      return LaneSort.CreatedAsc;
+    case 'created-time:desc':
+      return LaneSort.CreatedDsc;
+    case 'completed-time:asc':
+      return LaneSort.CompletedAsc;
+    case 'completed-time:desc':
+      return LaneSort.CompletedDsc;
+    default:
+      return `${rule.type}-${rule.order}`;
+  }
+}
+
+function getPersistedLaneData(
+  settings: KanbanSettings,
+  persistedLane: PersistedLaneSetting | undefined,
+  laneId: string
+) {
+  return {
+    defaultCompleteLaneId:
+      persistedLane?.['default-complete-lane-id'] ||
+      settings['default-complete-lane-ids']?.[laneId],
+    backgroundColor:
+      persistedLane?.['background-color'] || settings['lane-background-colors']?.[laneId],
+    sorted: ruleToLaneSort(persistedLane?.['sort-rule']),
+    showCreatedTime: persistedLane?.['show-created-time'],
+    showCompletedTime: persistedLane?.['show-completed-time'],
+  };
+}
+
 function buildPersistedLaneSettings(board: Board): PersistedLaneSetting[] {
   const collapseState = board.data.settings['list-collapse'] || [];
+  const rawSettings = board.data.settings as KanbanSettings & Record<string, any>;
+  const defaultCompleteLaneIds = rawSettings['default-complete-lane-ids'] || {};
+  const laneBackgroundColors = rawSettings['lane-background-colors'] || {};
 
-  return board.children.map((lane, laneIndex) => ({
-    id: lane.id,
-    'list-collapse': !!collapseState[laneIndex],
-  }));
+  return board.children.map((lane, laneIndex) => {
+    const persistedLane: PersistedLaneSetting = {
+      id: lane.id,
+      'list-collapse': !!collapseState[laneIndex],
+    };
+    const defaultCompleteLaneId =
+      lane.data.defaultCompleteLaneId || defaultCompleteLaneIds[lane.id];
+    const backgroundColor = lane.data.backgroundColor || laneBackgroundColors[lane.id];
+    const sortRule = laneSortToRule(lane.data.sorted);
+
+    if (defaultCompleteLaneId) {
+      persistedLane['default-complete-lane-id'] = defaultCompleteLaneId;
+    }
+
+    if (backgroundColor) {
+      persistedLane['background-color'] = backgroundColor;
+    }
+
+    if (sortRule) {
+      persistedLane['sort-rule'] = sortRule;
+    }
+
+    if (lane.data.showCreatedTime !== undefined) {
+      persistedLane['show-created-time'] = lane.data.showCreatedTime;
+    }
+
+    if (lane.data.showCompletedTime !== undefined) {
+      persistedLane['show-completed-time'] = lane.data.showCompletedTime;
+    }
+
+    return persistedLane;
+  });
 }
 
 function buildPersistedSettings(board: Board): KanbanSettings {
@@ -333,9 +462,11 @@ function buildPersistedSettings(board: Board): KanbanSettings {
   const {
     lanes: _persistedLanes,
     'lane-ids': _legacyLaneIds,
+    'lane-background-colors': _legacyLaneBackgroundColors,
     'list-collapse': _runtimeCollapseState,
     'default-complete-lane-title': _legacyDefaultCompleteLaneTitle,
     'default-complete-lane-titles': _legacyDefaultCompleteLaneTitles,
+    'default-complete-lane-ids': _legacyDefaultCompleteLaneIds,
     ...persistedSettings
   } = rawSettings;
 
@@ -412,20 +543,23 @@ export function astToUnhydratedBoard(
 
       if (!list) {
         const persistedLane = persistedLanes[laneIndex];
+        const laneId = persistedLane?.id || generateInstanceId();
         collapseState[laneIndex] = persistedLane?.['list-collapse'] ?? false;
 
         lanes.push({
           ...LaneTemplate,
           children: [],
-          id: persistedLane?.id || generateInstanceId(),
+          id: laneId,
           data: {
             ...parseLaneTitle(title),
+            ...getPersistedLaneData(settings, persistedLane, laneId),
             shouldMarkItemsComplete,
           },
         });
         laneIndex += 1;
       } else {
         const persistedLane = persistedLanes[laneIndex];
+        const laneId = persistedLane?.id || generateInstanceId();
         collapseState[laneIndex] = persistedLane?.['list-collapse'] ?? false;
 
         lanes.push({
@@ -438,9 +572,10 @@ export function astToUnhydratedBoard(
               data,
             };
           }),
-          id: persistedLane?.id || generateInstanceId(),
+          id: laneId,
           data: {
             ...parseLaneTitle(title),
+            ...getPersistedLaneData(settings, persistedLane, laneId),
             shouldMarkItemsComplete,
           },
         });

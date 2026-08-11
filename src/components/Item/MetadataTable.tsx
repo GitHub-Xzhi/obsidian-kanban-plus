@@ -19,6 +19,8 @@ export interface ItemMetadataProps {
   item: Item;
   searchQuery?: string;
   shouldMarkItemsComplete?: boolean;
+  showCreatedTime?: boolean;
+  showCompletedTime?: boolean;
 }
 
 function mergeMetadata(
@@ -36,7 +38,13 @@ function mergeMetadata(
   }, fileMetadata || {});
 }
 
-export function ItemMetadata({ item, searchQuery, shouldMarkItemsComplete }: ItemMetadataProps) {
+export function ItemMetadata({
+  item,
+  searchQuery,
+  shouldMarkItemsComplete,
+  showCreatedTime,
+  showCompletedTime,
+}: ItemMetadataProps) {
   const { stateManager } = useContext(KanbanContext);
   const mergeInlineMetadata =
     stateManager.useSetting('inline-metadata-position') === 'metadata-table';
@@ -56,8 +64,10 @@ export function ItemMetadata({ item, searchQuery, shouldMarkItemsComplete }: Ite
   const createdAt = item.data.blockId ? cardCreatedTimes?.[item.data.blockId] : undefined;
   const completedAt = item.data.blockId ? cardCompletedTimes?.[item.data.blockId] : undefined;
   const shouldShowCreatedTime =
-    shouldMarkItemsComplete ? showCardCreatedTimeInCompleteLane : showCardCreatedTime;
-  const shouldShowCompletedTime = shouldMarkItemsComplete && showCardCompletedTimeInCompleteLane;
+    showCreatedTime ??
+    (shouldMarkItemsComplete ? showCardCreatedTimeInCompleteLane : showCardCreatedTime);
+  const shouldShowCompletedTime =
+    showCompletedTime ?? (shouldMarkItemsComplete && showCardCompletedTimeInCompleteLane);
 
   const metadata = useMemo(() => {
     let metadata = mergeInlineMetadata
