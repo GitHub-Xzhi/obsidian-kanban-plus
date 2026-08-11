@@ -21,6 +21,16 @@ function getSortTitle(label: string, order: SortOrder) {
   return `${t('Sort by')} ${label} ${orderLabel}`;
 }
 
+function setSortIcon(
+  item: any,
+  currentSort: Lane['data']['sorted'],
+  targetSort: LaneSort | string
+) {
+  if (currentSort === targetSort) {
+    item.setIcon('lucide-check');
+  }
+}
+
 function getLaneSortRule(sorted: LaneSort | string): Lane['data']['sortRule'] {
   const bySort = (type: string, order: 'asc' | 'desc') => ({ type, order });
 
@@ -315,13 +325,14 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         dscSort: LaneSort
       ) => {
         menu.addItem((item) => {
+          const nextSort = lane.data.sorted === ascSort ? dscSort : ascSort;
+
+          setSortIcon(item, lane.data.sorted, nextSort);
           item
-            .setIcon('lucide-check')
             .setTitle(getSortTitle(title, lane.data.sorted === ascSort ? 'desc' : 'asc'))
             .onClick(() => {
               const children = lane.children.slice();
               const mod = lane.data.sorted === ascSort ? -1 : 1;
-              const nextSort = lane.data.sorted === ascSort ? dscSort : ascSort;
 
               children.sort((a, b) => {
                 const aTime = a.data.blockId ? times[a.data.blockId] : undefined;
@@ -355,15 +366,17 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       };
 
       menu.addItem((item) => {
+        const nextSort =
+          lane.data.sorted === LaneSort.TitleAsc ? LaneSort.TitleDsc : LaneSort.TitleAsc;
+
+        setSortIcon(item, lane.data.sorted, nextSort);
         item
-          .setIcon('lucide-check')
           .setTitle(
             getSortTitle(t('Card text'), lane.data.sorted === LaneSort.TitleAsc ? 'desc' : 'asc')
           )
           .onClick(() => {
             const children = lane.children.slice();
             const isAsc = lane.data.sorted === LaneSort.TitleAsc;
-            const nextSort = isAsc ? LaneSort.TitleDsc : LaneSort.TitleAsc;
 
             children.sort((a, b) => {
               if (isAsc) {
@@ -394,16 +407,17 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
 
       if (canSortDate) {
         menu.addItem((item) => {
+          const nextSort =
+            lane.data.sorted === LaneSort.DateAsc ? LaneSort.DateDsc : LaneSort.DateAsc;
+
+          setSortIcon(item, lane.data.sorted, nextSort);
           item
-            .setIcon('lucide-check')
             .setTitle(
               getSortTitle(t('Date'), lane.data.sorted === LaneSort.DateAsc ? 'desc' : 'asc')
             )
             .onClick(() => {
               const children = lane.children.slice();
               const mod = lane.data.sorted === LaneSort.DateAsc ? -1 : 1;
-              const nextSort =
-                lane.data.sorted === LaneSort.DateAsc ? LaneSort.DateDsc : LaneSort.DateAsc;
 
               children.sort((a, b) => {
                 const aDate: moment.Moment | undefined =
@@ -440,8 +454,11 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
 
       if (canSortTags) {
         menu.addItem((item) => {
+          const nextSort =
+            lane.data.sorted === LaneSort.TagsAsc ? LaneSort.TagsDsc : LaneSort.TagsAsc;
+
+          setSortIcon(item, lane.data.sorted, nextSort);
           item
-            .setIcon('lucide-check')
             .setTitle(
               getSortTitle(t('Tags'), lane.data.sorted === LaneSort.TagsAsc ? 'desc' : 'asc')
             )
@@ -449,8 +466,6 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
               const tagSortOrder = stateManager.getSetting('tag-sort');
               const children = lane.children.slice();
               const desc = lane.data.sorted === LaneSort.TagsAsc ? true : false;
-              const nextSort =
-                lane.data.sorted === LaneSort.TagsAsc ? LaneSort.TagsDsc : LaneSort.TagsAsc;
 
               children.sort((a, b) => {
                 const tagsA = a.data.metadata.tags;
@@ -511,55 +526,55 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       if (metadataSortOptions.size) {
         metadataSortOptions.forEach((k) => {
           menu.addItem((i) => {
-            i.setIcon('lucide-check')
-              .setTitle(
-                getSortTitle(
-                  lableToName(k).toLocaleLowerCase(),
-                  lane.data.sorted === k + '-asc' ? 'desc' : 'asc'
-                )
+            const nextSort = lane.data.sorted === k + '-asc' ? k + '-desc' : k + '-asc';
+
+            setSortIcon(i, lane.data.sorted, nextSort);
+            i.setTitle(
+              getSortTitle(
+                lableToName(k).toLocaleLowerCase(),
+                lane.data.sorted === k + '-asc' ? 'desc' : 'asc'
               )
-              .onClick(() => {
-                const children = lane.children.slice();
-                const desc = lane.data.sorted === k + '-asc' ? true : false;
-                const nextSort = lane.data.sorted === k + '-asc' ? k + '-desc' : k + '-asc';
+            ).onClick(() => {
+              const children = lane.children.slice();
+              const desc = lane.data.sorted === k + '-asc' ? true : false;
 
-                children.sort((a, b) => {
-                  const valA = a.data.metadata.inlineMetadata?.find((m) => m.key === k);
-                  const valB = b.data.metadata.inlineMetadata?.find((m) => m.key === k);
+              children.sort((a, b) => {
+                const valA = a.data.metadata.inlineMetadata?.find((m) => m.key === k);
+                const valB = b.data.metadata.inlineMetadata?.find((m) => m.key === k);
 
-                  if (valA === undefined && valB === undefined) return 0;
-                  if (valA === undefined) return 1;
-                  if (valB === undefined) return -1;
+                if (valA === undefined && valB === undefined) return 0;
+                if (valA === undefined) return 1;
+                if (valB === undefined) return -1;
 
-                  if (desc) {
-                    return defaultSort(
-                      anyToString(valB.value, stateManager),
-                      anyToString(valA.value, stateManager)
-                    );
-                  }
+                if (desc) {
                   return defaultSort(
-                    anyToString(valA.value, stateManager),
-                    anyToString(valB.value, stateManager)
+                    anyToString(valB.value, stateManager),
+                    anyToString(valA.value, stateManager)
                   );
-                });
-
-                boardModifiers.updateLane(
-                  path,
-                  update(lane, {
-                    children: {
-                      $set: children,
-                    },
-                    data: {
-                      sorted: {
-                        $set: nextSort,
-                      },
-                      sortRule: {
-                        $set: getLaneSortRule(nextSort),
-                      },
-                    },
-                  })
+                }
+                return defaultSort(
+                  anyToString(valA.value, stateManager),
+                  anyToString(valB.value, stateManager)
                 );
               });
+
+              boardModifiers.updateLane(
+                path,
+                update(lane, {
+                  children: {
+                    $set: children,
+                  },
+                  data: {
+                    sorted: {
+                      $set: nextSort,
+                    },
+                    sortRule: {
+                      $set: getLaneSortRule(nextSort),
+                    },
+                  },
+                })
+              );
+            });
           });
         });
       }
