@@ -485,6 +485,10 @@ export class StateManager {
   getLaneSortFromRule(lane: Lane): LaneSort | string {
     const sortRule = lane.data.sortRule || completedTimeDescSortRule;
 
+    if (sortRule.type === 'manual') {
+      return 'manual';
+    }
+
     switch (`${sortRule.type}:${sortRule.order}`) {
       case 'card-text:asc':
         return LaneSort.TitleAsc;
@@ -520,6 +524,18 @@ export class StateManager {
 
     const sorted = this.getLaneSortFromRule(lane);
     const sortRule = lane.data.sortRule || completedTimeDescSortRule;
+
+    if (sortRule.type === 'manual') {
+      return updateEntity(board, [laneIndex], {
+        data: {
+          sortRule: {
+            $set: sortRule,
+          },
+          $unset: ['sorted'],
+        },
+      });
+    }
+
     const direction = sortRule.order === 'desc' ? -1 : 1;
     const createdTimes = board.data.settings['card-created-times'] || {};
     const completedTimes = board.data.settings['card-completed-times'] || {};

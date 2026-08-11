@@ -52,7 +52,7 @@ export type KanbanFormat = 'basic' | 'board' | 'table' | 'list';
 
 export interface PersistedLaneSortRule {
   type: string;
-  order: 'asc' | 'desc';
+  order?: 'asc' | 'desc';
 }
 
 export interface PersistedLaneSetting {

@@ -22,6 +22,10 @@ export const completedTimeDescSortRule = {
   order: 'desc',
 } as const;
 
+export const manualSortRule = {
+  type: 'manual',
+} as const;
+
 export interface LaneData {
   shouldMarkItemsComplete?: boolean;
   title: string;
@@ -31,7 +35,7 @@ export interface LaneData {
   defaultCompleteLaneId?: string;
   backgroundColor?: string;
   sorted?: LaneSort | string;
-  sortRule?: { type: string; order: 'asc' | 'desc' };
+  sortRule?: { type: string; order?: 'asc' | 'desc' };
   showCreatedTime?: boolean;
   showCompletedTime?: boolean;
 }

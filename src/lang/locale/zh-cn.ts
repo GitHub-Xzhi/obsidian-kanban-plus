@@ -291,6 +291,7 @@ const lang: Partial<Lang> = {
   'Completed time': '完成时间',
   Ascending: '升序',
   Descending: '降序',
+  'Manual order': '拖拽排序',
   'Sort option prefix': '按',
   'Sort by': '排序方式',
 

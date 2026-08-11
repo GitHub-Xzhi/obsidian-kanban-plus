@@ -9,7 +9,7 @@ import { lableToName } from 'src/parsers/helpers/inlineMetadata';
 import { anyToString } from '../Item/MetadataTable';
 import { KanbanContext } from '../context';
 import { c, generateInstanceId } from '../helpers';
-import { EditState, Lane, LaneSort, LaneTemplate } from '../types';
+import { EditState, Lane, LaneSort, LaneTemplate, manualSortRule } from '../types';
 
 export type LaneAction = 'delete' | 'archive' | 'archive-items' | null;
 
@@ -318,6 +318,14 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       .addSeparator();
 
     const addSortOptions = (menu: Menu) => {
+      menu.addItem((item) => {
+        if (lane.data.sortRule?.type === manualSortRule.type) {
+          item.setIcon('lucide-check');
+        }
+
+        item.setTitle(t('Manual order'));
+      });
+
       const sortByTime = (
         title: string,
         times: Record<string, number>,

@@ -7,7 +7,7 @@ import { DraggableItem } from './components/Item/Item';
 import { DraggableLane } from './components/Lane/Lane';
 import { KanbanContext } from './components/context';
 import { c, maybeCompleteForMove } from './components/helpers';
-import { Board, DataTypes, Item, Lane } from './components/types';
+import { Board, DataTypes, Item, Lane, manualSortRule } from './components/types';
 import { DndContext } from './dnd/components/DndContext';
 import { DragOverlay } from './dnd/components/DragOverlay';
 import { Entity, Nestable } from './dnd/types';
@@ -221,13 +221,16 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
             newBoard = updateCompletedTime(newBoard, getEntityFromPath(newBoard, dropPath) as Item);
           }
 
-          // Remove sorting in the destination lane
+          // Manual drag ordering overrides previous sorted order in the destination lane
           const destinationParentPath = dropPath.slice(0, -1);
-          const destinationParent = getEntityFromPath(board, destinationParentPath);
+          const destinationParent = getEntityFromPath(newBoard, destinationParentPath);
 
-          if (destinationParent?.data?.sorted !== undefined) {
+          if (entity.type === DataTypes.Item && destinationParent?.type === DataTypes.Lane) {
             return updateEntity(newBoard, destinationParentPath, {
               data: {
+                sortRule: {
+                  $set: manualSortRule,
+                },
                 $unset: ['sorted'],
               },
             });

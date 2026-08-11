@@ -16,6 +16,7 @@ import {
   LaneSort,
   LaneTemplate,
   completedTimeDescSortRule,
+  manualSortRule,
 } from 'src/components/types';
 import { laneTitleWithMaxItems } from 'src/helpers';
 import { defaultSort } from 'src/helpers/util';
@@ -375,7 +376,7 @@ function getLaneSortRule(lane: Lane): PersistedLaneSetting['sort-rule'] {
 }
 
 function ruleToLaneSort(rule?: PersistedLaneSetting['sort-rule']): Lane['data']['sorted'] {
-  if (!rule?.type || !rule.order) {
+  if (!rule?.type || rule.type === manualSortRule.type || !rule.order) {
     return undefined;
   }
 
@@ -412,7 +413,15 @@ function normalizeLaneSortRule(rule: unknown): PersistedLaneSetting['sort-rule']
 
   const { order, type } = rule as Record<string, unknown>;
 
-  if (typeof type !== 'string' || (order !== 'asc' && order !== 'desc')) {
+  if (typeof type !== 'string') {
+    return undefined;
+  }
+
+  if (type === manualSortRule.type) {
+    return { type };
+  }
+
+  if (order !== 'asc' && order !== 'desc') {
     return undefined;
   }
 
