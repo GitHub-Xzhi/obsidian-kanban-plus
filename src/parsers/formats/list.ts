@@ -400,6 +400,20 @@ function ruleToLaneSort(rule?: PersistedLaneSetting['sort-rule']): Lane['data'][
   }
 }
 
+function normalizeLaneSortRule(rule: unknown): PersistedLaneSetting['sort-rule'] {
+  if (!rule || typeof rule !== 'object') {
+    return undefined;
+  }
+
+  const { order, type } = rule as Record<string, unknown>;
+
+  if (typeof type !== 'string' || (order !== 'asc' && order !== 'desc')) {
+    return undefined;
+  }
+
+  return { type, order };
+}
+
 function getPersistedLaneData(
   settings: KanbanSettings,
   persistedLane: PersistedLaneSetting | undefined,
@@ -411,7 +425,7 @@ function getPersistedLaneData(
       settings['default-complete-lane-ids']?.[laneId],
     backgroundColor:
       persistedLane?.['background-color'] || settings['lane-background-colors']?.[laneId],
-    sorted: ruleToLaneSort(persistedLane?.['sort-rule']),
+    sorted: ruleToLaneSort(normalizeLaneSortRule(persistedLane?.['sort-rule'])),
     showCreatedTime: persistedLane?.['show-created-time'],
     showCompletedTime: persistedLane?.['show-completed-time'],
   };
