@@ -5,7 +5,7 @@ import { t } from 'src/lang/helpers';
 
 import { KanbanContext } from '../context';
 import { c } from '../helpers';
-import { EditState, Lane, isEditing } from '../types';
+import { EditState, Lane, LaneSort, completedTimeDescSortRule, isEditing } from '../types';
 
 const laneBackgroundColorRegex =
   /^(?:#(?:[0-9a-f]{3}|[0-9a-f]{6})|rgba?\(\s*(?:25[0-5]|2[0-4]\d|1?\d?\d)\s*,\s*(?:25[0-5]|2[0-4]\d|1?\d?\d)\s*,\s*(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\s*,\s*(?:0|1|0?\.\d+))?\s*\))$/i;
@@ -73,7 +73,23 @@ export function LaneSettings({ lane, lanePath, editState }: LaneSettingsProps) {
             boardModifiers.updateLane(
               lanePath,
               update(lane, {
-                data: { $toggle: ['shouldMarkItemsComplete'] },
+                data: lane.data.shouldMarkItemsComplete
+                  ? {
+                      shouldMarkItemsComplete: {
+                        $set: false,
+                      },
+                    }
+                  : {
+                      shouldMarkItemsComplete: {
+                        $set: true,
+                      },
+                      sorted: {
+                        $set: LaneSort.CompletedDsc,
+                      },
+                      sortRule: {
+                        $set: completedTimeDescSortRule,
+                      },
+                    },
               })
             )
           }

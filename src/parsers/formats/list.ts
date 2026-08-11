@@ -15,6 +15,7 @@ import {
   Lane,
   LaneSort,
   LaneTemplate,
+  completedTimeDescSortRule,
 } from 'src/components/types';
 import { laneTitleWithMaxItems } from 'src/helpers';
 import { defaultSort } from 'src/helpers/util';
@@ -421,9 +422,12 @@ function normalizeLaneSortRule(rule: unknown): PersistedLaneSetting['sort-rule']
 function getPersistedLaneData(
   settings: KanbanSettings,
   persistedLane: PersistedLaneSetting | undefined,
-  laneId: string
+  laneId: string,
+  shouldMarkItemsComplete: boolean
 ) {
-  const sortRule = normalizeLaneSortRule(persistedLane?.['sort-rule']);
+  const sortRule =
+    normalizeLaneSortRule(persistedLane?.['sort-rule']) ||
+    (shouldMarkItemsComplete ? completedTimeDescSortRule : undefined);
 
   return {
     defaultCompleteLaneId:
@@ -484,6 +488,7 @@ function buildPersistedSettings(board: Board): KanbanSettings {
     lanes: _persistedLanes,
     'lane-ids': _legacyLaneIds,
     'lane-background-colors': _legacyLaneBackgroundColors,
+    'completed-card-insertion-method': _legacyCompletedCardInsertionMethod,
     'list-collapse': _runtimeCollapseState,
     'default-complete-lane-title': _legacyDefaultCompleteLaneTitle,
     'default-complete-lane-titles': _legacyDefaultCompleteLaneTitles,
@@ -573,7 +578,7 @@ export function astToUnhydratedBoard(
           id: laneId,
           data: {
             ...parseLaneTitle(title),
-            ...getPersistedLaneData(settings, persistedLane, laneId),
+            ...getPersistedLaneData(settings, persistedLane, laneId, shouldMarkItemsComplete),
             shouldMarkItemsComplete,
           },
         });
@@ -596,7 +601,7 @@ export function astToUnhydratedBoard(
           id: laneId,
           data: {
             ...parseLaneTitle(title),
-            ...getPersistedLaneData(settings, persistedLane, laneId),
+            ...getPersistedLaneData(settings, persistedLane, laneId, shouldMarkItemsComplete),
             shouldMarkItemsComplete,
           },
         });

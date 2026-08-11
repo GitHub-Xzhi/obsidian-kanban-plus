@@ -9,7 +9,14 @@ import {
   getDefaultDateFormat,
   getDefaultTimeFormat,
 } from './components/helpers';
-import { Board, BoardTemplate, Item, Lane } from './components/types';
+import {
+  Board,
+  BoardTemplate,
+  Item,
+  Lane,
+  LaneSort,
+  completedTimeDescSortRule,
+} from './components/types';
 import { Path } from './dnd/types';
 import { insertEntity, moveEntity, removeEntity, updateEntity } from './dnd/util/data';
 import { ListFormat } from './parsers/List';
@@ -257,8 +264,6 @@ export class StateManager {
       'metadata-keys': metadataKeys,
       'archive-date-separator': this.getSettingRaw('archive-date-separator') || '',
       'archive-date-format': archiveDateFormat,
-      'completed-card-insertion-method':
-        this.getSettingRaw('completed-card-insertion-method', suppliedSettings) ?? 'prepend',
       'show-add-list': this.getSettingRaw('show-add-list', suppliedSettings) ?? true,
       'show-archive-all': this.getSettingRaw('show-archive-all', suppliedSettings) ?? true,
       'show-archive-toggle': this.getSettingRaw('show-archive-toggle', suppliedSettings) ?? true,
@@ -476,6 +481,40 @@ export class StateManager {
     });
   }
 
+  sortCompletedLaneByCompletedTime(board: Board, laneIndex: number) {
+    const lane = board.children[laneIndex];
+
+    if (!lane?.data.shouldMarkItemsComplete) {
+      return board;
+    }
+
+    const completedTimes = board.data.settings['card-completed-times'] || {};
+    const children = lane.children.slice().sort((a, b) => {
+      const aTime = a.data.blockId ? completedTimes[a.data.blockId] : undefined;
+      const bTime = b.data.blockId ? completedTimes[b.data.blockId] : undefined;
+
+      if (aTime && !bTime) return -1;
+      if (bTime && !aTime) return 1;
+      if (!aTime && !bTime) return 0;
+
+      return bTime - aTime;
+    });
+
+    return updateEntity(board, [laneIndex], {
+      children: {
+        $set: children,
+      },
+      data: {
+        sorted: {
+          $set: LaneSort.CompletedDsc,
+        },
+        sortRule: {
+          $set: completedTimeDescSortRule,
+        },
+      },
+    });
+  }
+
   moveCompletedItemToLane(
     path: Path,
     replacements: Item[],
@@ -512,8 +551,7 @@ export class StateManager {
       }
 
       const destinationLane = nextBoard.children[laneIndex];
-      const insertionMethod = this.getSetting('completed-card-insertion-method');
-      const destinationIndex = insertionMethod === 'append' ? destinationLane.children.length : 0;
+      const destinationIndex = destinationLane.children.length;
 
       nextBoard = insertEntity(nextBoard, [laneIndex, destinationIndex], [completedItem]);
       nextBoard = this.updateCompletedTime(nextBoard, completedItem, true);
@@ -535,15 +573,7 @@ export class StateManager {
         },
       });
 
-      if (destinationLane.data.sorted !== undefined) {
-        nextBoard = updateEntity(nextBoard, [laneIndex], {
-          data: {
-            $unset: ['sorted'],
-          },
-        });
-      }
-
-      return nextBoard;
+      return this.sortCompletedLaneByCompletedTime(nextBoard, laneIndex);
     });
 
     return true;

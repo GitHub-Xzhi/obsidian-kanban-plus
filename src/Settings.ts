@@ -102,7 +102,6 @@ export interface KanbanSettings {
   >;
   'default-complete-lane-id'?: string;
   'default-complete-lane-ids'?: Record<string, string>;
-  'completed-card-insertion-method'?: 'prepend' | 'append';
   lanes?: PersistedLaneSetting[];
   'lane-background-colors'?: Record<string, string>;
   'full-list-lane-width'?: boolean;
@@ -169,7 +168,6 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'completed-card-sources',
   'default-complete-lane-id',
   'default-complete-lane-ids',
-  'completed-card-insertion-method',
   'lanes',
   'lane-background-colors',
   'full-list-lane-width',
@@ -387,25 +385,6 @@ export class SettingsManager {
         dropdown.onChange((value) => {
           this.applySettingsUpdate({
             'new-card-insertion-method': {
-              $set: value as 'prepend' | 'append',
-            },
-          });
-        });
-      });
-
-    new Setting(contentEl)
-      .setName(t('Completed card placement'))
-      .setDesc(t('This setting controls where cards are moved after their checkbox is completed.'))
-      .addDropdown((dropdown) => {
-        dropdown.addOption('prepend', t('Prepend'));
-        dropdown.addOption('append', t('Append'));
-
-        const [value, globalValue] = this.getSetting('completed-card-insertion-method', local);
-
-        dropdown.setValue((value as string) || (globalValue as string) || 'prepend');
-        dropdown.onChange((value) => {
-          this.applySettingsUpdate({
-            'completed-card-insertion-method': {
               $set: value as 'prepend' | 'append',
             },
           });
