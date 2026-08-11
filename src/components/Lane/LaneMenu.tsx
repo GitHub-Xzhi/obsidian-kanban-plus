@@ -18,15 +18,15 @@ type SortOrder = 'asc' | 'desc';
 function getSortTitle(label: string, order: SortOrder) {
   const orderLabel = order === 'asc' ? t('Ascending') : t('Descending');
 
-  return `${t('Sort by')} ${label} ${orderLabel}`;
+  return `${t('Sort option prefix')}${label} ${orderLabel}`;
 }
 
 function setSortIcon(
   item: any,
   currentSort: Lane['data']['sorted'],
-  targetSort: LaneSort | string
+  currentOptionSort: LaneSort | string
 ) {
-  if (currentSort === targetSort) {
+  if (currentSort === currentOptionSort) {
     item.setIcon('lucide-check');
   }
 }
@@ -327,7 +327,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         menu.addItem((item) => {
           const nextSort = lane.data.sorted === ascSort ? dscSort : ascSort;
 
-          setSortIcon(item, lane.data.sorted, nextSort);
+          setSortIcon(item, lane.data.sorted, lane.data.sorted === ascSort ? ascSort : dscSort);
           item
             .setTitle(getSortTitle(title, lane.data.sorted === ascSort ? 'desc' : 'asc'))
             .onClick(() => {
@@ -369,7 +369,11 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         const nextSort =
           lane.data.sorted === LaneSort.TitleAsc ? LaneSort.TitleDsc : LaneSort.TitleAsc;
 
-        setSortIcon(item, lane.data.sorted, nextSort);
+        setSortIcon(
+          item,
+          lane.data.sorted,
+          lane.data.sorted === LaneSort.TitleAsc ? LaneSort.TitleAsc : LaneSort.TitleDsc
+        );
         item
           .setTitle(
             getSortTitle(t('Card text'), lane.data.sorted === LaneSort.TitleAsc ? 'desc' : 'asc')
@@ -410,7 +414,11 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           const nextSort =
             lane.data.sorted === LaneSort.DateAsc ? LaneSort.DateDsc : LaneSort.DateAsc;
 
-          setSortIcon(item, lane.data.sorted, nextSort);
+          setSortIcon(
+            item,
+            lane.data.sorted,
+            lane.data.sorted === LaneSort.DateAsc ? LaneSort.DateAsc : LaneSort.DateDsc
+          );
           item
             .setTitle(
               getSortTitle(t('Date'), lane.data.sorted === LaneSort.DateAsc ? 'desc' : 'asc')
@@ -457,7 +465,11 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           const nextSort =
             lane.data.sorted === LaneSort.TagsAsc ? LaneSort.TagsDsc : LaneSort.TagsAsc;
 
-          setSortIcon(item, lane.data.sorted, nextSort);
+          setSortIcon(
+            item,
+            lane.data.sorted,
+            lane.data.sorted === LaneSort.TagsAsc ? LaneSort.TagsAsc : LaneSort.TagsDsc
+          );
           item
             .setTitle(
               getSortTitle(t('Tags'), lane.data.sorted === LaneSort.TagsAsc ? 'desc' : 'asc')
@@ -528,7 +540,11 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           menu.addItem((i) => {
             const nextSort = lane.data.sorted === k + '-asc' ? k + '-desc' : k + '-asc';
 
-            setSortIcon(i, lane.data.sorted, nextSort);
+            setSortIcon(
+              i,
+              lane.data.sorted,
+              lane.data.sorted === k + '-asc' ? k + '-asc' : k + '-desc'
+            );
             i.setTitle(
               getSortTitle(
                 lableToName(k).toLocaleLowerCase(),

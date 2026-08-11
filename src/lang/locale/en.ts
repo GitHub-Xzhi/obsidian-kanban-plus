@@ -302,6 +302,7 @@ const en = {
   'Completed time': 'completed time',
   Ascending: 'ascending',
   Descending: 'descending',
+  'Sort option prefix': 'Sort by ',
   'Sort by': 'Sort by',
 
   // components/helpers/renderMarkdown.ts
