@@ -326,42 +326,41 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       ) => {
         menu.addItem((item) => {
           const nextSort = lane.data.sorted === ascSort ? dscSort : ascSort;
+          const currentOrder = lane.data.sorted === dscSort ? 'desc' : 'asc';
 
           setSortIcon(item, lane.data.sorted, lane.data.sorted === ascSort ? ascSort : dscSort);
-          item
-            .setTitle(getSortTitle(title, lane.data.sorted === ascSort ? 'desc' : 'asc'))
-            .onClick(() => {
-              const children = lane.children.slice();
-              const mod = lane.data.sorted === ascSort ? -1 : 1;
+          item.setTitle(getSortTitle(title, currentOrder)).onClick(() => {
+            const children = lane.children.slice();
+            const mod = lane.data.sorted === ascSort ? -1 : 1;
 
-              children.sort((a, b) => {
-                const aTime = a.data.blockId ? times[a.data.blockId] : undefined;
-                const bTime = b.data.blockId ? times[b.data.blockId] : undefined;
+            children.sort((a, b) => {
+              const aTime = a.data.blockId ? times[a.data.blockId] : undefined;
+              const bTime = b.data.blockId ? times[b.data.blockId] : undefined;
 
-                if (aTime && !bTime) return -1;
-                if (bTime && !aTime) return 1;
-                if (!aTime && !bTime) return 0;
+              if (aTime && !bTime) return -1;
+              if (bTime && !aTime) return 1;
+              if (!aTime && !bTime) return 0;
 
-                return (aTime - bTime) * mod;
-              });
-
-              boardModifiers.updateLane(
-                path,
-                update(lane, {
-                  children: {
-                    $set: children,
-                  },
-                  data: {
-                    sorted: {
-                      $set: nextSort,
-                    },
-                    sortRule: {
-                      $set: getLaneSortRule(nextSort),
-                    },
-                  },
-                })
-              );
+              return (aTime - bTime) * mod;
             });
+
+            boardModifiers.updateLane(
+              path,
+              update(lane, {
+                children: {
+                  $set: children,
+                },
+                data: {
+                  sorted: {
+                    $set: nextSort,
+                  },
+                  sortRule: {
+                    $set: getLaneSortRule(nextSort),
+                  },
+                },
+              })
+            );
+          });
         });
       };
 
@@ -376,7 +375,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         );
         item
           .setTitle(
-            getSortTitle(t('Card text'), lane.data.sorted === LaneSort.TitleAsc ? 'desc' : 'asc')
+            getSortTitle(t('Card text'), lane.data.sorted === LaneSort.TitleDsc ? 'desc' : 'asc')
           )
           .onClick(() => {
             const children = lane.children.slice();
@@ -421,7 +420,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           );
           item
             .setTitle(
-              getSortTitle(t('Date'), lane.data.sorted === LaneSort.DateAsc ? 'desc' : 'asc')
+              getSortTitle(t('Date'), lane.data.sorted === LaneSort.DateDsc ? 'desc' : 'asc')
             )
             .onClick(() => {
               const children = lane.children.slice();
@@ -472,7 +471,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           );
           item
             .setTitle(
-              getSortTitle(t('Tags'), lane.data.sorted === LaneSort.TagsAsc ? 'desc' : 'asc')
+              getSortTitle(t('Tags'), lane.data.sorted === LaneSort.TagsDsc ? 'desc' : 'asc')
             )
             .onClick(() => {
               const tagSortOrder = stateManager.getSetting('tag-sort');
@@ -548,7 +547,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
             i.setTitle(
               getSortTitle(
                 lableToName(k).toLocaleLowerCase(),
-                lane.data.sorted === k + '-asc' ? 'desc' : 'asc'
+                lane.data.sorted === k + '-desc' ? 'desc' : 'asc'
               )
             ).onClick(() => {
               const children = lane.children.slice();
