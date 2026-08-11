@@ -21,6 +21,14 @@ function getSortTitle(label: string, order: SortOrder) {
   return `${t('Sort option prefix')}${label} ${orderLabel}`;
 }
 
+function getIncompleteLaneSortTitle(label: string) {
+  return `${t('Sort by prefix')}${label}${t('Sort by suffix')}`;
+}
+
+function getSortIcon(lane: Lane) {
+  return lane.data.shouldMarkItemsComplete ? undefined : 'arrow-down-up';
+}
+
 function setSortIcon(
   item: any,
   currentSort: Lane['data']['sorted'],
@@ -318,14 +326,6 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       .addSeparator();
 
     const addSortOptions = (menu: Menu) => {
-      menu.addItem((item) => {
-        if (lane.data.sortRule?.type === manualSortRule.type) {
-          item.setIcon('lucide-check');
-        }
-
-        item.setTitle(t('Manual order'));
-      });
-
       const sortByTime = (
         title: string,
         times: Record<string, number>,
@@ -335,55 +335,86 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         menu.addItem((item) => {
           const nextSort = lane.data.sorted === ascSort ? dscSort : ascSort;
           const currentOrder = lane.data.sorted === dscSort ? 'desc' : 'asc';
+          const icon = getSortIcon(lane);
 
-          setSortIcon(item, lane.data.sorted, lane.data.sorted === ascSort ? ascSort : dscSort);
-          item.setTitle(getSortTitle(title, currentOrder)).onClick(() => {
-            const children = lane.children.slice();
-            const mod = lane.data.sorted === ascSort ? -1 : 1;
+          if (icon) {
+            item.setIcon(icon);
+          } else {
+            setSortIcon(item, lane.data.sorted, lane.data.sorted === ascSort ? ascSort : dscSort);
+          }
+          item
+            .setTitle(
+              lane.data.shouldMarkItemsComplete
+                ? getSortTitle(title, currentOrder)
+                : getIncompleteLaneSortTitle(title)
+            )
+            .onClick(() => {
+              const children = lane.children.slice();
+              const mod = lane.data.sorted === ascSort ? -1 : 1;
 
-            children.sort((a, b) => {
-              const aTime = a.data.blockId ? times[a.data.blockId] : undefined;
-              const bTime = b.data.blockId ? times[b.data.blockId] : undefined;
+              children.sort((a, b) => {
+                const aTime = a.data.blockId ? times[a.data.blockId] : undefined;
+                const bTime = b.data.blockId ? times[b.data.blockId] : undefined;
 
-              if (aTime && !bTime) return -1;
-              if (bTime && !aTime) return 1;
-              if (!aTime && !bTime) return 0;
+                if (aTime && !bTime) return -1;
+                if (bTime && !aTime) return 1;
+                if (!aTime && !bTime) return 0;
 
-              return (aTime - bTime) * mod;
+                return (aTime - bTime) * mod;
+              });
+
+              boardModifiers.updateLane(
+                path,
+                update(lane, {
+                  children: {
+                    $set: children,
+                  },
+                  data: {
+                    sorted: {
+                      $set: nextSort,
+                    },
+                    sortRule: {
+                      $set: getLaneSortRule(nextSort),
+                    },
+                  },
+                })
+              );
             });
-
-            boardModifiers.updateLane(
-              path,
-              update(lane, {
-                children: {
-                  $set: children,
-                },
-                data: {
-                  sorted: {
-                    $set: nextSort,
-                  },
-                  sortRule: {
-                    $set: getLaneSortRule(nextSort),
-                  },
-                },
-              })
-            );
-          });
         });
       };
+
+      if (lane.data.shouldMarkItemsComplete) {
+        menu.addItem((item) => {
+          if (lane.data.sortRule?.type === manualSortRule.type) {
+            item.setIcon('lucide-check');
+          }
+
+          item.setTitle(t('Manual order'));
+        });
+      }
 
       menu.addItem((item) => {
         const nextSort =
           lane.data.sorted === LaneSort.TitleAsc ? LaneSort.TitleDsc : LaneSort.TitleAsc;
+        const icon = getSortIcon(lane);
 
-        setSortIcon(
-          item,
-          lane.data.sorted,
-          lane.data.sorted === LaneSort.TitleAsc ? LaneSort.TitleAsc : LaneSort.TitleDsc
-        );
+        if (icon) {
+          item.setIcon(icon);
+        } else {
+          setSortIcon(
+            item,
+            lane.data.sorted,
+            lane.data.sorted === LaneSort.TitleAsc ? LaneSort.TitleAsc : LaneSort.TitleDsc
+          );
+        }
         item
           .setTitle(
-            getSortTitle(t('Card text'), lane.data.sorted === LaneSort.TitleDsc ? 'desc' : 'asc')
+            lane.data.shouldMarkItemsComplete
+              ? getSortTitle(
+                  t('Card text'),
+                  lane.data.sorted === LaneSort.TitleDsc ? 'desc' : 'asc'
+                )
+              : getIncompleteLaneSortTitle(t('Card text'))
           )
           .onClick(() => {
             const children = lane.children.slice();
@@ -420,15 +451,22 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         menu.addItem((item) => {
           const nextSort =
             lane.data.sorted === LaneSort.DateAsc ? LaneSort.DateDsc : LaneSort.DateAsc;
+          const icon = getSortIcon(lane);
 
-          setSortIcon(
-            item,
-            lane.data.sorted,
-            lane.data.sorted === LaneSort.DateAsc ? LaneSort.DateAsc : LaneSort.DateDsc
-          );
+          if (icon) {
+            item.setIcon(icon);
+          } else {
+            setSortIcon(
+              item,
+              lane.data.sorted,
+              lane.data.sorted === LaneSort.DateAsc ? LaneSort.DateAsc : LaneSort.DateDsc
+            );
+          }
           item
             .setTitle(
-              getSortTitle(t('Date'), lane.data.sorted === LaneSort.DateDsc ? 'desc' : 'asc')
+              lane.data.shouldMarkItemsComplete
+                ? getSortTitle(t('Date'), lane.data.sorted === LaneSort.DateDsc ? 'desc' : 'asc')
+                : getIncompleteLaneSortTitle(t('Date'))
             )
             .onClick(() => {
               const children = lane.children.slice();
@@ -471,15 +509,22 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         menu.addItem((item) => {
           const nextSort =
             lane.data.sorted === LaneSort.TagsAsc ? LaneSort.TagsDsc : LaneSort.TagsAsc;
+          const icon = getSortIcon(lane);
 
-          setSortIcon(
-            item,
-            lane.data.sorted,
-            lane.data.sorted === LaneSort.TagsAsc ? LaneSort.TagsAsc : LaneSort.TagsDsc
-          );
+          if (icon) {
+            item.setIcon(icon);
+          } else {
+            setSortIcon(
+              item,
+              lane.data.sorted,
+              lane.data.sorted === LaneSort.TagsAsc ? LaneSort.TagsAsc : LaneSort.TagsDsc
+            );
+          }
           item
             .setTitle(
-              getSortTitle(t('Tags'), lane.data.sorted === LaneSort.TagsDsc ? 'desc' : 'asc')
+              lane.data.shouldMarkItemsComplete
+                ? getSortTitle(t('Tags'), lane.data.sorted === LaneSort.TagsDsc ? 'desc' : 'asc')
+                : getIncompleteLaneSortTitle(t('Tags'))
             )
             .onClick(() => {
               const tagSortOrder = stateManager.getSetting('tag-sort');
@@ -546,17 +591,24 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         metadataSortOptions.forEach((k) => {
           menu.addItem((i) => {
             const nextSort = lane.data.sorted === k + '-asc' ? k + '-desc' : k + '-asc';
+            const icon = getSortIcon(lane);
 
-            setSortIcon(
-              i,
-              lane.data.sorted,
-              lane.data.sorted === k + '-asc' ? k + '-asc' : k + '-desc'
-            );
+            if (icon) {
+              i.setIcon(icon);
+            } else {
+              setSortIcon(
+                i,
+                lane.data.sorted,
+                lane.data.sorted === k + '-asc' ? k + '-asc' : k + '-desc'
+              );
+            }
             i.setTitle(
-              getSortTitle(
-                lableToName(k).toLocaleLowerCase(),
-                lane.data.sorted === k + '-desc' ? 'desc' : 'asc'
-              )
+              lane.data.shouldMarkItemsComplete
+                ? getSortTitle(
+                    lableToName(k).toLocaleLowerCase(),
+                    lane.data.sorted === k + '-desc' ? 'desc' : 'asc'
+                  )
+                : getIncompleteLaneSortTitle(lableToName(k).toLocaleLowerCase())
             ).onClick(() => {
               const children = lane.children.slice();
               const desc = lane.data.sorted === k + '-asc' ? true : false;

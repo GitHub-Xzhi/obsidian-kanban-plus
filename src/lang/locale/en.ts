@@ -304,6 +304,8 @@ const en = {
   Descending: 'descending',
   'Manual order': 'Manual order',
   'Sort option prefix': 'Sort by ',
+  'Sort by prefix': 'Sort by ',
+  'Sort by suffix': '',
   'Sort by': 'Sort by',
 
   // components/helpers/renderMarkdown.ts

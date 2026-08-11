@@ -293,6 +293,8 @@ const lang: Partial<Lang> = {
   Descending: '降序',
   'Manual order': '拖拽排序',
   'Sort option prefix': '按',
+  'Sort by prefix': '以',
+  'Sort by suffix': '排序',
   'Sort by': '排序方式',
 
   // components/helpers/renderMarkdown.ts
