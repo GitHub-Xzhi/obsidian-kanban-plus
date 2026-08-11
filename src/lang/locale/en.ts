@@ -52,9 +52,6 @@ const en = {
   'Prepend / append new cards': 'Prepend / append new cards',
   'This setting controls whether new cards are added to the beginning or end of the list.':
     'This setting controls whether new cards are added to the beginning or end of the list.',
-  'Completed card placement': 'Completed card placement',
-  'This setting controls where cards are moved after their checkbox is completed.':
-    'This setting controls where cards are moved after their checkbox is completed.',
   Prepend: 'Prepend',
   'Prepend (compact)': 'Prepend (compact)',
   Append: 'Append',
@@ -300,11 +297,11 @@ const en = {
   'Delete list': 'Delete list',
   'Insert list before': 'Insert list before',
   'Insert list after': 'Insert list after',
-  'Sort by card text': 'Sort by card text',
-  'Sort by date': 'Sort by date',
-  'Sort by tags': 'Sort by tags',
-  'Sort by created time': 'Sort by created time',
-  'Sort by completed time': 'Sort by completed time',
+  'Card text': 'card text',
+  'Created time': 'created time',
+  'Completed time': 'completed time',
+  Ascending: 'ascending',
+  Descending: 'descending',
   'Sort by': 'Sort by',
 
   // components/helpers/renderMarkdown.ts

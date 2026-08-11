@@ -52,9 +52,6 @@ const lang: Partial<Lang> = {
   'Prepend / append new cards': '追加新卡片',
   'This setting controls whether new cards are added to the beginning or end of the list.':
     '设置新卡片追加到列头部或尾部。',
-  'Completed card placement': '完成卡片放置位置',
-  'This setting controls where cards are moved after their checkbox is completed.':
-    '设置点击完成复选框后，卡片移动到完成列的头部或尾部。',
   Prepend: '头部',
   'Prepend (compact)': '头部 (紧凑)',
   Append: '尾部',
@@ -289,11 +286,11 @@ const lang: Partial<Lang> = {
   'Delete list': '删除列',
   'Insert list before': '在上方插入列',
   'Insert list after': '在下方插入列',
-  'Sort by card text': '以卡片文本排序',
-  'Sort by date': '以日期排序',
-  'Sort by tags': '以标签排序',
-  'Sort by created time': '以创建时间排序',
-  'Sort by completed time': '以完成时间排序',
+  'Card text': '卡片文本',
+  'Created time': '创建时间',
+  'Completed time': '完成时间',
+  Ascending: '升序',
+  Descending: '降序',
   'Sort by': '排序方式',
 
   // components/helpers/renderMarkdown.ts

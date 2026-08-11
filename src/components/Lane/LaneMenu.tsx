@@ -13,6 +13,14 @@ import { EditState, Lane, LaneSort, LaneTemplate } from '../types';
 
 export type LaneAction = 'delete' | 'archive' | 'archive-items' | null;
 
+type SortOrder = 'asc' | 'desc';
+
+function getSortTitle(label: string, order: SortOrder) {
+  const orderLabel = order === 'asc' ? t('Ascending') : t('Descending');
+
+  return `${t('Sort by')} ${label} ${orderLabel}`;
+}
+
 function getLaneSortRule(sorted: LaneSort | string): Lane['data']['sortRule'] {
   const bySort = (type: string, order: 'asc' | 'desc') => ({ type, order });
 
@@ -308,8 +316,8 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       ) => {
         menu.addItem((item) => {
           item
-            .setIcon('arrow-down-up')
-            .setTitle(title)
+            .setIcon('lucide-check')
+            .setTitle(getSortTitle(title, lane.data.sorted === ascSort ? 'desc' : 'asc'))
             .onClick(() => {
               const children = lane.children.slice();
               const mod = lane.data.sorted === ascSort ? -1 : 1;
@@ -348,8 +356,10 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
 
       menu.addItem((item) => {
         item
-          .setIcon('arrow-down-up')
-          .setTitle(t('Sort by card text'))
+          .setIcon('lucide-check')
+          .setTitle(
+            getSortTitle(t('Card text'), lane.data.sorted === LaneSort.TitleAsc ? 'desc' : 'asc')
+          )
           .onClick(() => {
             const children = lane.children.slice();
             const isAsc = lane.data.sorted === LaneSort.TitleAsc;
@@ -385,8 +395,10 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       if (canSortDate) {
         menu.addItem((item) => {
           item
-            .setIcon('arrow-down-up')
-            .setTitle(t('Sort by date'))
+            .setIcon('lucide-check')
+            .setTitle(
+              getSortTitle(t('Date'), lane.data.sorted === LaneSort.DateAsc ? 'desc' : 'asc')
+            )
             .onClick(() => {
               const children = lane.children.slice();
               const mod = lane.data.sorted === LaneSort.DateAsc ? -1 : 1;
@@ -429,8 +441,10 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       if (canSortTags) {
         menu.addItem((item) => {
           item
-            .setIcon('arrow-down-up')
-            .setTitle(t('Sort by tags'))
+            .setIcon('lucide-check')
+            .setTitle(
+              getSortTitle(t('Tags'), lane.data.sorted === LaneSort.TagsAsc ? 'desc' : 'asc')
+            )
             .onClick(() => {
               const tagSortOrder = stateManager.getSetting('tag-sort');
               const children = lane.children.slice();
@@ -482,17 +496,12 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       }
 
       if (canSortCreatedTime) {
-        sortByTime(
-          t('Sort by created time'),
-          cardCreatedTimes,
-          LaneSort.CreatedAsc,
-          LaneSort.CreatedDsc
-        );
+        sortByTime(t('Created time'), cardCreatedTimes, LaneSort.CreatedAsc, LaneSort.CreatedDsc);
       }
 
       if (canSortCompletedTime) {
         sortByTime(
-          t('Sort by completed time'),
+          t('Completed time'),
           cardCompletedTimes,
           LaneSort.CompletedAsc,
           LaneSort.CompletedDsc
@@ -502,8 +511,13 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       if (metadataSortOptions.size) {
         metadataSortOptions.forEach((k) => {
           menu.addItem((i) => {
-            i.setIcon('arrow-down-up')
-              .setTitle(t('Sort by') + ' ' + lableToName(k).toLocaleLowerCase())
+            i.setIcon('lucide-check')
+              .setTitle(
+                getSortTitle(
+                  lableToName(k).toLocaleLowerCase(),
+                  lane.data.sorted === k + '-asc' ? 'desc' : 'asc'
+                )
+              )
               .onClick(() => {
                 const children = lane.children.slice();
                 const desc = lane.data.sorted === k + '-asc' ? true : false;
