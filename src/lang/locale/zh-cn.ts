@@ -52,6 +52,9 @@ const lang: Partial<Lang> = {
   'Prepend / append new cards': '追加新卡片',
   'This setting controls whether new cards are added to the beginning or end of the list.':
     '设置新卡片追加到列头部或尾部。',
+  'Completed card placement in manual-order complete lists': '完成列拖拽排序时的完成卡片放置位置',
+  'When a complete list uses manual order, cards completed by checkbox will be added to the beginning or end of the list.':
+    '当完成列使用拖拽排序时，点击复选框完成的卡片会追加到该列的头部或尾部。',
   Prepend: '头部',
   'Prepend (compact)': '头部 (紧凑)',
   Append: '尾部',

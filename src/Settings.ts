@@ -100,6 +100,7 @@ export interface KanbanSettings {
       movedAt: number;
     }
   >;
+  'manual-completed-card-insertion-method'?: 'prepend' | 'append';
   'default-complete-lane-id'?: string;
   'default-complete-lane-ids'?: Record<string, string>;
   lanes?: PersistedLaneSetting[];
@@ -166,6 +167,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'card-completed-time-format',
   'card-completed-times',
   'completed-card-sources',
+  'manual-completed-card-insertion-method',
   'default-complete-lane-id',
   'default-complete-lane-ids',
   'lanes',
@@ -385,6 +387,32 @@ export class SettingsManager {
         dropdown.onChange((value) => {
           this.applySettingsUpdate({
             'new-card-insertion-method': {
+              $set: value as 'prepend' | 'append',
+            },
+          });
+        });
+      });
+
+    new Setting(contentEl)
+      .setName(t('Completed card placement in manual-order complete lists'))
+      .setDesc(
+        t(
+          'When a complete list uses manual order, cards completed by checkbox will be added to the beginning or end of the list.'
+        )
+      )
+      .addDropdown((dropdown) => {
+        dropdown.addOption('prepend', t('Prepend'));
+        dropdown.addOption('append', t('Append'));
+
+        const [value, globalValue] = this.getSetting(
+          'manual-completed-card-insertion-method',
+          local
+        );
+
+        dropdown.setValue((value as string) || (globalValue as string) || 'prepend');
+        dropdown.onChange((value) => {
+          this.applySettingsUpdate({
+            'manual-completed-card-insertion-method': {
               $set: value as 'prepend' | 'append',
             },
           });

@@ -657,7 +657,13 @@ export class StateManager {
       }
 
       const destinationLane = nextBoard.children[laneIndex];
-      const destinationIndex = destinationLane.children.length;
+      const shouldPrependInManualCompleteLane =
+        destinationLane.data.shouldMarkItemsComplete &&
+        destinationLane.data.sortRule?.type === 'manual' &&
+        (this.getSetting('manual-completed-card-insertion-method') || 'prepend') === 'prepend';
+      const destinationIndex = shouldPrependInManualCompleteLane
+        ? 0
+        : destinationLane.children.length;
 
       nextBoard = insertEntity(nextBoard, [laneIndex, destinationIndex], [completedItem]);
       nextBoard = this.updateCompletedTime(nextBoard, completedItem, true);

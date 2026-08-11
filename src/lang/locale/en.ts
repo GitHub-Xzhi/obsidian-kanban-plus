@@ -52,6 +52,10 @@ const en = {
   'Prepend / append new cards': 'Prepend / append new cards',
   'This setting controls whether new cards are added to the beginning or end of the list.':
     'This setting controls whether new cards are added to the beginning or end of the list.',
+  'Completed card placement in manual-order complete lists':
+    'Completed card placement in manual-order complete lists',
+  'When a complete list uses manual order, cards completed by checkbox will be added to the beginning or end of the list.':
+    'When a complete list uses manual order, cards completed by checkbox will be added to the beginning or end of the list.',
   Prepend: 'Prepend',
   'Prepend (compact)': 'Prepend (compact)',
   Append: 'Append',
