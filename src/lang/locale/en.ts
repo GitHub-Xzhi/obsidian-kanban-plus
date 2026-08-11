@@ -286,6 +286,10 @@ const en = {
   'Hide created time': 'Hide created time',
   'Show completed time': 'Show completed time',
   'Hide completed time': 'Hide completed time',
+  'Show all created times': 'Show all created times',
+  'Hide all created times': 'Hide all created times',
+  'Show all completed times': 'Show all completed times',
+  'Hide all completed times': 'Hide all completed times',
   'Change default complete list': 'Change default complete list',
   'Clear default complete list': 'Clear default complete list',
   'Only incomplete lists can set a default complete list':

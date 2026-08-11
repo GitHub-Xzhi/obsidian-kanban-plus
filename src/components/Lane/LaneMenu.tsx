@@ -138,7 +138,9 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       .addItem((item) => {
         item
           .setIcon('lucide-clock')
-          .setTitle(showCreatedTimeInAllLanes ? t('Hide created time') : t('Show created time'))
+          .setTitle(
+            showCreatedTimeInAllLanes ? t('Hide all created times') : t('Show all created times')
+          )
           .onClick(() => {
             const nextShowCreatedTime = !showCreatedTimeInAllLanes;
 
@@ -163,7 +165,9 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         item
           .setIcon('lucide-circle-check')
           .setTitle(
-            showCompletedTimeInAllLanes ? t('Hide completed time') : t('Show completed time')
+            showCompletedTimeInAllLanes
+              ? t('Hide all completed times')
+              : t('Show all completed times')
           )
           .onClick(() => {
             const nextShowCompletedTime = !showCompletedTimeInAllLanes;
