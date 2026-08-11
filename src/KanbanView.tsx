@@ -384,6 +384,12 @@ export class KanbanView extends TextFileView implements HoverParent {
         })
       );
     };
+    const areAllCreatedTimesShown = stateManager.state.children.every(
+      (lane) => !!lane.data.showCreatedTime
+    );
+    const areAllCompletedTimesShown = stateManager.state.children.every(
+      (lane) => !!lane.data.showCompletedTime
+    );
 
     if (
       stateManager.getSetting('show-board-settings') &&
@@ -527,7 +533,7 @@ export class KanbanView extends TextFileView implements HoverParent {
     ) {
       this.actionButtons['show-toggle-all-card-created-times'] = this.addAction(
         'lucide-clock',
-        t('Toggle all created times'),
+        areAllCreatedTimesShown ? t('Hide all created times') : t('Show all created times'),
         () => toggleAllLaneTimes('showCreatedTime')
       );
     } else if (
@@ -544,7 +550,7 @@ export class KanbanView extends TextFileView implements HoverParent {
     ) {
       this.actionButtons['show-toggle-all-card-completed-times'] = this.addAction(
         'lucide-circle-check',
-        t('Toggle all completed times'),
+        areAllCompletedTimesShown ? t('Hide all completed times') : t('Show all completed times'),
         () => toggleAllLaneTimes('showCompletedTime')
       );
     } else if (
