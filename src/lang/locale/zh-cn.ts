@@ -153,6 +153,8 @@ const lang: Partial<Lang> = {
   'Display metadata for the first note linked within a card. Specify which metadata keys to display below. An optional label can be provided, and labels can be hidden altogether.':
     '展示卡片中第一个连接所对应的笔记元数据。请在下方指定哪些元数据可以展示。你可以选择展示哪些标志，所有标志都可以被隐藏。',
   'Board Header Buttons': '板头按钮',
+  'Toggle all created times': '切换所有创建时间',
+  'Toggle all completed times': '切换所有完成时间',
   'Calendar: first day of week': '日历：一周的第一天',
   'Override which day is used as the start of the week': '设置哪一天作为一周的开始',
   Sunday: '周日',

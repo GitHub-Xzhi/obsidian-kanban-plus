@@ -125,6 +125,8 @@ export interface KanbanSettings {
   'show-archive-all'?: boolean;
   'show-archive-toggle'?: boolean;
   'show-board-settings'?: boolean;
+  'show-toggle-all-card-created-times'?: boolean;
+  'show-toggle-all-card-completed-times'?: boolean;
   'show-card-created-time'?: boolean;
   'show-card-created-time-in-complete-lane'?: boolean;
   'show-card-completed-time-in-complete-lane'?: boolean;
@@ -189,6 +191,8 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'show-archive-all',
   'show-archive-toggle',
   'show-board-settings',
+  'show-toggle-all-card-created-times',
+  'show-toggle-all-card-completed-times',
   'show-card-created-time',
   'show-card-created-time-in-complete-lane',
   'show-card-completed-time-in-complete-lane',
@@ -1766,6 +1770,90 @@ export class SettingsManager {
 
               this.applySettingsUpdate({
                 $unset: ['show-board-settings'],
+              });
+            });
+        });
+    });
+
+    new Setting(contentEl).setName(t('Toggle all created times')).then((setting) => {
+      let toggleComponent: ToggleComponent;
+
+      setting
+        .addToggle((toggle) => {
+          toggleComponent = toggle;
+
+          const [value, globalValue] = this.getSetting('show-toggle-all-card-created-times', local);
+
+          if (value !== undefined && value !== null) {
+            toggle.setValue(value as boolean);
+          } else if (globalValue !== undefined && globalValue !== null) {
+            toggle.setValue(globalValue as boolean);
+          } else {
+            toggle.setValue(true);
+          }
+
+          toggle.onChange((newValue) => {
+            this.applySettingsUpdate({
+              'show-toggle-all-card-created-times': {
+                $set: newValue,
+              },
+            });
+          });
+        })
+        .addExtraButton((b) => {
+          b.setIcon('lucide-rotate-ccw')
+            .setTooltip(t('Reset to default'))
+            .onClick(() => {
+              const [, globalValue] = this.getSetting('show-toggle-all-card-created-times', local);
+              toggleComponent.setValue(!!globalValue);
+
+              this.applySettingsUpdate({
+                $unset: ['show-toggle-all-card-created-times'],
+              });
+            });
+        });
+    });
+
+    new Setting(contentEl).setName(t('Toggle all completed times')).then((setting) => {
+      let toggleComponent: ToggleComponent;
+
+      setting
+        .addToggle((toggle) => {
+          toggleComponent = toggle;
+
+          const [value, globalValue] = this.getSetting(
+            'show-toggle-all-card-completed-times',
+            local
+          );
+
+          if (value !== undefined && value !== null) {
+            toggle.setValue(value as boolean);
+          } else if (globalValue !== undefined && globalValue !== null) {
+            toggle.setValue(globalValue as boolean);
+          } else {
+            toggle.setValue(true);
+          }
+
+          toggle.onChange((newValue) => {
+            this.applySettingsUpdate({
+              'show-toggle-all-card-completed-times': {
+                $set: newValue,
+              },
+            });
+          });
+        })
+        .addExtraButton((b) => {
+          b.setIcon('lucide-rotate-ccw')
+            .setTooltip(t('Reset to default'))
+            .onClick(() => {
+              const [, globalValue] = this.getSetting(
+                'show-toggle-all-card-completed-times',
+                local
+              );
+              toggleComponent.setValue(!!globalValue);
+
+              this.applySettingsUpdate({
+                $unset: ['show-toggle-all-card-completed-times'],
               });
             });
         });

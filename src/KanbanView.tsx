@@ -365,6 +365,26 @@ export class KanbanView extends TextFileView implements HoverParent {
 
     if (!stateManager) return;
 
+    const toggleAllLaneTimes = (key: 'showCreatedTime' | 'showCompletedTime') => {
+      const shouldShow = !stateManager.state.children.every((lane) => !!lane.data[key]);
+
+      stateManager.setState((board) =>
+        update(board, {
+          children: {
+            $set: board.children.map((lane) =>
+              update(lane, {
+                data: {
+                  [key]: {
+                    $set: shouldShow,
+                  },
+                },
+              })
+            ),
+          },
+        })
+      );
+    };
+
     if (
       stateManager.getSetting('show-board-settings') &&
       !this.actionButtons['show-board-settings']
@@ -499,6 +519,40 @@ export class KanbanView extends TextFileView implements HoverParent {
     } else if (!stateManager.getSetting('show-add-list') && this.actionButtons['show-add-list']) {
       this.actionButtons['show-add-list'].remove();
       delete this.actionButtons['show-add-list'];
+    }
+
+    if (
+      stateManager.getSetting('show-toggle-all-card-created-times') &&
+      !this.actionButtons['show-toggle-all-card-created-times']
+    ) {
+      this.actionButtons['show-toggle-all-card-created-times'] = this.addAction(
+        'lucide-clock',
+        t('Toggle all created times'),
+        () => toggleAllLaneTimes('showCreatedTime')
+      );
+    } else if (
+      !stateManager.getSetting('show-toggle-all-card-created-times') &&
+      this.actionButtons['show-toggle-all-card-created-times']
+    ) {
+      this.actionButtons['show-toggle-all-card-created-times'].remove();
+      delete this.actionButtons['show-toggle-all-card-created-times'];
+    }
+
+    if (
+      stateManager.getSetting('show-toggle-all-card-completed-times') &&
+      !this.actionButtons['show-toggle-all-card-completed-times']
+    ) {
+      this.actionButtons['show-toggle-all-card-completed-times'] = this.addAction(
+        'lucide-circle-check',
+        t('Toggle all completed times'),
+        () => toggleAllLaneTimes('showCompletedTime')
+      );
+    } else if (
+      !stateManager.getSetting('show-toggle-all-card-completed-times') &&
+      this.actionButtons['show-toggle-all-card-completed-times']
+    ) {
+      this.actionButtons['show-toggle-all-card-completed-times'].remove();
+      delete this.actionButtons['show-toggle-all-card-completed-times'];
     }
   };
 

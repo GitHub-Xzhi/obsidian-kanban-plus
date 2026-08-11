@@ -265,6 +265,10 @@ export class StateManager {
       'show-view-as-markdown':
         this.getSettingRaw('show-view-as-markdown', suppliedSettings) ?? true,
       'show-board-settings': this.getSettingRaw('show-board-settings', suppliedSettings) ?? true,
+      'show-toggle-all-card-created-times':
+        this.getSettingRaw('show-toggle-all-card-created-times', suppliedSettings) ?? true,
+      'show-toggle-all-card-completed-times':
+        this.getSettingRaw('show-toggle-all-card-completed-times', suppliedSettings) ?? true,
       'show-search': this.getSettingRaw('show-search', suppliedSettings) ?? true,
       'show-set-view': this.getSettingRaw('show-set-view', suppliedSettings) ?? true,
       'tag-colors': this.getSettingRaw('tag-colors', suppliedSettings) ?? [],
