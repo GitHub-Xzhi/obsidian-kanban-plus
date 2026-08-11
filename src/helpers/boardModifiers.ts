@@ -16,6 +16,16 @@ import {
 } from 'src/dnd/util/data';
 import { t } from 'src/lang/helpers';
 import { getTaskStatusDone } from 'src/parsers/helpers/inlineMetadata';
+import {
+  getArchivedCardSource,
+  getCardCreatedTime,
+  getCardCompletedTime,
+  getCompletedCardSource,
+  PersistedArchivedCard,
+  sanitizeCards,
+  updateCard,
+  removeCards,
+} from 'src/helpers/cardSettings';
 
 import { escapeRegExpStr, generateInstanceId } from '../components/helpers';
 import { Board, DataTypes, Item, Lane } from '../components/types';
@@ -39,10 +49,6 @@ export interface BoardModifiers {
   unarchiveItem: (archiveIndex: number) => void;
   duplicateEntity: (path: Path) => void;
 }
-
-type ArchivedCardSources = NonNullable<KanbanSettings['archived-card-sources']>;
-type CardCreatedTimes = NonNullable<KanbanSettings['card-created-times']>;
-type CardCompletedTimes = NonNullable<KanbanSettings['card-completed-times']>;
 
 export function getBoardModifiers(view: KanbanView, stateManager: StateManager): BoardModifiers {
   const getArchiveDateSettings = () => {
@@ -93,7 +99,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     return stateManager.updateItemContent(item, titleRaw);
   };
 
-  const removeArchiveDate = (item: Item, source: ArchivedCardSources[string]) => {
+  const removeArchiveDate = (item: Item, source: PersistedArchivedCard) => {
     const archivedAt = source.archivedAt;
 
     if (!stateManager.getSetting('archive-with-date') || !archivedAt) {
@@ -136,10 +142,8 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
   const addCreatedTimes = (boardData: Board, items: Item[]) => {
     const createdAt = Date.now();
-    const nextCreatedTimes: CardCreatedTimes = {
-      ...(boardData.data.settings['card-created-times'] || {}),
-    };
-    let didUpdateCreatedTimes = false;
+    let nextCards = sanitizeCards(boardData.data.settings.cards) || [];
+    let didUpdateCards = false;
 
     const nextItems = items.map((item) => {
       const blockId = item.data.blockId || generateInstanceId(6);
@@ -147,9 +151,12 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         ? item
         : update<Item>(item, { data: { blockId: { $set: blockId } } });
 
-      if (!nextCreatedTimes[blockId]) {
-        nextCreatedTimes[blockId] = createdAt;
-        didUpdateCreatedTimes = true;
+      if (!getCardCreatedTime({ ...boardData.data.settings, cards: nextCards }, blockId)) {
+        nextCards = updateCard({ ...boardData.data.settings, cards: nextCards }, blockId, (card) => ({
+          ...card,
+          'created-time': createdAt,
+        }));
+        didUpdateCards = true;
       }
 
       return itemWithBlockId;
@@ -157,17 +164,13 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     return {
       items: nextItems,
-      settingsSpec: didUpdateCreatedTimes
-        ? { 'card-created-times': { $set: nextCreatedTimes } }
-        : {},
+      settingsSpec: didUpdateCards ? { cards: { $set: nextCards } } : {},
     };
   };
 
   const updateCompletedTimes = (boardData: Board, items: Item[]) => {
-    const nextCompletedTimes: CardCompletedTimes = {
-      ...(boardData.data.settings['card-completed-times'] || {}),
-    };
-    let didUpdateCompletedTimes = false;
+    let nextCards = sanitizeCards(boardData.data.settings.cards) || [];
+    let didUpdateCards = false;
 
     items.forEach((item) => {
       const blockId = item.data.blockId;
@@ -178,16 +181,26 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
       const isComplete = item.data.checked && item.data.checkChar === getTaskStatusDone();
 
-      if (isComplete && !nextCompletedTimes[blockId]) {
-        nextCompletedTimes[blockId] = Date.now();
-        didUpdateCompletedTimes = true;
-      } else if (!isComplete && nextCompletedTimes[blockId]) {
-        delete nextCompletedTimes[blockId];
-        didUpdateCompletedTimes = true;
+      if (isComplete && !getCardCompletedTime({ ...boardData.data.settings, cards: nextCards }, blockId)) {
+        nextCards = updateCard({ ...boardData.data.settings, cards: nextCards }, blockId, (card) => ({
+          ...card,
+          'completed-time': Date.now(),
+        }));
+        didUpdateCards = true;
+      } else if (!isComplete && getCardCompletedTime({ ...boardData.data.settings, cards: nextCards }, blockId)) {
+        nextCards = updateCard({ ...boardData.data.settings, cards: nextCards }, blockId, (card) => {
+          const nextCard = { ...card };
+          delete nextCard['completed-time'];
+          delete nextCard.sourceLaneId;
+          delete nextCard.sourceItemIndex;
+          delete nextCard.targetLaneId;
+          return nextCard;
+        });
+        didUpdateCards = true;
       }
     });
 
-    return didUpdateCompletedTimes ? { 'card-completed-times': { $set: nextCompletedTimes } } : {};
+    return didUpdateCards ? { cards: { $set: nextCards } } : {};
   };
 
   const archiveItemsWithSources = (
@@ -197,65 +210,63 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
   ) => {
     const archivedAt = Date.now();
     const archiveDateSettings = getArchiveDateSettings();
-    const sources: ArchivedCardSources = {};
+    let nextCards = sanitizeCards(stateManager.state.data.settings.cards) || [];
     const archivedItems = items.map((item, itemIndex) => {
       const blockId = item.data.blockId || generateInstanceId(6);
       const itemWithBlockId = item.data.blockId
         ? item
         : update<Item>(item, { data: { blockId: { $set: blockId } } });
 
-      sources[blockId] = {
-        sourceLaneId: sourceLane.id,
-        sourceItemIndex: getSourceItemIndex(itemIndex),
-        archivedAt,
-        ...archiveDateSettings,
-      };
+      nextCards = updateCard(
+        { ...stateManager.state.data.settings, cards: nextCards },
+        blockId,
+        (card) => ({
+          ...card,
+          archived: {
+            sourceLaneId: sourceLane.id,
+            sourceItemIndex: getSourceItemIndex(itemIndex),
+            archivedAt,
+            ...archiveDateSettings,
+          },
+        })
+      );
 
       return stateManager.getSetting('archive-with-date')
         ? appendArchiveDate(itemWithBlockId, archivedAt)
         : itemWithBlockId;
     });
 
-    return { items: archivedItems, sources };
+    return { items: archivedItems, cards: nextCards };
   };
 
-  const updateArchivedSources = (boardData: Board, sources: ArchivedCardSources) => {
-    if (!Object.keys(sources).length) {
+  const updateCards = (boardData: Board, cards: KanbanSettings['cards']) => {
+    if (!cards) {
       return boardData;
     }
 
     return update<Board>(boardData, {
       data: {
         settings: {
-          'archived-card-sources': {
-            $set: {
-              ...(boardData.data.settings['archived-card-sources'] || {}),
-              ...sources,
-            },
+          cards: {
+            $set: cards,
           },
         },
       },
     });
   };
 
-  const findArchivedSourceLaneIndex = (boardData: Board, source: ArchivedCardSources[string]) => {
+  const findArchivedSourceLaneIndex = (boardData: Board, source: PersistedArchivedCard) => {
     return boardData.children.findIndex((lane) => lane.id === source.sourceLaneId);
   };
 
   const clearDeletedEntityReferences = (boardData: Board, entity: Item | Lane, path: Path) => {
     const blockIds = collectBlockIds(entity);
-    const sources = boardData.data.settings['completed-card-sources'];
-    const archiveSources = boardData.data.settings['archived-card-sources'];
-    const createdTimes = boardData.data.settings['card-created-times'];
-    const completedTimes = boardData.data.settings['card-completed-times'];
+    const cards = sanitizeCards(boardData.data.settings.cards);
     const defaultCompleteLaneIds = boardData.data.settings['default-complete-lane-ids'];
     const defaultCompleteLaneId = boardData.data.settings['default-complete-lane-id'];
 
     if (
-      !sources &&
-      !archiveSources &&
-      !createdTimes &&
-      !completedTimes &&
+      !cards &&
       !defaultCompleteLaneIds &&
       !defaultCompleteLaneId &&
       entity.type !== DataTypes.Lane
@@ -264,77 +275,44 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     }
 
     const deletedLaneId = entity.type === DataTypes.Lane ? entity.id : null;
-    const nextSources = sources ? { ...sources } : undefined;
-    const nextArchiveSources = archiveSources ? { ...archiveSources } : undefined;
-    const nextCreatedTimes = createdTimes ? { ...createdTimes } : undefined;
-    const nextCompletedTimes = completedTimes ? { ...completedTimes } : undefined;
-    let didUpdateSources = false;
-    let didUpdateArchiveSources = false;
-    let didUpdateCreatedTimes = false;
-    let didUpdateCompletedTimes = false;
+    let nextCards = cards ? removeCards(boardData.data.settings, blockIds) : cards;
+    let didUpdateCards = !!cards && nextCards !== cards;
 
-    if (nextSources) {
-      for (const blockId of blockIds) {
-        if (nextSources[blockId]) {
-          delete nextSources[blockId];
-          didUpdateSources = true;
-        }
-      }
-
-      if (entity.type === DataTypes.Lane) {
-        Object.entries(nextSources).forEach(([blockId, source]) => {
-          if (source.sourceLaneId === deletedLaneId) {
-            delete nextSources[blockId];
-            didUpdateSources = true;
+    if (entity.type === DataTypes.Lane && nextCards) {
+      const filteredCards = nextCards
+        .map((card) => {
+          if (card.sourceLaneId !== deletedLaneId && card.archived?.sourceLaneId !== deletedLaneId) {
+            return card;
           }
-        });
-      }
-    }
 
-    if (nextArchiveSources) {
-      for (const blockId of blockIds) {
-        if (nextArchiveSources[blockId]) {
-          delete nextArchiveSources[blockId];
-          didUpdateArchiveSources = true;
-        }
-      }
-    }
+          const nextCard = { ...card };
 
-    if (nextCreatedTimes) {
-      for (const blockId of blockIds) {
-        if (nextCreatedTimes[blockId]) {
-          delete nextCreatedTimes[blockId];
-          didUpdateCreatedTimes = true;
-        }
-      }
-    }
+          if (nextCard.sourceLaneId === deletedLaneId) {
+            delete nextCard.sourceLaneId;
+            delete nextCard.sourceItemIndex;
+            delete nextCard.targetLaneId;
+          }
 
-    if (nextCompletedTimes) {
-      for (const blockId of blockIds) {
-        if (nextCompletedTimes[blockId]) {
-          delete nextCompletedTimes[blockId];
-          didUpdateCompletedTimes = true;
-        }
+          if (nextCard.archived?.sourceLaneId === deletedLaneId) {
+            delete nextCard.archived;
+          }
+
+          return nextCard;
+        })
+        .map((card) => updateCard({ cards: [] }, card.id, () => card)[0])
+        .filter(Boolean);
+
+      if (filteredCards.length !== nextCards.length || filteredCards.some((card, index) => card !== nextCards[index])) {
+        nextCards = filteredCards.length ? filteredCards : undefined;
+        didUpdateCards = true;
       }
     }
 
     if (entity.type !== DataTypes.Lane) {
       const settingsSpec: any = {};
 
-      if (didUpdateSources) {
-        settingsSpec['completed-card-sources'] = { $set: nextSources };
-      }
-
-      if (didUpdateArchiveSources) {
-        settingsSpec['archived-card-sources'] = { $set: nextArchiveSources };
-      }
-
-      if (didUpdateCreatedTimes) {
-        settingsSpec['card-created-times'] = { $set: nextCreatedTimes };
-      }
-
-      if (didUpdateCompletedTimes) {
-        settingsSpec['card-completed-times'] = { $set: nextCompletedTimes };
+      if (didUpdateCards) {
+        settingsSpec.cards = { $set: nextCards };
       }
 
       return applySettingsSpec(boardData, settingsSpec);
@@ -344,20 +322,8 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     const settingsSpec: any = {};
     const unsetSettings: string[] = [];
 
-    if (didUpdateSources) {
-      settingsSpec['completed-card-sources'] = { $set: nextSources };
-    }
-
-    if (didUpdateArchiveSources) {
-      settingsSpec['archived-card-sources'] = { $set: nextArchiveSources };
-    }
-
-    if (didUpdateCreatedTimes) {
-      settingsSpec['card-created-times'] = { $set: nextCreatedTimes };
-    }
-
-    if (didUpdateCompletedTimes) {
-      settingsSpec['card-completed-times'] = { $set: nextCompletedTimes };
+    if (didUpdateCards) {
+      settingsSpec.cards = { $set: nextCards };
     }
 
     if (deletedLaneId !== null) {
@@ -552,7 +518,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           };
           view.setViewState('list-collapse', undefined, op);
 
-          return updateArchivedSources(
+          return updateCards(
             update<Board>(removeEntity(boardData, path), {
               data: {
                 settings: { 'list-collapse': { $set: op(collapseState) } },
@@ -561,7 +527,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
                 },
               },
             }),
-            archived.sources
+            archived.cards
           );
         } catch (e) {
           stateManager.setError(e);
@@ -578,7 +544,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         try {
           const archived = archiveItemsWithSources(items, lane, (itemIndex) => itemIndex);
 
-          return updateArchivedSources(
+          return updateCards(
             update(
               updateEntity(boardData, path, {
                 children: {
@@ -593,7 +559,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
                 },
               }
             ),
-            archived.sources
+            archived.cards
           );
         } catch (e) {
           stateManager.setError(e);
@@ -657,22 +623,25 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           let nextBoard = removeEntity(boardData, path);
           const blockId = item.data.blockId;
 
-          if (blockId && nextBoard.data.settings['completed-card-sources']?.[blockId]) {
-            const nextSources = { ...nextBoard.data.settings['completed-card-sources'] };
-            delete nextSources[blockId];
-
+          if (blockId && getCompletedCardSource(nextBoard.data.settings, blockId)) {
             nextBoard = update(nextBoard, {
               data: {
                 settings: {
-                  'completed-card-sources': {
-                    $set: nextSources,
+                  cards: {
+                    $set: updateCard(nextBoard.data.settings, blockId, (card) => {
+                      const nextCard = { ...card };
+                      delete nextCard.sourceLaneId;
+                      delete nextCard.sourceItemIndex;
+                      delete nextCard.targetLaneId;
+                      return nextCard;
+                    }),
                   },
                 },
               },
             });
           }
 
-          nextBoard = updateArchivedSources(nextBoard, archived.sources);
+          nextBoard = updateCards(nextBoard, archived.cards);
 
           return update(nextBoard, {
             data: {
@@ -697,7 +666,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         }
 
         const blockId = item.data.blockId;
-        const source = blockId ? boardData.data.settings['archived-card-sources']?.[blockId] : null;
+  const source = getArchivedCardSource(boardData.data.settings, blockId);
 
         if (!blockId || !source) {
           new Notice(t('Unable to find source list'));
@@ -717,8 +686,6 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           source.sourceItemIndex ?? sourceLane.children.length,
           sourceLane.children.length
         );
-        const nextSources = { ...(boardData.data.settings['archived-card-sources'] || {}) };
-        delete nextSources[blockId];
 
         return update(
           insertEntity(
@@ -735,8 +702,12 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           {
             data: {
               settings: {
-                'archived-card-sources': {
-                  $set: nextSources,
+                cards: {
+                  $set: updateCard(boardData.data.settings, blockId, (card) => {
+                    const nextCard = { ...card };
+                    delete nextCard.archived;
+                    return nextCard;
+                  }),
                 },
               },
             },

@@ -6,6 +6,7 @@ import { ComponentChild } from 'preact';
 import { memo, useContext, useMemo } from 'preact/compat';
 import { KanbanView } from 'src/KanbanView';
 import { StateManager } from 'src/StateManager';
+import { getCardCreatedTime, getCardCompletedTime } from 'src/helpers/cardSettings';
 import { t } from 'src/lang/helpers';
 import { InlineField, taskFields } from 'src/parsers/helpers/inlineMetadata';
 
@@ -49,8 +50,7 @@ export function ItemMetadata({
   const mergeInlineMetadata =
     stateManager.useSetting('inline-metadata-position') === 'metadata-table';
   const metadataKeys = stateManager.useSetting('metadata-keys');
-  const cardCreatedTimes = stateManager.useSetting('card-created-times');
-  const cardCompletedTimes = stateManager.useSetting('card-completed-times');
+  const cards = stateManager.useSetting('cards');
   const showCardCreatedTime = stateManager.useSetting('show-card-created-time');
   const showCardCreatedTimeInCompleteLane = stateManager.useSetting(
     'show-card-created-time-in-complete-lane'
@@ -61,8 +61,8 @@ export function ItemMetadata({
   const cardCreatedTimeFormat = stateManager.useSetting('card-created-time-format');
   const cardCompletedTimeFormat = stateManager.useSetting('card-completed-time-format');
   const { fileMetadata, fileMetadataOrder, inlineMetadata } = item.data.metadata;
-  const createdAt = item.data.blockId ? cardCreatedTimes?.[item.data.blockId] : undefined;
-  const completedAt = item.data.blockId ? cardCompletedTimes?.[item.data.blockId] : undefined;
+  const createdAt = getCardCreatedTime({ cards }, item.data.blockId);
+  const completedAt = getCardCompletedTime({ cards }, item.data.blockId);
   const shouldShowCreatedTime =
     showCreatedTime ??
     (shouldMarkItemsComplete ? showCardCreatedTimeInCompleteLane : showCardCreatedTime);

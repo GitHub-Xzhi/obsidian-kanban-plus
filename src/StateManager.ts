@@ -19,7 +19,13 @@ import {
 } from './components/types';
 import { Path } from './dnd/types';
 import { insertEntity, moveEntity, removeEntity, updateEntity } from './dnd/util/data';
-import { getCard, sanitizeCards, upsertCard } from './helpers/cardSettings';
+import {
+  getArchivedCardSource,
+  getCard,
+  getCompletedCardSource,
+  sanitizeCards,
+  updateCard,
+} from './helpers/cardSettings';
 import { defaultSort } from './helpers/util';
 import { ListFormat } from './parsers/List';
 import { BaseFormat, frontmatterKey, shouldRefreshBoard } from './parsers/common';
@@ -454,7 +460,7 @@ export class StateManager {
         data: {
           settings: {
             cards: {
-              $set: upsertCard(board.data.settings, blockId, (card) => ({
+              $set: updateCard(board.data.settings, blockId, (card) => ({
                 ...card,
                 'completed-time': Date.now(),
               })),
@@ -472,14 +478,14 @@ export class StateManager {
       data: {
         settings: {
           cards: {
-            $set: upsertCard(board.data.settings, blockId, (card) => {
+              $set: updateCard(board.data.settings, blockId, (card) => {
               const nextCard = { ...card };
               delete nextCard['completed-time'];
               delete nextCard.sourceLaneId;
               delete nextCard.sourceItemIndex;
               delete nextCard.targetLaneId;
 
-              return Object.keys(nextCard).length > 1 || nextCard.archived ? nextCard : undefined;
+                return nextCard;
             }),
           },
         },
@@ -676,15 +682,13 @@ export class StateManager {
       nextBoard = update(nextBoard, {
         data: {
           settings: {
-            'completed-card-sources': {
-              $set: {
-                ...(nextBoard.data.settings['completed-card-sources'] || {}),
-                [blockId]: {
-                  sourceLaneId: sourceLane.id,
-                  sourceItemIndex: path[1],
-                  movedAt: Date.now(),
-                },
-              },
+            cards: {
+              $set: updateCard(nextBoard.data.settings, blockId, (card) => ({
+                ...card,
+                sourceLaneId: sourceLane.id,
+                sourceItemIndex: path[1],
+                targetLaneId: destinationLane.id,
+              })),
             },
           },
         },
@@ -703,9 +707,7 @@ export class StateManager {
     originalItem: Item
   ) {
     const blockId = originalItem.data.blockId;
-    const sourceRecord = blockId
-      ? this.state.data.settings['completed-card-sources']?.[blockId]
-      : null;
+    const sourceRecord = getCompletedCardSource(this.state.data.settings, blockId);
 
     if (!blockId || !sourceRecord) {
       return false;
@@ -751,14 +753,17 @@ export class StateManager {
       nextBoard = insertEntity(nextBoard, [sourceLaneIndex, destinationIndex], [returnedItem]);
       nextBoard = this.updateCompletedTime(nextBoard, returnedItem, false);
 
-      const nextSources = { ...(nextBoard.data.settings['completed-card-sources'] || {}) };
-      delete nextSources[blockId];
-
       return update(nextBoard, {
         data: {
           settings: {
-            'completed-card-sources': {
-              $set: nextSources,
+            cards: {
+              $set: updateCard(nextBoard.data.settings, blockId, (card) => {
+                const nextCard = { ...card };
+                delete nextCard.sourceLaneId;
+                delete nextCard.sourceItemIndex;
+                delete nextCard.targetLaneId;
+                return nextCard;
+              }),
             },
           },
         },
@@ -773,19 +778,22 @@ export class StateManager {
   }
 
   clearCompletedCardSourceByBlockId(blockId?: string) {
-    if (!blockId || !this.state.data.settings['completed-card-sources']?.[blockId]) {
+    if (!blockId || !getCompletedCardSource(this.state.data.settings, blockId)) {
       return;
     }
 
     this.setState((board) => {
-      const nextSources = { ...(board.data.settings['completed-card-sources'] || {}) };
-      delete nextSources[blockId];
-
       return update(board, {
         data: {
           settings: {
-            'completed-card-sources': {
-              $set: nextSources,
+            cards: {
+              $set: updateCard(board.data.settings, blockId, (card) => {
+                const nextCard = { ...card };
+                delete nextCard.sourceLaneId;
+                delete nextCard.sourceItemIndex;
+                delete nextCard.targetLaneId;
+                return nextCard;
+              }),
             },
           },
         },
@@ -804,15 +812,18 @@ export class StateManager {
       let nextBoard = moveEntity(board, path, [laneIndex, 0]);
       const blockId = item.data.blockId;
 
-      if (blockId && nextBoard.data.settings['completed-card-sources']?.[blockId]) {
-        const nextSources = { ...nextBoard.data.settings['completed-card-sources'] };
-        delete nextSources[blockId];
-
+      if (blockId && getCompletedCardSource(nextBoard.data.settings, blockId)) {
         nextBoard = update(nextBoard, {
           data: {
             settings: {
-              'completed-card-sources': {
-                $set: nextSources,
+              cards: {
+                $set: updateCard(nextBoard.data.settings, blockId, (card) => {
+                  const nextCard = { ...card };
+                  delete nextCard.sourceLaneId;
+                  delete nextCard.sourceItemIndex;
+                  delete nextCard.targetLaneId;
+                  return nextCard;
+                }),
               },
             },
           },
@@ -927,7 +938,7 @@ export class StateManager {
     });
 
     const archivedAt = Date.now();
-    const archivedSources: NonNullable<KanbanSettings['archived-card-sources']> = {};
+    let nextCards = sanitizeCards(board.data.settings.cards) || [];
     const archivedItems = await Promise.all(
       archived.map(({ item, sourceLane, sourceItemIndex }) => {
         const blockId = item.data.blockId || generateInstanceId(6);
@@ -935,14 +946,17 @@ export class StateManager {
           ? item
           : update<Item>(item, { data: { blockId: { $set: blockId } } });
 
-        archivedSources[blockId] = {
-          sourceLaneId: sourceLane.id,
-          sourceItemIndex,
-          archivedAt,
-          archiveDateFormat,
-          archiveDateSeparator,
-          archiveDateAfterTitle,
-        };
+        nextCards = updateCard({ ...board.data.settings, cards: nextCards }, blockId, (card) => ({
+          ...card,
+          archived: {
+            sourceLaneId: sourceLane.id,
+            sourceItemIndex,
+            archivedAt,
+            archiveDateFormat,
+            archiveDateSeparator,
+            archiveDateAfterTitle,
+          },
+        }));
 
         return shouldAppendArchiveDate ? appendArchiveDate(itemWithBlockId) : itemWithBlockId;
       })
@@ -956,11 +970,8 @@ export class StateManager {
           },
           data: {
             settings: {
-              'archived-card-sources': {
-                $set: {
-                  ...(board.data.settings['archived-card-sources'] || {}),
-                  ...archivedSources,
-                },
+              cards: {
+                $set: nextCards,
               },
             },
             archive: {

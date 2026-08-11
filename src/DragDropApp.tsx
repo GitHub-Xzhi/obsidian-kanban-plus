@@ -18,6 +18,7 @@ import {
   removeEntity,
   updateEntity,
 } from './dnd/util/data';
+import { getCompletedCardSource, updateCard } from './helpers/cardSettings';
 import { getBoardModifiers } from './helpers/boardModifiers';
 import KanbanPlugin from './main';
 import { frontmatterKey } from './parsers/common';
@@ -34,26 +35,43 @@ function updateCompletedTime(board: Board, item: Item) {
     return board;
   }
 
-  const nextCompletedTimes = { ...(board.data.settings['card-completed-times'] || {}) };
   const isComplete = item.data.checked && item.data.checkChar === getTaskStatusDone();
 
-  if (isComplete && !nextCompletedTimes[blockId]) {
-    nextCompletedTimes[blockId] = Date.now();
-  } else if (!isComplete && nextCompletedTimes[blockId]) {
-    delete nextCompletedTimes[blockId];
+  if (isComplete && !board.data.settings.cards?.find((card) => card.id === blockId)?.['completed-time']) {
+    return update<Board>(board, {
+      data: {
+        settings: {
+          cards: {
+            $set: updateCard(board.data.settings, blockId, (card) => ({
+              ...card,
+              'completed-time': Date.now(),
+            })),
+          },
+        },
+      },
+    });
+  } else if (isComplete) {
+    return board;
+  } else if (getCompletedCardSource(board.data.settings, blockId) || board.data.settings.cards?.find((card) => card.id === blockId)?.['completed-time']) {
+    return update<Board>(board, {
+      data: {
+        settings: {
+          cards: {
+            $set: updateCard(board.data.settings, blockId, (card) => {
+              const nextCard = { ...card };
+              delete nextCard['completed-time'];
+              delete nextCard.sourceLaneId;
+              delete nextCard.sourceItemIndex;
+              delete nextCard.targetLaneId;
+              return nextCard;
+            }),
+          },
+        },
+      },
+    });
   } else {
     return board;
   }
-
-  return update<Board>(board, {
-    data: {
-      settings: {
-        'card-completed-times': {
-          $set: nextCompletedTimes,
-        },
-      },
-    },
-  });
 }
 
 export function createApp(win: Window, plugin: KanbanPlugin) {
@@ -199,19 +217,18 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
           if (entity.type === DataTypes.Item) {
             const blockId = entity.data.blockId;
 
-            if (
-              dragPath[0] !== dropPath[0] &&
-              blockId &&
-              newBoard.data.settings['completed-card-sources']?.[blockId]
-            ) {
-              const nextSources = { ...newBoard.data.settings['completed-card-sources'] };
-              delete nextSources[blockId];
-
+            if (dragPath[0] !== dropPath[0] && blockId && getCompletedCardSource(newBoard.data.settings, blockId)) {
               newBoard = update<Board>(newBoard, {
                 data: {
                   settings: {
-                    'completed-card-sources': {
-                      $set: nextSources,
+                    cards: {
+                      $set: updateCard(newBoard.data.settings, blockId, (card) => {
+                        const nextCard = { ...card };
+                        delete nextCard.sourceLaneId;
+                        delete nextCard.sourceItemIndex;
+                        delete nextCard.targetLaneId;
+                        return nextCard;
+                      }),
                     },
                   },
                 },
@@ -317,15 +334,18 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
           let nextSourceBoard = removeEntity(sourceBoard, dragPath, replacementEntity);
           const blockId = entity.data.blockId;
 
-          if (blockId && nextSourceBoard.data.settings['completed-card-sources']?.[blockId]) {
-            const nextSources = { ...nextSourceBoard.data.settings['completed-card-sources'] };
-            delete nextSources[blockId];
-
+          if (blockId && getCompletedCardSource(nextSourceBoard.data.settings, blockId)) {
             nextSourceBoard = update<Board>(nextSourceBoard, {
               data: {
                 settings: {
-                  'completed-card-sources': {
-                    $set: nextSources,
+                  cards: {
+                    $set: updateCard(nextSourceBoard.data.settings, blockId, (card) => {
+                      const nextCard = { ...card };
+                      delete nextCard.sourceLaneId;
+                      delete nextCard.sourceItemIndex;
+                      delete nextCard.targetLaneId;
+                      return nextCard;
+                    }),
                   },
                 },
               },

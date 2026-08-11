@@ -251,6 +251,10 @@ function buildRuntimeSettings(settings: KanbanSettings, collapseState: boolean[]
     'list-collapse': _legacyCollapseState,
     'default-complete-lane-title': _legacyDefaultCompleteLaneTitle,
     'default-complete-lane-titles': _legacyDefaultCompleteLaneTitles,
+    'completed-card-sources': _legacyCompletedCardSources,
+    'archived-card-sources': _legacyArchivedCardSources,
+    'card-created-times': _legacyCardCreatedTimes,
+    'card-completed-times': _legacyCardCompletedTimes,
     ...runtimeSettings
   } = rawSettings;
 
@@ -441,6 +445,10 @@ function buildPersistedSettings(board: Board): KanbanSettings {
     'default-complete-lane-title': _legacyDefaultCompleteLaneTitle,
     'default-complete-lane-titles': _legacyDefaultCompleteLaneTitles,
     'default-complete-lane-ids': _legacyDefaultCompleteLaneIds,
+    'completed-card-sources': _legacyCompletedCardSources,
+    'archived-card-sources': _legacyArchivedCardSources,
+    'card-created-times': _legacyCardCreatedTimes,
+    'card-completed-times': _legacyCardCompletedTimes,
     ...persistedSettings
   } = rawSettings;
 

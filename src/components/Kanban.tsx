@@ -13,6 +13,7 @@ import { t } from 'src/lang/helpers';
 
 import { DndScope } from '../dnd/components/Scope';
 import { getBoardModifiers } from '../helpers/boardModifiers';
+import { removeCards } from '../helpers/cardSettings';
 import { frontmatterKey } from '../parsers/common';
 import { Icon } from './Icon/Icon';
 import { ArchiveLane } from './Lane/ArchiveLane';
@@ -159,31 +160,10 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
           0,
           board.data.archive.length - nextArchive.length
         );
-        const nextSources = { ...(board.data.settings['archived-card-sources'] || {}) };
-        const nextCreatedTimes = { ...(board.data.settings['card-created-times'] || {}) };
-        const nextCompletedTimes = { ...(board.data.settings['card-completed-times'] || {}) };
-        let didUpdateSources = false;
-        let didUpdateCreatedTimes = false;
-        let didUpdateCompletedTimes = false;
-
-        removedArchive.forEach((item) => {
-          const blockId = item.data.blockId;
-
-          if (blockId && nextSources[blockId]) {
-            delete nextSources[blockId];
-            didUpdateSources = true;
-          }
-
-          if (blockId && nextCreatedTimes[blockId]) {
-            delete nextCreatedTimes[blockId];
-            didUpdateCreatedTimes = true;
-          }
-
-          if (blockId && nextCompletedTimes[blockId]) {
-            delete nextCompletedTimes[blockId];
-            didUpdateCompletedTimes = true;
-          }
-        });
+        const removedBlockIds = removedArchive
+          .map((item) => item.data.blockId)
+          .filter((blockId): blockId is string => !!blockId);
+        const nextCards = removeCards(board.data.settings, removedBlockIds);
 
         return update(board, {
           data: {
@@ -191,27 +171,9 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
               $set: nextArchive,
             },
             settings: {
-              ...(didUpdateSources
-                ? {
-                    'archived-card-sources': {
-                      $set: nextSources,
-                    },
-                  }
-                : {}),
-              ...(didUpdateCreatedTimes
-                ? {
-                    'card-created-times': {
-                      $set: nextCreatedTimes,
-                    },
-                  }
-                : {}),
-              ...(didUpdateCompletedTimes
-                ? {
-                    'card-completed-times': {
-                      $set: nextCompletedTimes,
-                    },
-                  }
-                : {}),
+              cards: {
+                $set: nextCards,
+              },
             },
           },
         });

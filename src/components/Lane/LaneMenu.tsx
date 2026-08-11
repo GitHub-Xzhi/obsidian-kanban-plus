@@ -2,6 +2,7 @@ import update from 'immutability-helper';
 import { Menu, Platform, setTooltip } from 'obsidian';
 import { Dispatch, StateUpdater, useContext, useEffect, useMemo, useState } from 'preact/hooks';
 import { Path } from 'src/dnd/types';
+import { getCardCreatedTime, getCardCompletedTime } from 'src/helpers/cardSettings';
 import { defaultSort } from 'src/helpers/util';
 import { t } from 'src/lang/helpers';
 import { lableToName } from 'src/parsers/helpers/inlineMetadata';
@@ -156,13 +157,11 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     let canSortDate = false;
     let canSortTags = false;
     const completeLanes = stateManager.getCompleteLaneOptions();
-    const cardCreatedTimes = board.data.settings['card-created-times'] || {};
-    const cardCompletedTimes = board.data.settings['card-completed-times'] || {};
     const canSortCreatedTime = lane.children.some(
-      (item) => !!item.data.blockId && !!cardCreatedTimes[item.data.blockId]
+      (item) => !!getCardCreatedTime(board.data.settings, item.data.blockId)
     );
     const canSortCompletedTime = lane.children.some(
-      (item) => !!item.data.blockId && !!cardCompletedTimes[item.data.blockId]
+      (item) => !!getCardCompletedTime(board.data.settings, item.data.blockId)
     );
 
     lane.children.forEach((item) => {
@@ -328,7 +327,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     const addSortOptions = (menu: Menu) => {
       const sortByTime = (
         title: string,
-        times: Record<string, number>,
+        getTime: (blockId?: string) => number | undefined,
         ascSort: LaneSort,
         dscSort: LaneSort
       ) => {
@@ -353,8 +352,8 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
               const mod = lane.data.sorted === ascSort ? -1 : 1;
 
               children.sort((a, b) => {
-                const aTime = a.data.blockId ? times[a.data.blockId] : undefined;
-                const bTime = b.data.blockId ? times[b.data.blockId] : undefined;
+                const aTime = getTime(a.data.blockId);
+                const bTime = getTime(b.data.blockId);
 
                 if (aTime && !bTime) return -1;
                 if (bTime && !aTime) return 1;
@@ -575,13 +574,18 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       }
 
       if (canSortCreatedTime) {
-        sortByTime(t('Created time'), cardCreatedTimes, LaneSort.CreatedAsc, LaneSort.CreatedDsc);
+        sortByTime(
+          t('Created time'),
+          (blockId) => getCardCreatedTime(board.data.settings, blockId),
+          LaneSort.CreatedAsc,
+          LaneSort.CreatedDsc
+        );
       }
 
       if (canSortCompletedTime) {
         sortByTime(
           t('Completed time'),
-          cardCompletedTimes,
+          (blockId) => getCardCompletedTime(board.data.settings, blockId),
           LaneSort.CompletedAsc,
           LaneSort.CompletedDsc
         );
@@ -674,8 +678,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     completeLanesKey,
     showCreatedTime,
     showCompletedTime,
-    board.data.settings['card-created-times'],
-    board.data.settings['card-completed-times'],
+    board.data.settings.cards,
   ]);
 
   return {

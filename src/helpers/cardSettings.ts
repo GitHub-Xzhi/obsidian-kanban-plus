@@ -132,6 +132,32 @@ export function getCard(settings: KanbanSettings | undefined, blockId?: string):
   return getCardMap(settings).get(blockId);
 }
 
+export function getCardCreatedTime(settings: KanbanSettings | undefined, blockId?: string) {
+  return getCard(settings, blockId)?.['created-time'];
+}
+
+export function getCardCompletedTime(settings: KanbanSettings | undefined, blockId?: string) {
+  return getCard(settings, blockId)?.['completed-time'];
+}
+
+export function getCompletedCardSource(settings: KanbanSettings | undefined, blockId?: string) {
+  const card = getCard(settings, blockId);
+
+  if (!card?.sourceLaneId) {
+    return undefined;
+  }
+
+  return {
+    sourceLaneId: card.sourceLaneId,
+    sourceItemIndex: card.sourceItemIndex,
+    targetLaneId: card.targetLaneId,
+  };
+}
+
+export function getArchivedCardSource(settings: KanbanSettings | undefined, blockId?: string) {
+  return getCard(settings, blockId)?.archived;
+}
+
 export function upsertCard(
   settings: KanbanSettings,
   blockId: string,
@@ -169,6 +195,48 @@ export function upsertCard(
   }
 
   return didUpdate ? nextCards : cards;
+}
+
+export function normalizeCard(card: PersistedCard): PersistedCard | undefined {
+  const nextCard: PersistedCard = { id: card.id };
+
+  if (isValidNumber(card['created-time'])) {
+    nextCard['created-time'] = card['created-time'];
+  }
+
+  if (isValidNumber(card['completed-time'])) {
+    nextCard['completed-time'] = card['completed-time'];
+  }
+
+  if (typeof card.sourceLaneId === 'string') {
+    nextCard.sourceLaneId = card.sourceLaneId;
+  }
+
+  if (isValidNumber(card.sourceItemIndex)) {
+    nextCard.sourceItemIndex = card.sourceItemIndex;
+  }
+
+  if (typeof card.targetLaneId === 'string') {
+    nextCard.targetLaneId = card.targetLaneId;
+  }
+
+  if (card.archived) {
+    nextCard.archived = card.archived;
+  }
+
+  return Object.keys(nextCard).length > 1 || nextCard.archived ? nextCard : undefined;
+}
+
+export function updateCard(
+  settings: KanbanSettings,
+  blockId: string,
+  updater: (card: PersistedCard) => PersistedCard | undefined
+): PersistedCards {
+  return upsertCard(settings, blockId, (card) => {
+    const nextCard = updater(card);
+
+    return nextCard ? normalizeCard(nextCard) : undefined;
+  });
 }
 
 export function removeCards(settings: KanbanSettings, blockIds: string[]): PersistedCards | undefined {
