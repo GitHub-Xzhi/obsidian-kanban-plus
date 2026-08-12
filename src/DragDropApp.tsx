@@ -158,6 +158,12 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
 
         return stateManager.setState((board) => {
           const entity = getEntityFromPath(board, dragPath);
+          const sourceParent = getEntityFromPath(board, dragPath.slice(0, -1));
+          const destinationParentBeforeMove = getEntityFromPath(board, dropPath.slice(0, -1));
+          const didLeaveCompleteLane =
+            entity.type === DataTypes.Item &&
+            !!sourceParent?.data?.shouldMarkItemsComplete &&
+            !destinationParentBeforeMove?.data?.shouldMarkItemsComplete;
           let newBoard: Board = moveEntity(
             board,
             dragPath,
@@ -217,7 +223,7 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
           if (entity.type === DataTypes.Item) {
             const blockId = entity.data.blockId;
 
-            if (dragPath[0] !== dropPath[0] && blockId && getCompletedCardSource(newBoard.data.settings, blockId)) {
+            if (didLeaveCompleteLane && blockId && getCompletedCardSource(newBoard.data.settings, blockId)) {
               newBoard = update<Board>(newBoard, {
                 data: {
                   settings: {
@@ -264,6 +270,12 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
 
       sourceStateManager.setState((sourceBoard) => {
         const entity = getEntityFromPath(sourceBoard, dragPath);
+        const sourceParent = getEntityFromPath(sourceBoard, dragPath.slice(0, -1));
+        const destinationParent = getEntityFromPath(destinationStateManager.state, dropPath.slice(0, -1));
+        const didLeaveCompleteLane =
+          entity.type === DataTypes.Item &&
+          !!sourceParent?.data?.shouldMarkItemsComplete &&
+          !destinationParent?.data?.shouldMarkItemsComplete;
         let replacementEntity: Nestable;
 
         destinationStateManager.setState((destinationBoard) => {
@@ -334,7 +346,7 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
           let nextSourceBoard = removeEntity(sourceBoard, dragPath, replacementEntity);
           const blockId = entity.data.blockId;
 
-          if (blockId && getCompletedCardSource(nextSourceBoard.data.settings, blockId)) {
+          if (didLeaveCompleteLane && blockId && getCompletedCardSource(nextSourceBoard.data.settings, blockId)) {
             nextSourceBoard = update<Board>(nextSourceBoard, {
               data: {
                 settings: {
