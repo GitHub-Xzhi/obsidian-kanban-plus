@@ -387,6 +387,7 @@ function getPersistedLaneData(
       settings['default-complete-lane-ids']?.[laneId],
     backgroundColor:
       persistedLane?.['background-color'] || settings['lane-background-colors']?.[laneId],
+    groupBy: persistedLane?.['group-by'],
     sorted: ruleToLaneSort(sortRule),
     sortRule,
     showCreatedTime: persistedLane?.['show-created-time'],
@@ -416,6 +417,10 @@ function buildPersistedLaneSettings(board: Board): PersistedLaneSetting[] {
 
     if (backgroundColor) {
       persistedLane['background-color'] = backgroundColor;
+    }
+
+    if (lane.data.groupBy) {
+      persistedLane['group-by'] = lane.data.groupBy;
     }
 
     if (sortRule) {

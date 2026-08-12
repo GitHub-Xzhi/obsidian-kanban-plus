@@ -42,8 +42,8 @@ function sanitizeArchivedCard(archived: unknown): PersistedArchivedCard | undefi
 
   return {
     sourceLaneId: source.sourceLaneId,
-    sourceItemIndex: source.sourceItemIndex,
-    archivedAt: source.archivedAt,
+    sourceItemIndex: source.sourceItemIndex as number,
+    archivedAt: source.archivedAt as number,
     archiveDateFormat:
       typeof source.archiveDateFormat === 'string' ? source.archiveDateFormat : undefined,
     archiveDateSeparator:
@@ -77,11 +77,11 @@ export function sanitizeCards(cards: unknown): PersistedCards | undefined {
     };
 
     if (isValidNumber(source['created-time'])) {
-      nextCard['created-time'] = source['created-time'];
+      nextCard['created-time'] = source['created-time'] as number;
     }
 
     if (isValidNumber(source['completed-time'])) {
-      nextCard['completed-time'] = source['completed-time'];
+      nextCard['completed-time'] = source['completed-time'] as number;
     }
 
     if (typeof source.sourceLaneId === 'string') {
@@ -89,7 +89,7 @@ export function sanitizeCards(cards: unknown): PersistedCards | undefined {
     }
 
     if (isValidNumber(source.sourceItemIndex)) {
-      nextCard.sourceItemIndex = source.sourceItemIndex;
+      nextCard.sourceItemIndex = source.sourceItemIndex as number;
     }
 
     if (typeof source.targetLaneId === 'string') {

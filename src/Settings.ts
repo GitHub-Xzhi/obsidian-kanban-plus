@@ -61,6 +61,7 @@ export interface PersistedLaneSetting {
   'list-collapse'?: boolean;
   'default-complete-lane-id'?: string;
   'background-color'?: string;
+  'group-by'?: 'created-time' | 'completed-time';
   'sort-rule'?: PersistedLaneSortRule;
   'show-created-time'?: boolean;
   'show-completed-time'?: boolean;
@@ -128,6 +129,7 @@ export interface KanbanViewSettings {
   [frontmatterKey]?: KanbanFormat;
   'list-collapse'?: boolean[];
   'show-archive'?: boolean;
+  'time-group-collapse'?: Record<string, boolean>;
 }
 
 export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([

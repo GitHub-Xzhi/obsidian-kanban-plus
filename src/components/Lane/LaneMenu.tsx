@@ -209,6 +209,28 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         });
     });
 
+    menu.addItem((item) => {
+      item
+        .setIcon('lucide-folders')
+        .setTitle(
+          lane.data.groupBy === 'created-time'
+            ? t('Disable created time grouping')
+            : t('Group by created time')
+        )
+        .onClick(() => {
+          boardModifiers.updateLane(
+            path,
+            update(lane, {
+              data: {
+                groupBy: {
+                  $set: lane.data.groupBy === 'created-time' ? undefined : 'created-time',
+                },
+              },
+            })
+          );
+        });
+    });
+
     if (lane.data.shouldMarkItemsComplete) {
       menu.addItem((item) => {
         item
@@ -221,6 +243,28 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
                 data: {
                   showCompletedTime: {
                     $set: !showCompletedTime,
+                  },
+                },
+              })
+            );
+          });
+      });
+
+      menu.addItem((item) => {
+        item
+          .setIcon('lucide-folders')
+          .setTitle(
+            lane.data.groupBy === 'completed-time'
+              ? t('Disable completed time grouping')
+              : t('Group by completed time')
+          )
+          .onClick(() => {
+            boardModifiers.updateLane(
+              path,
+              update(lane, {
+                data: {
+                  groupBy: {
+                    $set: lane.data.groupBy === 'completed-time' ? undefined : 'completed-time',
                   },
                 },
               })
@@ -355,9 +399,9 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
                 const aTime = getTime(a.data.blockId);
                 const bTime = getTime(b.data.blockId);
 
-                if (aTime && !bTime) return -1;
-                if (bTime && !aTime) return 1;
-                if (!aTime && !bTime) return 0;
+                if (aTime !== undefined && bTime === undefined) return -1;
+                if (bTime !== undefined && aTime === undefined) return 1;
+                if (aTime === undefined && bTime === undefined) return 0;
 
                 return (aTime - bTime) * mod;
               });
@@ -481,7 +525,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
                 if (bDate && !aDate) return 1 * mod;
                 if (!aDate && !bDate) return 0;
 
-                return (aDate.isBefore(bDate) ? -1 : 1) * mod;
+                return (aDate!.isBefore(bDate!) ? -1 : 1) * mod;
               });
 
               boardModifiers.updateLane(

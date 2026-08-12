@@ -1,6 +1,7 @@
 import classcat from 'classcat';
 import {
   JSX,
+  Fragment,
   memo,
   useCallback,
   useContext,
@@ -13,6 +14,8 @@ import { Droppable, useNestedEntityPath } from 'src/dnd/components/Droppable';
 import { DndManagerContext } from 'src/dnd/components/context';
 import { useDragHandle } from 'src/dnd/managers/DragManager';
 import { frontmatterKey } from 'src/parsers/common';
+import { t } from 'src/lang/helpers';
+import { getCardCreatedTime, getCardCompletedTime } from 'src/helpers/cardSettings';
 
 import { KanbanContext, SearchContext } from '../context';
 import { c } from '../helpers';
@@ -199,6 +202,14 @@ interface ItemsProps {
   shouldMarkItemsComplete: boolean;
   showCreatedTime?: boolean;
   showCompletedTime?: boolean;
+  laneId?: string;
+  groupBy?: 'created-time' | 'completed-time';
+}
+
+interface ItemGroup {
+  id: string;
+  title: string;
+  items: Array<{ item: Item; itemIndex: number }>;
 }
 
 export const Items = memo(function Items({
@@ -207,24 +218,102 @@ export const Items = memo(function Items({
   shouldMarkItemsComplete,
   showCreatedTime,
   showCompletedTime,
+  laneId,
+  groupBy,
 }: ItemsProps) {
   const search = useContext(SearchContext);
   const { view } = useContext(KanbanContext);
+  const { stateManager } = useContext(KanbanContext);
   const boardView = view.useViewState(frontmatterKey);
+  const groupedCollapseState = view.useViewState('time-group-collapse') || {};
+
+  const toggleGroup = useCallback(
+    (groupId: string) => {
+      const nextState = {
+        ...groupedCollapseState,
+        [groupId]: !groupedCollapseState[groupId],
+      };
+      view.setViewState('time-group-collapse', nextState);
+    },
+    [groupedCollapseState, view]
+  );
+
+  const groups = useMemo(() => {
+    if (!groupBy || !laneId) {
+      return null;
+    }
+
+    const getTime = (item: Item) => {
+      if (groupBy === 'created-time') {
+        return getCardCreatedTime(stateManager.state.data.settings, item.data.blockId);
+      }
+
+      return getCardCompletedTime(stateManager.state.data.settings, item.data.blockId);
+    };
+
+    const grouped = new Map<string, ItemGroup>();
+
+    items.forEach((item, itemIndex) => {
+      if (search?.query && !search.items.has(item)) {
+        return;
+      }
+
+      const timestamp = getTime(item);
+      const title = timestamp ? window.moment(timestamp).format('YYYY-MM-DD') : 'Unscheduled';
+      const id = `${laneId}:${groupBy}:${title}`;
+
+      if (!grouped.has(id)) {
+        grouped.set(id, {
+          id,
+          title: timestamp ? title : t('No time set'),
+          items: [],
+        });
+      }
+
+      grouped.get(id).items.push({ item, itemIndex });
+    });
+
+    return Array.from(grouped.values());
+  }, [groupBy, items, laneId, search?.items, search?.query, stateManager]);
 
   return (
     <>
-      {items.map((item, i) => {
-        return search?.query && !search.items.has(item) ? null : (
-          <DraggableItem
-            key={boardView + item.id}
-            item={item}
-            itemIndex={i}
-            shouldMarkItemsComplete={shouldMarkItemsComplete}
-            showCreatedTime={showCreatedTime}
-            showCompletedTime={showCompletedTime}
-            isStatic={isStatic}
-          />
+      {(groups || [
+        {
+          id: `${laneId || 'lane'}:all`,
+          title: '',
+          items: items
+            .map((item, itemIndex) => ({ item, itemIndex }))
+            .filter(({ item }) => !(search?.query && !search.items.has(item))),
+        },
+      ]).map((group) => {
+        const isCollapsed = !!groupedCollapseState[group.id];
+
+        return (
+          <Fragment key={group.id}>
+            {!!groupBy && (
+              <button className={c('item-group-header')} onClick={() => toggleGroup(group.id)}>
+                <span className={c('item-group-header-icon')}>{isCollapsed ? '>' : 'v'}</span>
+                <span className={c('item-group-header-title')}>{group.title}</span>
+                <span className={c('item-group-header-count')}>{group.items.length}</span>
+              </button>
+            )}
+
+            {!isCollapsed &&
+              group.items.map(({ item, itemIndex }) => {
+                return (
+                  <DraggableItem
+                    key={boardView + item.id}
+                    item={item}
+                    itemIndex={itemIndex}
+                    shouldMarkItemsComplete={shouldMarkItemsComplete}
+                    showCreatedTime={showCreatedTime}
+                    showCompletedTime={showCompletedTime}
+                    isStatic={isStatic}
+                  />
+                );
+              })}
+          </Fragment>
         );
       })}
     </>

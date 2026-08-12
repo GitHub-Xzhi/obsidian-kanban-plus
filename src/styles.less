@@ -245,6 +245,36 @@
   background-color: var(--background-primary);
 }
 
+.kanban-plugin__item-group-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 8px 0 4px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.kanban-plugin__item-group-header-icon {
+  width: 12px;
+  color: var(--text-muted);
+}
+
+.kanban-plugin__item-group-header-title {
+  flex: 1;
+  text-align: left;
+}
+
+.kanban-plugin__item-group-header-count {
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
 button.kanban-plugin__search-cancel-button {
   display: flex;
   line-height: 1;

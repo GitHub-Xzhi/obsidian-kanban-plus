@@ -200,6 +200,8 @@ function DraggableLaneRaw({
                     <Items
                       items={lane.children}
                       isStatic={isStatic}
+                      laneId={lane.id}
+                      groupBy={lane.data.groupBy}
                       shouldMarkItemsComplete={shouldMarkItemsComplete}
                       showCreatedTime={lane.data.showCreatedTime}
                       showCompletedTime={lane.data.showCompletedTime}

@@ -34,6 +34,7 @@ export interface LaneData {
   forceEditMode?: boolean;
   defaultCompleteLaneId?: string;
   backgroundColor?: string;
+  groupBy?: 'created-time' | 'completed-time';
   sorted?: LaneSort | string;
   sortRule?: { type: string; order?: 'asc' | 'desc' };
   showCreatedTime?: boolean;
