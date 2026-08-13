@@ -1017,22 +1017,6 @@ export class SettingsManager {
                 'group-cards-by-created-time': {
                   $set: newValue,
                 },
-                ...(!newValue
-                  ? {
-                      lanes: {
-                        $apply: (lanes: PersistedLaneSetting[] = []) =>
-                          lanes.map((lane) => {
-                            if (lane['group-by'] !== 'created-time') {
-                              return lane;
-                            }
-
-                            const nextLane = { ...lane };
-                            delete nextLane['group-by'];
-                            return nextLane;
-                          }),
-                      },
-                    }
-                  : {}),
               });
             });
           })
@@ -1125,22 +1109,6 @@ export class SettingsManager {
                 'group-cards-by-completed-time': {
                   $set: newValue,
                 },
-                ...(!newValue
-                  ? {
-                      lanes: {
-                        $apply: (lanes: PersistedLaneSetting[] = []) =>
-                          lanes.map((lane) => {
-                            if (lane['group-by'] !== 'completed-time') {
-                              return lane;
-                            }
-
-                            const nextLane = { ...lane };
-                            delete nextLane['group-by'];
-                            return nextLane;
-                          }),
-                      },
-                    }
-                  : {}),
               });
             });
           })
