@@ -2,15 +2,54 @@ name: Release Obsidian plugin
 
 on:
   push:
+    branches:
+      - main
     tags:
       - '*'
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  ensure-tag:
+    if: startsWith(github.ref, 'refs/heads/')
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+
+      - name: Create version tag when missing
+        run: |
+          git fetch --force --tags
+
+          version=$(node -p "JSON.parse(require('fs').readFileSync('manifest.json', 'utf8')).version")
+
+          if git show-ref --tags --verify --quiet "refs/tags/$version"; then
+            echo "Tag $version already exists."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git tag "$version"
+          git push origin "$version"
+
+  build:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v3
