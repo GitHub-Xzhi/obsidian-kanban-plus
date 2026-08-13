@@ -846,7 +846,7 @@ function FlatpickrInstance(element: HTMLElement, instanceConfig?: Options): Inst
 
     self.monthsDropdownContainer.tabIndex = -1;
 
-    self.monthsDropdownContainer.innerHTML = '';
+    self.monthsDropdownContainer.replaceChildren();
 
     for (let i = 0; i < 12; i++) {
       if (!shouldBuildMonth(i)) continue;
@@ -2050,9 +2050,15 @@ function FlatpickrInstance(element: HTMLElement, instanceConfig?: Options): Inst
   }
 
   function createArrowFragment(svgMarkup: string) {
-    const template = win.document.createElement('template');
-    template.innerHTML = svgMarkup.trim();
-    return template.content.cloneNode(true);
+    const parser = new DOMParser();
+    const svgDocument = parser.parseFromString(svgMarkup.trim(), 'image/svg+xml');
+    const svgElement = svgDocument.documentElement;
+
+    if (svgElement.nodeName === 'parsererror') {
+      return win.document.createDocumentFragment();
+    }
+
+    return win.document.importNode(svgElement, true);
   }
 
   function getDocumentStyleSheet() {

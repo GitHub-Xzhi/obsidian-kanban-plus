@@ -22,6 +22,19 @@ function confirmDatePlugin(pluginConfig: Config): Plugin {
   let confirmContainer: HTMLDivElement;
   const confirmButtonCSSClass = 'flatpickr-confirm';
 
+  const createConfirmIcon = (doc: Document) => {
+    const confirmIcon = config.confirmIcon ?? '';
+    const parser = new DOMParser();
+    const svgDocument = parser.parseFromString(confirmIcon, 'image/svg+xml');
+    const svgElement = svgDocument.documentElement;
+
+    if (svgElement.nodeName === 'parsererror') {
+      return doc.createDocumentFragment();
+    }
+
+    return doc.importNode(svgElement, true);
+  };
+
   return function (fp: Instance) {
     if (fp.config.noCalendar || fp.isMobile) return {};
     return {
@@ -47,7 +60,7 @@ function confirmDatePlugin(pluginConfig: Config): Plugin {
         );
 
         confirmContainer.tabIndex = -1;
-        confirmContainer.innerHTML += config.confirmIcon;
+  confirmContainer.appendChild(createConfirmIcon(fp.calendarContainer.doc));
 
         confirmContainer.addEventListener('click', fp.close);
         fp.calendarContainer.appendChild(confirmContainer);
