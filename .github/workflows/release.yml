@@ -15,6 +15,10 @@ jobs:
     if: startsWith(github.ref, 'refs/heads/')
     runs-on: ubuntu-latest
 
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag_created: ${{ steps.push-tag.outputs.tag_created }}
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -25,14 +29,22 @@ jobs:
         with:
           node-version: '18.x'
 
+      - name: Read version
+        id: version
+        run: |
+          version=$(node -p "JSON.parse(require('fs').readFileSync('manifest.json', 'utf8')).version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Create version tag when missing
+        id: push-tag
         run: |
           git fetch --force --tags
 
-          version=$(node -p "JSON.parse(require('fs').readFileSync('manifest.json', 'utf8')).version")
+          version="${{ steps.version.outputs.version }}"
 
           if git show-ref --tags --verify --quiet "refs/tags/$version"; then
             echo "Tag $version already exists."
+            echo "tag_created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -41,10 +53,16 @@ jobs:
 
           git tag "$version"
           git push origin "$version"
+          echo "tag_created=true" >> "$GITHUB_OUTPUT"
 
   build:
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || startsWith(github.ref, 'refs/heads/')
+    needs:
+      - ensure-tag
     runs-on: ubuntu-latest
+
+    env:
+      RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || needs.ensure-tag.outputs.version }}
 
     steps:
       - uses: actions/checkout@v3
@@ -65,7 +83,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          tag="${GITHUB_REF#refs/tags/}"
+          tag="$RELEASE_TAG"
 
           gh release create "$tag" \
             --title="$tag" \
