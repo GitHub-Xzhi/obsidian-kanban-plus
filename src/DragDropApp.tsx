@@ -28,6 +28,35 @@ import {
   toggleTask,
 } from './parsers/helpers/inlineMetadata';
 
+function updateCompletedSource(
+  board: Board,
+  item: Item,
+  sourceLaneId: string,
+  sourceItemIndex: number,
+  targetLaneId: string
+) {
+  const blockId = item.data.blockId;
+
+  if (!blockId) {
+    return board;
+  }
+
+  return update<Board>(board, {
+    data: {
+      settings: {
+        cards: {
+          $set: updateCard(board.data.settings, blockId, (card) => ({
+            ...card,
+            sourceLaneId,
+            sourceItemIndex,
+            targetLaneId,
+          })),
+        },
+      },
+    },
+  });
+}
+
 function updateCompletedTime(board: Board, item: Item) {
   const blockId = item.data.blockId;
 
@@ -160,6 +189,10 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
           const entity = getEntityFromPath(board, dragPath);
           const sourceParent = getEntityFromPath(board, dragPath.slice(0, -1));
           const destinationParentBeforeMove = getEntityFromPath(board, dropPath.slice(0, -1));
+          const didEnterCompleteLane =
+            entity.type === DataTypes.Item &&
+            dragPath[0] !== dropPath[0] &&
+            !!destinationParentBeforeMove?.data?.shouldMarkItemsComplete;
           const didLeaveCompleteLane =
             entity.type === DataTypes.Item &&
             !!sourceParent?.data?.shouldMarkItemsComplete &&
@@ -221,7 +254,8 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
           }
 
           if (entity.type === DataTypes.Item) {
-            const blockId = entity.data.blockId;
+            const movedItem = getEntityFromPath(newBoard, dropPath) as Item;
+            const blockId = movedItem?.data.blockId;
 
             if (didLeaveCompleteLane && blockId && getCompletedCardSource(newBoard.data.settings, blockId)) {
               newBoard = update<Board>(newBoard, {
@@ -241,7 +275,21 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
               });
             }
 
-            newBoard = updateCompletedTime(newBoard, getEntityFromPath(newBoard, dropPath) as Item);
+            newBoard = updateCompletedTime(newBoard, movedItem);
+
+            if (
+              didEnterCompleteLane &&
+              sourceParent?.type === DataTypes.Lane &&
+              destinationParentBeforeMove?.type === DataTypes.Lane
+            ) {
+              newBoard = updateCompletedSource(
+                newBoard,
+                movedItem,
+                sourceParent.id,
+                dragPath[1],
+                destinationParentBeforeMove.id
+              );
+            }
           }
 
           // Manual drag ordering overrides previous sorted order in the destination lane
@@ -272,6 +320,9 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
         const entity = getEntityFromPath(sourceBoard, dragPath);
         const sourceParent = getEntityFromPath(sourceBoard, dragPath.slice(0, -1));
         const destinationParent = getEntityFromPath(destinationStateManager.state, dropPath.slice(0, -1));
+        const didEnterCompleteLane =
+          entity.type === DataTypes.Item &&
+          !!destinationParent?.data?.shouldMarkItemsComplete;
         const didLeaveCompleteLane =
           entity.type === DataTypes.Item &&
           !!sourceParent?.data?.shouldMarkItemsComplete &&
@@ -309,7 +360,23 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
 
           if (entity.type === DataTypes.Item) {
             let nextDestinationBoard = insertEntity(destinationBoard, dropPath, toInsert);
-            nextDestinationBoard = updateCompletedTime(nextDestinationBoard, toInsert[0] as Item);
+            const insertedItem = toInsert[0] as Item;
+            nextDestinationBoard = updateCompletedTime(nextDestinationBoard, insertedItem);
+
+            if (
+              didEnterCompleteLane &&
+              sourceParent?.type === DataTypes.Lane &&
+              destinationParent?.type === DataTypes.Lane
+            ) {
+              nextDestinationBoard = updateCompletedSource(
+                nextDestinationBoard,
+                insertedItem,
+                sourceParent.id,
+                dragPath[1],
+                destinationParent.id
+              );
+            }
+
             return nextDestinationBoard;
           }
 

@@ -234,8 +234,9 @@ export const Items = memo(function Items({
         [groupId]: !groupedCollapseState[groupId],
       };
       view.setViewState('time-group-collapse', nextState);
+      stateManager.softRefresh();
     },
-    [groupedCollapseState, view]
+    [groupedCollapseState, stateManager, view]
   );
 
   const groups = useMemo(() => {
