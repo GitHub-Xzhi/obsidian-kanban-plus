@@ -22,6 +22,7 @@ import { c } from '../helpers';
 import { EditState, EditingState, Item, isEditing } from '../types';
 import { ItemCheckbox } from './ItemCheckbox';
 import { ItemContent } from './ItemContent';
+import { Icon } from '../Icon/Icon';
 import { useItemMenu } from './ItemMenu';
 import { ItemMenuButton } from './ItemMenuButton';
 import { ItemMetadata } from './MetadataTable';
@@ -294,12 +295,8 @@ export const Items = memo(function Items({
           <Fragment key={group.id}>
             {!!groupBy && (
               <button className={c('item-group-header')} onClick={() => toggleGroup(group.id)}>
-                <span
-                  className={c('item-group-header-icon')}
-                  data-collapsed={isCollapsed ? 'true' : 'false'}
-                >
-                  <span className={c('item-group-header-icon-line')} />
-                  <span className={c('item-group-header-icon-line')} />
+                <span className={c('item-group-header-icon')} data-collapsed={isCollapsed ? 'true' : 'false'}>
+                  <Icon name="chevron-down" />
                 </span>
                 <span className={c('item-group-header-title')}>{group.title}</span>
                 <span className={c('item-group-header-count')}>{group.items.length}</span>

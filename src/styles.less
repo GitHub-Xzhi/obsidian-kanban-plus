@@ -266,33 +266,20 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  position: relative;
   color: var(--text-muted);
 }
 
-.kanban-plugin__item-group-header-icon-line {
-  position: absolute;
-  width: 9px;
-  height: 2px;
-  border-radius: 999px;
-  background: currentColor;
-  transform-origin: center;
+.kanban-plugin__item-group-header-icon > span {
+  display: flex;
+  transition: transform 120ms ease;
 }
 
-.kanban-plugin__item-group-header-icon-line:first-child {
-  transform: translateX(-2px) rotate(40deg);
+.kanban-plugin__item-group-header-icon[data-collapsed='true'] > span {
+  transform: rotate(-90deg);
 }
 
-.kanban-plugin__item-group-header-icon-line:last-child {
-  transform: translateX(2px) rotate(-40deg);
-}
-
-.kanban-plugin__item-group-header-icon[data-collapsed='true'] .kanban-plugin__item-group-header-icon-line:first-child {
-  transform: translateY(-2px) rotate(50deg);
-}
-
-.kanban-plugin__item-group-header-icon[data-collapsed='true'] .kanban-plugin__item-group-header-icon-line:last-child {
-  transform: translateY(2px) rotate(-50deg);
+.kanban-plugin__item-group-header-icon svg {
+  --icon-size: 1rem;
 }
 
 .kanban-plugin__item-group-header-title {
