@@ -14,6 +14,10 @@ Kanban Plus is a Markdown-backed Kanban plugin for Obsidian. It stores boards as
 
 ## 👀 预览 / Preview
 
+> 约 2 MB 文件大小的 GIF 动态预览图，请耐心等待加载。
+>
+> The preview is an approximately 2 MB GIF file. Please wait patiently while it loads.
+
 ![](assets/README/2026-08-14.gif)
 
 ## ✨ 新增功能 / New Features
