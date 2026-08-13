@@ -381,19 +381,13 @@ function getPersistedLaneData(
     normalizeLaneSortRule(persistedLane?.['sort-rule']) ||
     (shouldMarkItemsComplete ? completedTimeDescSortRule : undefined);
 
-  const inheritedGroupBy = settings['group-cards-by-created-time']
-    ? 'created-time'
-    : settings['group-cards-by-completed-time']
-      ? 'completed-time'
-      : undefined;
-
   return {
     defaultCompleteLaneId:
       persistedLane?.['default-complete-lane-id'] ||
       settings['default-complete-lane-ids']?.[laneId],
     backgroundColor:
       persistedLane?.['background-color'] || settings['lane-background-colors']?.[laneId],
-    groupBy: persistedLane?.['group-by'] || inheritedGroupBy,
+    groupBy: persistedLane?.['group-by'],
     sorted: ruleToLaneSort(sortRule),
     sortRule,
     showCreatedTime: persistedLane?.['show-created-time'],

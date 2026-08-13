@@ -49,16 +49,7 @@ function DraggableLaneRaw({
   const path = useNestedEntityPath(laneIndex);
   const laneWidth = stateManager.useSetting('lane-width');
   const fullWidth = boardView === 'list' && stateManager.useSetting('full-list-lane-width');
-  const groupCardsByCreatedTime = stateManager.useSetting('group-cards-by-created-time');
-  const groupCardsByCompletedTime = stateManager.useSetting('group-cards-by-completed-time');
   const insertionMethod = stateManager.useSetting('new-card-insertion-method');
-  const effectiveGroupBy =
-    (groupCardsByCreatedTime && lane.data.groupBy === 'created-time'
-      ? 'created-time'
-      : undefined) ||
-    (groupCardsByCompletedTime && lane.data.groupBy === 'completed-time'
-      ? 'completed-time'
-      : undefined);
   const laneStyles = useMemo(() => {
     const styles: Record<string, string> = {};
 
@@ -210,7 +201,7 @@ function DraggableLaneRaw({
                       items={lane.children}
                       isStatic={isStatic}
                       laneId={lane.id}
-                      groupBy={effectiveGroupBy}
+                      groupBy={lane.data.groupBy}
                       shouldMarkItemsComplete={shouldMarkItemsComplete}
                       showCreatedTime={lane.data.showCreatedTime}
                       showCompletedTime={lane.data.showCompletedTime}
