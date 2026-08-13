@@ -53,9 +53,12 @@ function DraggableLaneRaw({
   const groupCardsByCompletedTime = stateManager.useSetting('group-cards-by-completed-time');
   const insertionMethod = stateManager.useSetting('new-card-insertion-method');
   const effectiveGroupBy =
-    lane.data.groupBy ||
-    (groupCardsByCreatedTime ? 'created-time' : undefined) ||
-    (groupCardsByCompletedTime ? 'completed-time' : undefined);
+    (groupCardsByCreatedTime && lane.data.groupBy === 'created-time'
+      ? 'created-time'
+      : undefined) ||
+    (groupCardsByCompletedTime && lane.data.groupBy === 'completed-time'
+      ? 'completed-time'
+      : undefined);
   const laneStyles = useMemo(() => {
     const styles: Record<string, string> = {};
 

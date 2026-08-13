@@ -2,7 +2,7 @@ import update from 'immutability-helper';
 import { Menu, Platform, setTooltip } from 'obsidian';
 import { Dispatch, StateUpdater, useContext, useEffect, useMemo, useState } from 'preact/hooks';
 import { Path } from 'src/dnd/types';
-import { getCardCreatedTime, getCardCompletedTime } from 'src/helpers/cardSettings';
+import { getCardCompletedTime, getCardCreatedTime } from 'src/helpers/cardSettings';
 import { defaultSort } from 'src/helpers/util';
 import { t } from 'src/lang/helpers';
 import { lableToName } from 'src/parsers/helpers/inlineMetadata';
@@ -144,6 +144,14 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
   const showCompletedTime =
     lane.data.showCompletedTime ??
     stateManager.getSetting('show-card-completed-time-in-complete-lane', board.data.settings);
+  const groupCardsByCreatedTime = stateManager.getSetting(
+    'group-cards-by-created-time',
+    board.data.settings
+  );
+  const groupCardsByCompletedTime = stateManager.getSetting(
+    'group-cards-by-completed-time',
+    board.data.settings
+  );
 
   const completeLanesKey = board.children
     .map(
@@ -209,27 +217,29 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         });
     });
 
-    menu.addItem((item) => {
-      item
-        .setIcon('lucide-folders')
-        .setTitle(
-          lane.data.groupBy === 'created-time'
-            ? t('Disable created time grouping')
-            : t('Group by created time')
-        )
-        .onClick(() => {
-          boardModifiers.updateLane(
-            path,
-            update(lane, {
-              data: {
-                groupBy: {
-                  $set: lane.data.groupBy === 'created-time' ? undefined : 'created-time',
+    if (groupCardsByCreatedTime) {
+      menu.addItem((item) => {
+        item
+          .setIcon('lucide-folders')
+          .setTitle(
+            lane.data.groupBy === 'created-time'
+              ? t('Disable created time grouping')
+              : t('Group by created time')
+          )
+          .onClick(() => {
+            boardModifiers.updateLane(
+              path,
+              update(lane, {
+                data: {
+                  groupBy: {
+                    $set: lane.data.groupBy === 'created-time' ? undefined : 'created-time',
+                  },
                 },
-              },
-            })
-          );
-        });
-    });
+              })
+            );
+          });
+      });
+    }
 
     if (lane.data.shouldMarkItemsComplete) {
       menu.addItem((item) => {
@@ -250,27 +260,29 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           });
       });
 
-      menu.addItem((item) => {
-        item
-          .setIcon('lucide-folders')
-          .setTitle(
-            lane.data.groupBy === 'completed-time'
-              ? t('Disable completed time grouping')
-              : t('Group by completed time')
-          )
-          .onClick(() => {
-            boardModifiers.updateLane(
-              path,
-              update(lane, {
-                data: {
-                  groupBy: {
-                    $set: lane.data.groupBy === 'completed-time' ? undefined : 'completed-time',
+      if (groupCardsByCompletedTime) {
+        menu.addItem((item) => {
+          item
+            .setIcon('lucide-folders')
+            .setTitle(
+              lane.data.groupBy === 'completed-time'
+                ? t('Disable completed time grouping')
+                : t('Group by completed time')
+            )
+            .onClick(() => {
+              boardModifiers.updateLane(
+                path,
+                update(lane, {
+                  data: {
+                    groupBy: {
+                      $set: lane.data.groupBy === 'completed-time' ? undefined : 'completed-time',
+                    },
                   },
-                },
-              })
-            );
-          });
-      });
+                })
+              );
+            });
+        });
+      }
     }
 
     if (completeLanes.length > 0) {
@@ -722,6 +734,8 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     completeLanesKey,
     showCreatedTime,
     showCompletedTime,
+    groupCardsByCreatedTime,
+    groupCardsByCompletedTime,
     board.data.settings.cards,
   ]);
 

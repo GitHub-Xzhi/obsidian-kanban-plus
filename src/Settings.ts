@@ -30,8 +30,8 @@ import {
   TagSortSetting,
   TagSortSettingTemplate,
 } from './components/types';
-import { PersistedCard } from './helpers/cardSettings';
 import { getParentWindow } from './dnd/util/getWindow';
+import { PersistedCard } from './helpers/cardSettings';
 import { KanbanLanguage, getKanbanLanguage, setKanbanLanguage, t } from './lang/helpers';
 import KanbanPlugin from './main';
 import { frontmatterKey } from './parsers/common';
@@ -1023,7 +1023,20 @@ export class SettingsManager {
                         $set: false,
                       },
                     }
-                  : {}),
+                  : {
+                      lanes: {
+                        $apply: (lanes: PersistedLaneSetting[] = []) =>
+                          lanes.map((lane) => {
+                            if (lane['group-by'] !== 'created-time') {
+                              return lane;
+                            }
+
+                            const nextLane = { ...lane };
+                            delete nextLane['group-by'];
+                            return nextLane;
+                          }),
+                      },
+                    }),
               });
             });
           })
@@ -1101,10 +1114,7 @@ export class SettingsManager {
           .addToggle((toggle) => {
             toggleComponent = toggle;
 
-            const [value, globalValue] = this.getSetting(
-              'group-cards-by-completed-time',
-              local
-            );
+            const [value, globalValue] = this.getSetting('group-cards-by-completed-time', local);
 
             if (value !== undefined) {
               toggle.setValue(value as boolean);
@@ -1125,7 +1135,20 @@ export class SettingsManager {
                         $set: false,
                       },
                     }
-                  : {}),
+                  : {
+                      lanes: {
+                        $apply: (lanes: PersistedLaneSetting[] = []) =>
+                          lanes.map((lane) => {
+                            if (lane['group-by'] !== 'completed-time') {
+                              return lane;
+                            }
+
+                            const nextLane = { ...lane };
+                            delete nextLane['group-by'];
+                            return nextLane;
+                          }),
+                      },
+                    }),
               });
             });
           })
