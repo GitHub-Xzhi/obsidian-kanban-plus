@@ -1,5 +1,6 @@
 import { around } from 'monkey-around';
 import {
+  MarkdownFileInfo,
   MarkdownView,
   Platform,
   Plugin,
@@ -748,14 +749,12 @@ export default class KanbanPlugin extends Plugin {
 
     this.register(
       around(this.app.workspace, {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
         setActiveLeaf(next) {
-          return function (...args) {
+          return function (this: typeof app.workspace, ...args: Parameters<typeof next>) {
             next.apply(this, args);
             const view = this.getActiveViewOfType(KanbanView);
             if (view?.activeEditor) {
-              this.activeEditor = view.activeEditor;
+              this.activeEditor = view.activeEditor as MarkdownFileInfo;
             }
           };
         },

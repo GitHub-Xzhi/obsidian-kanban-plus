@@ -86,8 +86,7 @@ export const ItemCell = memo(
       <ExplicitPathContext.Provider value={path}>
         <div
           onContextMenu={onContextMenu}
-          // eslint-disable-next-line react/no-unknown-property
-          onDblClick={onDoubleClick}
+          onDoubleClick={onDoubleClick}
           className={c('item-content-wrapper')}
         >
           <div className={c('item-title-wrapper')}>

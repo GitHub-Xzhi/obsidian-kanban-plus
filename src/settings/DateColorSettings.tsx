@@ -195,8 +195,7 @@ function DateSettings({ dataKeys, onChange, getTimeFormat, getDateFormat }: Date
     const wrapper = createDiv(c('item-metadata'));
     const date = wrapper.createSpan(c('item-metadata-date'));
 
-    wrapper.style.position = 'absolute';
-    wrapper.style.visibility = 'hidden';
+    wrapper.setCssStyles({ position: 'absolute', visibility: 'hidden' });
 
     activeDocument.body.append(wrapper);
 

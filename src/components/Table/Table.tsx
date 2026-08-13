@@ -1,4 +1,5 @@
 import {
+  type ColumnResizeDirection,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -101,9 +102,9 @@ export function TableView({
     getColumnCanGlobalFilter: () => true,
     enableColumnResizing: true,
     columnResizeMode: 'onChange',
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    columnResizeDirection: stateManager.app.vault.getConfig('rightToLeft') ? 'rtl' : 'ltr',
+    columnResizeDirection: (stateManager.app.vault.getConfig('rightToLeft')
+      ? 'rtl'
+      : 'ltr') as ColumnResizeDirection,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),

@@ -176,8 +176,7 @@ function TagSettings({ dataKeys, onChange }: TagSettingsProps) {
     const wrapper = createDiv(c('item-tags'));
     const tag = wrapper.createEl('a', c('item-tag'));
 
-    wrapper.style.position = 'absolute';
-    wrapper.style.visibility = 'hidden';
+    wrapper.setCssStyles({ position: 'absolute', visibility: 'hidden' });
 
     activeDocument.body.append(wrapper);
 

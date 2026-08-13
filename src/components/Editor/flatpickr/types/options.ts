@@ -1,3 +1,4 @@
+import { Platform } from 'obsidian';
 import { Instance } from './instance';
 import { CustomLocale, Locale, key as LocaleKey } from './locale';
 
@@ -343,7 +344,7 @@ export const defaults: ParsedOptions = {
   altFormat: 'F j, Y',
   altInput: false,
   altInputClass: 'form-control input',
-  animate: typeof window === 'object' && window.navigator.userAgent.indexOf('MSIE') === -1,
+  animate: typeof window === 'object' && !Platform.isWin,
   ariaDateFormat: 'F j, Y',
   autoFillDefaultTime: true,
   clickOpens: true,

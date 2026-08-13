@@ -1,3 +1,5 @@
+import { Platform } from 'obsidian';
+
 export function toggleClass(elem: HTMLElement, className: string, bool: boolean) {
   if (bool === true) return elem.classList.add(className);
   elem.classList.remove(className);
@@ -41,7 +43,7 @@ export function createNumberInput(
     arrowUp = createElement<HTMLSpanElement>(doc, 'span', 'arrowUp'),
     arrowDown = createElement<HTMLSpanElement>(doc, 'span', 'arrowDown');
 
-  if (navigator.userAgent.indexOf('MSIE 9.0') === -1) {
+  if (!Platform.isWin) {
     numInput.type = 'number';
   } else {
     numInput.type = 'text';
