@@ -282,6 +282,10 @@ export class StateManager {
         this.getSettingRaw('show-toggle-all-card-created-times', suppliedSettings) ?? true,
       'show-toggle-all-card-completed-times':
         this.getSettingRaw('show-toggle-all-card-completed-times', suppliedSettings) ?? true,
+      'group-cards-by-created-time':
+        this.getSettingRaw('group-cards-by-created-time', suppliedSettings) ?? false,
+      'group-cards-by-completed-time':
+        this.getSettingRaw('group-cards-by-completed-time', suppliedSettings) ?? false,
       'show-search': this.getSettingRaw('show-search', suppliedSettings) ?? true,
       'show-set-view': this.getSettingRaw('show-set-view', suppliedSettings) ?? true,
       'tag-colors': this.getSettingRaw('tag-colors', suppliedSettings) ?? [],

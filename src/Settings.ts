@@ -109,6 +109,8 @@ export interface KanbanSettings {
   'show-board-settings'?: boolean;
   'show-toggle-all-card-created-times'?: boolean;
   'show-toggle-all-card-completed-times'?: boolean;
+  'group-cards-by-created-time'?: boolean;
+  'group-cards-by-completed-time'?: boolean;
   'show-card-created-time'?: boolean;
   'show-card-created-time-in-complete-lane'?: boolean;
   'show-card-completed-time-in-complete-lane'?: boolean;
@@ -173,6 +175,8 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'show-board-settings',
   'show-toggle-all-card-created-times',
   'show-toggle-all-card-completed-times',
+  'group-cards-by-created-time',
+  'group-cards-by-completed-time',
   'show-card-created-time',
   'show-card-created-time-in-complete-lane',
   'show-card-completed-time-in-complete-lane',
@@ -988,6 +992,55 @@ export class SettingsManager {
           });
       });
 
+    new Setting(contentEl)
+      .setName(t('Group cards by created time'))
+      .setDesc(t('When toggled, cards will be grouped by created date.'))
+      .then((setting) => {
+        let toggleComponent: ToggleComponent;
+
+        setting
+          .addToggle((toggle) => {
+            toggleComponent = toggle;
+
+            const [value, globalValue] = this.getSetting('group-cards-by-created-time', local);
+
+            if (value !== undefined) {
+              toggle.setValue(value as boolean);
+            } else if (globalValue !== undefined) {
+              toggle.setValue(globalValue as boolean);
+            } else {
+              toggle.setValue(false);
+            }
+
+            toggle.onChange((newValue) => {
+              this.applySettingsUpdate({
+                'group-cards-by-created-time': {
+                  $set: newValue,
+                },
+                ...(newValue
+                  ? {
+                      'group-cards-by-completed-time': {
+                        $set: false,
+                      },
+                    }
+                  : {}),
+              });
+            });
+          })
+          .addExtraButton((b) => {
+            b.setIcon('lucide-rotate-ccw')
+              .setTooltip(t('Reset to default'))
+              .onClick(() => {
+                const [, globalValue] = this.getSetting('group-cards-by-created-time', local);
+                toggleComponent.setValue(!!globalValue);
+
+                this.applySettingsUpdate({
+                  $unset: ['group-cards-by-created-time'],
+                });
+              });
+          });
+      });
+
     new Setting(contentEl).setName(t('Completed time format')).then((setting) => {
       setting.addMomentFormat((mf) => {
         setting.descEl.appendChild(
@@ -1037,6 +1090,58 @@ export class SettingsManager {
         });
       });
     });
+
+    new Setting(contentEl)
+      .setName(t('Group cards by completed time'))
+      .setDesc(t('When toggled, cards will be grouped by completed date.'))
+      .then((setting) => {
+        let toggleComponent: ToggleComponent;
+
+        setting
+          .addToggle((toggle) => {
+            toggleComponent = toggle;
+
+            const [value, globalValue] = this.getSetting(
+              'group-cards-by-completed-time',
+              local
+            );
+
+            if (value !== undefined) {
+              toggle.setValue(value as boolean);
+            } else if (globalValue !== undefined) {
+              toggle.setValue(globalValue as boolean);
+            } else {
+              toggle.setValue(false);
+            }
+
+            toggle.onChange((newValue) => {
+              this.applySettingsUpdate({
+                'group-cards-by-completed-time': {
+                  $set: newValue,
+                },
+                ...(newValue
+                  ? {
+                      'group-cards-by-created-time': {
+                        $set: false,
+                      },
+                    }
+                  : {}),
+              });
+            });
+          })
+          .addExtraButton((b) => {
+            b.setIcon('lucide-rotate-ccw')
+              .setTooltip(t('Reset to default'))
+              .onClick(() => {
+                const [, globalValue] = this.getSetting('group-cards-by-completed-time', local);
+                toggleComponent.setValue(!!globalValue);
+
+                this.applySettingsUpdate({
+                  $unset: ['group-cards-by-completed-time'],
+                });
+              });
+          });
+      });
 
     new Setting(contentEl).setName(t('Date display format')).then((setting) => {
       setting.addMomentFormat((mf) => {

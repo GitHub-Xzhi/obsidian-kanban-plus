@@ -289,8 +289,14 @@ const en = {
   'Hide created time': 'Hide created time',
   'Show completed time': 'Show completed time',
   'Hide completed time': 'Hide completed time',
+  'Group cards by created time': 'Group cards by created time',
+  'When toggled, cards will be grouped by created date.':
+    'When toggled, cards will be grouped by created date.',
   'Group by created time': 'Group by created time',
   'Disable created time grouping': 'Disable created time grouping',
+  'Group cards by completed time': 'Group cards by completed time',
+  'When toggled, cards will be grouped by completed date.':
+    'When toggled, cards will be grouped by completed date.',
   'Group by completed time': 'Group by completed time',
   'Disable completed time grouping': 'Disable completed time grouping',
   'Show all created times': 'Show all created times',
