@@ -294,7 +294,13 @@ export const Items = memo(function Items({
           <Fragment key={group.id}>
             {!!groupBy && (
               <button className={c('item-group-header')} onClick={() => toggleGroup(group.id)}>
-                <span className={c('item-group-header-icon')}>{isCollapsed ? '>' : 'v'}</span>
+                <span
+                  className={c('item-group-header-icon')}
+                  data-collapsed={isCollapsed ? 'true' : 'false'}
+                >
+                  <span className={c('item-group-header-icon-line')} />
+                  <span className={c('item-group-header-icon-line')} />
+                </span>
                 <span className={c('item-group-header-title')}>{group.title}</span>
                 <span className={c('item-group-header-count')}>{group.items.length}</span>
               </button>

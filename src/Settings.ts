@@ -1009,7 +1009,7 @@ export class SettingsManager {
             } else if (globalValue !== undefined) {
               toggle.setValue(globalValue as boolean);
             } else {
-              toggle.setValue(false);
+              toggle.setValue(true);
             }
 
             toggle.onChange((newValue) => {
@@ -1101,7 +1101,7 @@ export class SettingsManager {
             } else if (globalValue !== undefined) {
               toggle.setValue(globalValue as boolean);
             } else {
-              toggle.setValue(false);
+              toggle.setValue(true);
             }
 
             toggle.onChange((newValue) => {
