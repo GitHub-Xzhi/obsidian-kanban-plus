@@ -1,4 +1,4 @@
-# Kanban Plus
+# Kanban Plus++
 
 > 本项目基于 [community-archive/obsidian-kanban](https://github.com/community-archive/obsidian-kanban) 进行修改与扩展。
 > 感谢原项目优秀的开源工作！
@@ -8,9 +8,9 @@
 
 ## 📖 项目简介 / Overview
 
-Kanban Plus 是一个适用于 Obsidian 的 Markdown 看板插件。它以普通 Markdown 文件保存看板内容，支持看板、列表和表格视图，并在原有看板体验上扩展了完成列自动流转、来源追踪、取消归档、卡片时间记录、时间排序和列样式自定义等能力。
+Kanban Plus++ 是一个适用于 Obsidian 的 Markdown 看板插件。它以普通 Markdown 文件保存看板内容，支持看板、列表和表格视图，并在原有看板体验上扩展了完成列自动流转、来源追踪、取消归档、卡片时间记录、时间排序和列样式自定义等能力。
 
-Kanban Plus is a Markdown-backed Kanban plugin for Obsidian. It stores boards as regular Markdown files, supports board, list, and table views, and extends the original Kanban workflow with automatic complete-list movement, source tracking, unarchive support, card time records, time-based sorting, and per-list styling.
+Kanban Plus++ is a Markdown-backed Kanban plugin for Obsidian. It stores boards as regular Markdown files, supports board, list, and table views, and extends the original Kanban workflow with automatic complete-list movement, source tracking, unarchive support, card time records, time-based sorting, and per-list styling.
 
 ## 👀 预览 / Preview
 
@@ -65,26 +65,26 @@ Kanban Plus is a Markdown-backed Kanban plugin for Obsidian. It stores boards as
 ### 从 Obsidian 社区插件安装 / From Obsidian Community Plugins
 
 1. 打开 Obsidian -> **设置 -> 第三方插件**。
-2. 点击 **浏览**，搜索 **Kanban Plus**。
+2. 点击 **浏览**，搜索 **Kanban Plus++**。
 3. 点击 **安装**，然后 **启用**。
 
 ---
 
 1. Open Obsidian -> **Settings -> Community plugins**.
-2. Click **Browse** and search for **Kanban Plus**.
+2. Click **Browse** and search for **Kanban Plus++**.
 3. Click **Install**, then **Enable**.
 
 ### 从 GitHub Releases 安装 / From GitHub Releases
 
 1. 从最新 [release](../../releases) 下载 `main.js`、`styles.css` 和 `manifest.json`。
-2. 放入 `<vault>/.obsidian/plugins/kanban-plus`。
-3. 重启 Obsidian，在 **设置 -> 第三方插件** 中启用 **Kanban Plus**。
+2. 放入 `<vault>/.obsidian/plugins/kanban-plus-xzhi`。
+3. 重启 Obsidian，在 **设置 -> 第三方插件** 中启用 **Kanban Plus++**。
 
 ---
 
 1. Download `main.js`, `styles.css`, and `manifest.json` from the latest [release](../../releases).
-2. Place them in `<vault>/.obsidian/plugins/kanban-plus`.
-3. Restart Obsidian, then enable **Kanban Plus** from **Settings -> Community plugins**.
+2. Place them in `<vault>/.obsidian/plugins/kanban-plus-xzhi`.
+3. Restart Obsidian, then enable **Kanban Plus++** from **Settings -> Community plugins**.
 
 ## 🚀 使用 / Usage
 
