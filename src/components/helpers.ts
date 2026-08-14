@@ -44,11 +44,16 @@ export function maybeCompleteForMove(
   destinationPath: Path,
   item: Item
 ): { next: Item; replacement?: Item } {
-  const sourceParent = getEntityFromPath(sourceBoard, sourcePath.slice(0, -1));
-  const destinationParent = getEntityFromPath(destinationBoard, destinationPath.slice(0, -1));
+  const sourceParent = getEntityFromPath(sourceBoard, sourcePath.slice(0, -1)) as Board | Lane;
+  const destinationParent = getEntityFromPath(destinationBoard, destinationPath.slice(0, -1)) as
+    | Board
+    | Lane;
 
-  const oldShouldComplete = sourceParent?.data?.shouldMarkItemsComplete;
-  const newShouldComplete = destinationParent?.data?.shouldMarkItemsComplete;
+  const sourceLane = sourceParent.type === 'lane' ? sourceParent : null;
+  const destinationLane = destinationParent.type === 'lane' ? destinationParent : null;
+
+  const oldShouldComplete = !!sourceLane?.data.shouldMarkItemsComplete;
+  const newShouldComplete = !!destinationLane?.data.shouldMarkItemsComplete;
 
   // If neither the old or new lane set it complete, leave it alone
   if (!oldShouldComplete && !newShouldComplete) return { next: item };
@@ -130,7 +135,7 @@ export async function applyTemplate(stateManager: StateManager, templatePath?: s
     : null;
 
   if (templateFile && templateFile instanceof TFile) {
-    const activeView = app.workspace.getActiveViewOfType(MarkdownView);
+    const activeView = stateManager.app.workspace.getActiveViewOfType(MarkdownView);
 
     try {
       // Force the view to source mode, if needed
@@ -173,16 +178,61 @@ export async function applyTemplate(stateManager: StateManager, templatePath?: s
       );
     } catch (e) {
       console.error(e);
-      stateManager.setError(e);
+      stateManager.setError(e instanceof Error ? e : new Error(String(e)));
     }
   }
 }
 
+interface InternalPluginEntry {
+  enabled?: boolean;
+  instance?: {
+    options?: {
+      format?: string;
+      dateFormat?: string;
+      timeFormat?: string;
+      folder?: string;
+    };
+    insertTemplate?: (file: TFile) => Promise<void>;
+  };
+}
+
+interface TemplaterPlugin {
+  settings?: {
+    template_folder?: string;
+    empty_file_template?: string;
+  };
+  templater?: {
+    append_template_to_active_file: (file: TFile) => Promise<void>;
+  };
+}
+
+interface TemplatesPlugin {
+  enabled?: boolean;
+  instance?: {
+    options?: {
+      folder?: string;
+    };
+    insertTemplate?: (file: TFile) => Promise<void>;
+  };
+}
+
+interface ObsidianPluginApp extends App {
+  internalPlugins?: {
+    plugins: Record<string, InternalPluginEntry>;
+  };
+  plugins?: {
+    enabledPlugins: Set<string>;
+    plugins: Record<string, TemplaterPlugin | undefined>;
+  };
+}
+
 export function getDefaultDateFormat(app: App) {
-  const internalPlugins = (app as any).internalPlugins.plugins;
+  const internalPlugins = (app as ObsidianPluginApp).internalPlugins?.plugins ?? {};
   const dailyNotesEnabled = internalPlugins['daily-notes']?.enabled;
   const dailyNotesValue = internalPlugins['daily-notes']?.instance.options.format;
-  const nlDatesValue = (app as any).plugins.plugins['nldates-obsidian']?.settings.format;
+  const nlDatesValue = ((app as ObsidianPluginApp).plugins?.plugins['nldates-obsidian'] as {
+    settings?: { format?: string };
+  })?.settings?.format;
   const templatesEnabled = internalPlugins.templates?.enabled;
   const templatesValue = internalPlugins.templates?.instance.options.dateFormat;
 
@@ -195,8 +245,10 @@ export function getDefaultDateFormat(app: App) {
 }
 
 export function getDefaultTimeFormat(app: App) {
-  const internalPlugins = (app as any).internalPlugins.plugins;
-  const nlDatesValue = (app as any).plugins.plugins['nldates-obsidian']?.settings.timeFormat;
+  const internalPlugins = (app as ObsidianPluginApp).internalPlugins?.plugins ?? {};
+  const nlDatesValue = ((app as ObsidianPluginApp).plugins?.plugins['nldates-obsidian'] as {
+    settings?: { timeFormat?: string };
+  })?.settings?.timeFormat;
   const templatesEnabled = internalPlugins.templates?.enabled;
   const templatesValue = internalPlugins.templates?.instance.options.timeFormat;
 
@@ -211,18 +263,18 @@ export function escapeRegExpStr(str: string) {
 }
 
 export function getTemplatePlugins(app: App) {
-  const templatesPlugin = (app as any).internalPlugins.plugins.templates;
-  const templatesEnabled = templatesPlugin.enabled;
-  const templaterPlugin = (app as any).plugins.plugins['templater-obsidian'];
-  const templaterEnabled = (app as any).plugins.enabledPlugins.has('templater-obsidian');
+  const pluginApp = app as ObsidianPluginApp;
+  const templatesPlugin = pluginApp.internalPlugins?.plugins.templates;
+  const templatesEnabled = !!templatesPlugin?.enabled;
+  const templaterPlugin = pluginApp.plugins?.plugins['templater-obsidian'];
+  const templaterEnabled = !!pluginApp.plugins?.enabledPlugins.has('templater-obsidian');
   const templaterEmptyFileTemplate =
-    templaterPlugin &&
-    (this.app).plugins.plugins['templater-obsidian'].settings?.empty_file_template;
+    templaterPlugin?.settings?.empty_file_template;
 
   const templateFolder = templatesEnabled
-    ? templatesPlugin.instance.options.folder
+    ? templatesPlugin?.instance?.options?.folder
     : templaterPlugin
-      ? templaterPlugin.settings.template_folder
+      ? templaterPlugin.settings?.template_folder
       : undefined;
 
   return {

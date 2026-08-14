@@ -53,6 +53,7 @@ SOFTWARE.
 import { TFile } from 'obsidian';
 import { RRule } from 'rrule';
 import { Item } from 'src/components/types';
+import KanbanPlugin from 'src/main';
 import { t } from 'src/lang/helpers';
 
 export enum Priority {
@@ -84,7 +85,7 @@ export const DEFAULT_SYMBOLS = {
   idSymbol: '🆔',
 } as const;
 
-export function lableToIcon(label: string, value: any) {
+export function lableToIcon(label: string, value: Priority | string) {
   switch (label) {
     case 'priority':
       return priorityToIcon(value);
@@ -170,18 +171,69 @@ export function iconToPriority(icon: string) {
   return null;
 }
 
+interface TasksPluginStatus {
+  type?: string;
+  symbol?: string;
+  nextStatusSymbol?: string;
+}
+
+interface TasksPluginSettings {
+  taskFormat?: string;
+  recurrenceOnNextLine?: boolean;
+  statusSettings?: {
+    coreStatuses?: TasksPluginStatus[];
+    customStatuses?: TasksPluginStatus[];
+  };
+}
+
+interface TasksPluginApi {
+  executeToggleTaskDoneCommand?: (item: string, filePath: string) => string | null;
+}
+
+interface TasksPluginInstance {
+  apiV1?: TasksPluginApi;
+}
+
+interface DataviewPluginInstance {
+  index?: {
+    inlineField?: {
+      parseInlineField?: (line: string) => InlineField[] | null;
+    };
+  };
+}
+
+interface TasksPluginHost {
+  workspace: {
+    editorSuggest: {
+      suggests: Array<{ settings?: TasksPluginSettings }>;
+    };
+  };
+  plugins: {
+    enabledPlugins: Set<string>;
+    plugins: Record<string, TasksPluginInstance | undefined>;
+  };
+}
+
+let pluginHost: TasksPluginHost | null = null;
+let dataviewHost: DataviewPluginInstance | null = null;
+
+export function setTasksPluginHost(plugin: KanbanPlugin) {
+  pluginHost = plugin.app as unknown as TasksPluginHost;
+  dataviewHost = (plugin.app as unknown as {
+    plugins?: { plugins: Record<string, DataviewPluginInstance | undefined> };
+  }).plugins?.plugins['dataview'] || null;
+}
+
 export function getTasksPlugin() {
-  if (!(app as any).plugins.enabledPlugins.has('obsidian-tasks-plugin')) {
+  if (!pluginHost?.plugins.enabledPlugins.has('obsidian-tasks-plugin')) {
     return null;
   }
 
-  return (app as any).plugins.plugins['obsidian-tasks-plugin'];
+  return pluginHost.plugins.plugins['obsidian-tasks-plugin'] || null;
 }
 
 function getTasksPluginSettings() {
-  return (app as any).workspace.editorSuggest.suggests.find(
-    (s: any) => s.settings && s.settings.taskFormat
-  )?.settings;
+  return pluginHost?.workspace.editorSuggest.suggests.find((s) => s.settings?.taskFormat)?.settings;
 }
 
 export function getTaskStatusDone(): string {
@@ -189,8 +241,8 @@ export function getTaskStatusDone(): string {
   const statuses = settings?.statusSettings;
   if (!statuses) return 'x';
 
-  let done = statuses.coreStatuses?.find((s: any) => s.type === 'DONE');
-  if (!done) done = statuses.customStatuses?.find((s: any) => s.type === 'DONE');
+  let done = statuses.coreStatuses?.find((s) => s.type === 'DONE');
+  if (!done) done = statuses.customStatuses?.find((s) => s.type === 'DONE');
   if (!done) return 'x';
 
   return done.symbol;
@@ -203,8 +255,8 @@ export function getTaskStatusPreDone(): string {
 
   const done = getTaskStatusDone();
 
-  let preDone = statuses.coreStatuses?.find((s: any) => s.nextStatusSymbol === done);
-  if (!preDone) preDone = statuses.customStatuses?.find((s: any) => s.nextStatusSymbol === done);
+  let preDone = statuses.coreStatuses?.find((s) => s.nextStatusSymbol === done);
+  if (!preDone) preDone = statuses.customStatuses?.find((s) => s.nextStatusSymbol === done);
   if (!preDone) return ' ';
 
   return preDone.symbol;
@@ -455,9 +507,9 @@ export function extractInlineFields(
 }
 
 export function getDataviewPlugin() {
-  if (!(app as any).plugins.enabledPlugins.has('dataview')) {
+  if (!dataviewHost) {
     return null;
   }
 
-  return (app as any).plugins.plugins['dataview'];
+  return dataviewHost;
 }
