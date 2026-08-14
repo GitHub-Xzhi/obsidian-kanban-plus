@@ -29,20 +29,78 @@ interface MarkdownEditorProps {
   placeholder?: string;
 }
 
+interface VaultConfigLike {
+  showLineNumber?: boolean;
+  foldHeading?: boolean;
+  foldIndent?: boolean;
+  [key: string]: unknown;
+}
+
+interface WorkspaceAppLike {
+  activeEditor: unknown;
+}
+
+interface MobileToolbarLike {
+  update(): void;
+}
+
+interface EditorAppLike {
+  vault: typeof KanbanView.prototype.app.vault & { config: VaultConfigLike; getConfig(key: string): boolean };
+  workspace: WorkspaceAppLike;
+  mobileToolbar?: MobileToolbarLike;
+}
+
+interface VimPluginValue {
+  useNextTextInput: unknown;
+  waitForCopy: unknown;
+  cm: string;
+}
+
+interface MarkdownController {
+  app: KanbanView['app'];
+  showSearch: typeof noop;
+  toggleMode: typeof noop;
+  onMarkdownScroll: typeof noop;
+  getMode: () => 'source';
+  scroll: number;
+  editMode: unknown;
+  readonly editor: ObsidianEditor;
+  readonly file: KanbanView['file'];
+  readonly path: string;
+}
+
+interface EditorOwnerLike extends ObsidianEditor {
+  newlineAndIndentContinueMarkdownList(): void;
+}
+
+interface MarkdownEditorInstance {
+  cm: EditorView;
+  owner: EditorOwnerLike;
+  app: EditorAppLike;
+  editor: EditorOwnerLike;
+  set(value: string): void;
+  onUpdate?(update: ViewUpdate, changed: boolean): void;
+  buildLocalExtensions?(): Extension[];
+}
+
+interface MarkdownEditorCtor {
+  new (app: EditorAppLike, el: HTMLDivElement | undefined, controller: MarkdownController): MarkdownEditorInstance;
+}
+
 export function allowNewLine(stateManager: StateManager, mod: boolean, shift: boolean) {
   if (Platform.isMobile) return !(mod || shift);
   return stateManager.getSetting('new-line-trigger') === 'enter' ? !(mod || shift) : mod || shift;
 }
 
-function getEditorAppProxy(view: KanbanView) {
+function getEditorAppProxy(view: KanbanView): EditorAppLike {
   return new Proxy(view.app, {
-    get(target, prop, reveiver) {
+    get(target, prop, reveiver): unknown {
       if (prop === 'vault') {
         return new Proxy(view.app.vault, {
-          get(target, prop, reveiver) {
+          get(target, prop, reveiver): unknown {
             if (prop === 'config') {
-              return new Proxy((view.app.vault as any).config, {
-                get(target, prop, reveiver) {
+              return new Proxy((view.app.vault as { config: VaultConfigLike }).config, {
+                get(target, prop, reveiver): unknown {
                   if (['showLineNumber', 'foldHeading', 'foldIndent'].includes(prop as string)) {
                     return false;
                   }
@@ -62,7 +120,7 @@ function getEditorAppProxy(view: KanbanView) {
 function getMarkdownController(
   view: KanbanView,
   getEditor: () => ObsidianEditor
-): Record<any, any> {
+): MarkdownController {
   return {
     app: view.app,
     showSearch: noop,
@@ -86,15 +144,31 @@ function getMarkdownController(
 function setInsertMode(cm: EditorView) {
   const vim = getVimPlugin(cm);
   if (vim) {
-    (window as any).CodeMirrorAdapter?.Vim?.enterInsertMode(vim);
+    ((window as unknown as { CodeMirrorAdapter?: { Vim?: { enterInsertMode(vim: string): void } } })
+      .CodeMirrorAdapter?.Vim?.enterInsertMode(vim));
   }
 }
 
-function getVimPlugin(cm: EditorView): string {
-  return (cm as any)?.plugins?.find((p: any) => {
-    if (!p?.value) return false;
-    return 'useNextTextInput' in p.value && 'waitForCopy' in p.value;
-  })?.value?.cm;
+function getVimPlugin(cm: EditorView): string | undefined {
+  const rawPlugins = (cm as EditorView & { plugins?: unknown[] }).plugins || [];
+
+  for (const plugin of rawPlugins) {
+    if (!plugin || typeof plugin !== 'object' || !('value' in plugin)) continue;
+
+    const value = plugin.value;
+    if (
+      value &&
+      typeof value === 'object' &&
+      'useNextTextInput' in value &&
+      'waitForCopy' in value &&
+      'cm' in value &&
+      typeof value.cm === 'string'
+    ) {
+      return value.cm;
+    }
+  }
+
+  return undefined;
 }
 
 export function MarkdownEditor({
@@ -114,7 +188,9 @@ export function MarkdownEditor({
   const internalRef = useRef<EditorView>();
 
   useEffect(() => {
-    class Editor extends view.plugin.MarkdownEditor {
+    const BaseEditor = view.plugin.MarkdownEditor as MarkdownEditorCtor;
+
+    class Editor extends BaseEditor {
       isKanbanEditor = true;
 
       showTasksPluginAutoSuggest(
@@ -134,7 +210,7 @@ export function MarkdownEditor({
         onChange && onChange(update);
       }
       buildLocalExtensions(): Extension[] {
-        const extensions = super.buildLocalExtensions();
+        const extensions = super.buildLocalExtensions?.() || [];
 
         extensions.push(stateManagerField.init(() => stateManager));
         extensions.push(datePlugins);
@@ -148,9 +224,9 @@ export function MarkdownEditor({
                 }
 
                 evt.win.setTimeout(() => {
-                  this.app.workspace.activeEditor = this.owner;
+                    this.app.workspace.activeEditor = this.owner;
                   if (Platform.isMobile) {
-                    this.app.mobileToolbar.update();
+                      this.app.mobileToolbar?.update();
                   }
                 });
                 return true;
@@ -158,7 +234,7 @@ export function MarkdownEditor({
               blur: () => {
                 if (Platform.isMobile) {
                   view.contentEl.removeClass('is-mobile-editing');
-                  this.app.mobileToolbar.update();
+                    this.app.mobileToolbar?.update();
                 }
                 return true;
               },
@@ -219,9 +295,10 @@ export function MarkdownEditor({
       }
     }
 
+    let editor: MarkdownEditorInstance;
     const controller = getMarkdownController(view, () => editor.editor);
     const app = getEditorAppProxy(view);
-    const editor = view.plugin.addChild(new (Editor as any)(app, elRef.current, controller));
+    editor = view.plugin.addChild(new Editor(app, elRef.current, controller)) as MarkdownEditorInstance;
     const cm: EditorView = editor.cm;
 
     internalRef.current = cm;
@@ -258,7 +335,7 @@ export function MarkdownEditor({
 
         if (app.workspace.activeEditor === controller) {
           app.workspace.activeEditor = null;
-          (app as any).mobileToolbar.update();
+          app.mobileToolbar?.update();
           view.contentEl.removeClass('is-mobile-editing');
         }
       }

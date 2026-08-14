@@ -14,6 +14,66 @@ import { Instance } from '../Editor/flatpickr/types/instance';
 import { c, escapeRegExpStr } from '../helpers';
 import { Item } from '../types';
 
+interface ClipboardImageLike {
+  isEmpty(): boolean;
+  toPNG(): ArrayBuffer;
+}
+
+interface ClipboardLike {
+  has(format: string): boolean;
+  read(format: string): string;
+  readImage(format?: string): ClipboardImageLike;
+  readBuffer(format: string): { toString(encoding: string): string };
+  availableFormats(): string[];
+}
+
+interface ElectronLike {
+  remote: {
+    clipboard: ClipboardLike;
+  };
+}
+
+interface FsPromisesLike {
+  copyFile(source: string, destination: string): Promise<void>;
+}
+
+interface PathModuleLike {
+  join(...paths: string[]): string;
+}
+
+type VaultWithAttachmentPaths = StateManager['app']['vault'] & {
+  getAvailablePathForAttachments(
+    fileName: string,
+    ext: string,
+    sourceFile: TFile
+  ): Promise<string>;
+  adapter: {
+    basePath?: string;
+  };
+};
+
+type DraggableData =
+  | { type: 'file'; file: TFile }
+  | { type: 'files'; files: TFile[] }
+  | { type: 'folder'; file: TFolder & { children: Array<TFile | TFolder> } }
+  | { type: 'link'; file?: TFile; linktext: string }
+  | null;
+
+function getElectronClipboard(win: Window & typeof window): ClipboardLike {
+  return (win.require('electron') as ElectronLike).remote.clipboard;
+}
+
+function getVaultWithAttachmentPaths(stateManager: StateManager): VaultWithAttachmentPaths {
+  return stateManager.app.vault as VaultWithAttachmentPaths;
+}
+
+function getDragEntity(stateManager: StateManager): DraggableData {
+  return (
+    (stateManager.app as unknown as { dragManager?: { draggable?: DraggableData } }).dragManager
+      ?.draggable || null
+  );
+}
+
 export function constructDatePicker(
   win: Window,
   stateManager: StateManager,
@@ -331,15 +391,15 @@ interface FileData {
 }
 
 export function getFileListFromClipboard(win: Window & typeof window) {
-  const clipboard = win.require('electron').remote.clipboard;
+  const clipboard = getElectronClipboard(win);
 
   if (process.platform === 'darwin') {
     // https://github.com/electron/electron/issues/9035#issuecomment-359554116
     if (clipboard.has('NSFilenamesPboardType')) {
       return (
-        (clipboard.read('NSFilenamesPboardType') as string)
+        clipboard.read('NSFilenamesPboardType')
           .match(/<string>.*<\/string>/g)
-          ?.map((item) => item.replace(/<string>|<\/string>/g, '')) || []
+            ?.map((item) => item.replace(/<string>|<\/string>/g, '')) || []
       );
     } else {
       const clipboardImage = clipboard.readImage('clipboard');
@@ -352,7 +412,7 @@ export function getFileListFromClipboard(win: Window & typeof window) {
         };
         return [fileInfo];
       } else {
-        return [(clipboard.read('public.file-url') as string).replace('file://', '')].filter(
+        return [clipboard.read('public.file-url').replace('file://', '')].filter(
           (item) => item
         );
       }
@@ -392,7 +452,7 @@ export function getFileListFromClipboard(win: Window & typeof window) {
         return [fileInfo];
       } else {
         return [
-          (clipboard.readBuffer('FileNameW').toString('ucs2') as string).replace(
+          clipboard.readBuffer('FileNameW').toString('ucs2').replace(
             RegExp(String.fromCharCode(0), 'g'),
             ''
           ),
@@ -414,11 +474,11 @@ async function linkFromBuffer(
   ext: string,
   buffer: ArrayBuffer
 ) {
-  const path = (await (stateManager.app.vault as any).getAvailablePathForAttachments(
+  const path = await getVaultWithAttachmentPaths(stateManager).getAvailablePathForAttachments(
     fileName,
     ext,
     stateManager.file
-  )) as string;
+  );
 
   const newFile = await stateManager.app.vault.createBinary(path, buffer);
 
@@ -430,8 +490,9 @@ async function handleElectronPaste(stateManager: StateManager, win: Window & typ
 
   if (!list || list.length === 0) return null;
 
-  const fs = win.require('fs/promises');
-  const nPath = win.require('path');
+  const fs = win.require('fs/promises') as FsPromisesLike;
+  const nPath = win.require('path') as PathModuleLike;
+  const vault = getVaultWithAttachmentPaths(stateManager);
 
   return (
     await Promise.all(
@@ -440,16 +501,16 @@ async function handleElectronPaste(stateManager: StateManager, win: Window & typ
           const fileStr = getFileFromPath(file);
 
           const splitFile = fileStr.split('.');
-          const ext = splitFile.pop();
+          const ext = splitFile.pop() || '';
           const fileName = splitFile.join('.');
 
-          const path = (await (stateManager.app.vault as any).getAvailablePathForAttachments(
+          const path = await vault.getAvailablePathForAttachments(
             fileName,
             ext,
             stateManager.file
-          )) as string;
+          );
 
-          const basePath = (stateManager.app.vault.adapter as any).basePath;
+          const basePath = vault.adapter.basePath || '';
 
           await fs.copyFile(file, nPath.join(basePath, path));
 
@@ -461,7 +522,7 @@ async function handleElectronPaste(stateManager: StateManager, win: Window & typ
           return linkTo(stateManager, newFile, stateManager.file.path);
         } else {
           const splitFile = file.originalName.split('.');
-          const ext = splitFile.pop();
+          const ext = splitFile.pop() || '';
           const fileName = splitFile.join('.');
 
           return await linkFromBuffer(stateManager, fileName, ext, file.buffer);
@@ -499,11 +560,11 @@ function handleFiles(stateManager: StateManager, files: FileWithPath[], isPaste?
         const reader = new FileReader();
         reader.onload = async (e) => {
           try {
-            const path = (await (stateManager.app.vault as any).getAvailablePathForAttachments(
+            const path = await getVaultWithAttachmentPaths(stateManager).getAvailablePathForAttachments(
               fileName,
-              ext,
+              ext || '',
               stateManager.file
-            )) as string;
+            );
             const newFile = await stateManager.app.vault.createBinary(
               path,
               e.target.result as ArrayBuffer
@@ -532,7 +593,7 @@ async function handleNullDraggable(
     ? (e as ClipboardEvent).clipboardData
     : (e as DragEvent).dataTransfer;
   const clipboard =
-    isClipboardEvent && Platform.isDesktopApp ? win.require('electron').remote.clipboard : null;
+    isClipboardEvent && Platform.isDesktopApp ? getElectronClipboard(win) : null;
   const formats = clipboard ? clipboard.availableFormats() : [];
 
   if (!isClipboardEvent) {
@@ -577,7 +638,7 @@ export async function handleDragOrPaste(
   e: DragEvent | ClipboardEvent,
   win: Window & typeof window
 ): Promise<string[]> {
-  const draggable = (stateManager.app as any).dragManager.draggable;
+  const draggable = getDragEntity(stateManager);
   const transfer = (e as DragEvent).view
     ? (e as DragEvent).dataTransfer
     : (e as ClipboardEvent).clipboardData;
