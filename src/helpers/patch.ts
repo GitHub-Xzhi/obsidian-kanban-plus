@@ -248,7 +248,7 @@ export function diffApply(obj: Diffable, diff: Op[]) {
     if (thisOp === REMOVE || thisOp === REPLACE) {
       const path = thisDiff.path;
       if (!Object.prototype.hasOwnProperty.call(subObject, lastProp)) {
-        throw new Error(['expected to find property', path, 'in object', obj].join(' '));
+        throw new Error(`expected to find property ${String(path)} in object`);
       }
     }
 

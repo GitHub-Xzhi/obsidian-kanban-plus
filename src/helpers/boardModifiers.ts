@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
 
 import update from 'immutability-helper';
 import { Notice, moment } from 'obsidian';

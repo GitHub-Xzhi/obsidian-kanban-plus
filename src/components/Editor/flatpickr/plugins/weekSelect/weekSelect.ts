@@ -37,12 +37,12 @@ function weekSelectPlugin(): Plugin<PlusWeeks> {
       ) {
         fp.weekStartDay = (
           fp.days.childNodes[
-            7 * Math.floor((fp.selectedDateElem as DayElement).$i / 7)
+            7 * Math.floor((fp.selectedDateElem).$i / 7)
           ] as DayElement
         ).dateObj;
         fp.weekEndDay = (
           fp.days.childNodes[
-            7 * Math.ceil((fp.selectedDateElem as DayElement).$i / 7 + 0.01) - 1
+            7 * Math.ceil((fp.selectedDateElem).$i / 7 + 0.01) - 1
           ] as DayElement
         ).dateObj;
       }

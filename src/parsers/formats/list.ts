@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
 
 import update from 'immutability-helper';
 import { Content, List, Parent, Root } from 'mdast';
@@ -487,7 +487,7 @@ export function astToUnhydratedBoard(
   root.children.forEach((child, index) => {
     if (child.type === 'heading') {
       const isArchive = isArchiveLane(child, root.children, index);
-      const headingBoundary = getNodeContentBoundary(child as Parent);
+      const headingBoundary = getNodeContentBoundary(child);
       const title = getStringFromBoundary(md, headingBoundary);
 
       let shouldMarkItemsComplete = false;

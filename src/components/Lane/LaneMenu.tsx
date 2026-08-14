@@ -537,7 +537,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
                 if (bDate && !aDate) return 1 * mod;
                 if (!aDate && !bDate) return 0;
 
-                return (aDate!.isBefore(bDate!) ? -1 : 1) * mod;
+                return (aDate.isBefore(bDate) ? -1 : 1) * mod;
               });
 
               boardModifiers.updateLane(

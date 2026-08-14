@@ -26,7 +26,7 @@ import { TableData, TableItem } from './types';
 export const columnHelper = createColumnHelper<TableItem>();
 
 export const fuzzyAnyFilter: FilterFn<TableItem> = (row, columnId, search, addMeta) => {
-  const val = row.getValue(columnId) as any;
+  const val = row.getValue(columnId);
 
   if (val === null) return false;
 
@@ -203,8 +203,8 @@ export function useTableColumns(boardData: Board, stateManager: StateManager) {
                 sortingFn: (a, b, id) => {
                   const sorted = fuzzySort(a, b, id);
                   if (sorted === null) {
-                    const dateA = a.getValue(id) as moment.Moment;
-                    const dateB = b.getValue(id) as moment.Moment;
+                    const dateA = a.getValue(id);
+                    const dateB = b.getValue(id);
 
                     if (!dateA && !dateB) return 0;
                     if (!dateA) return desc.current ? -1 : 1;
@@ -327,8 +327,8 @@ export function useTableColumns(boardData: Board, stateManager: StateManager) {
             },
             sortDescFirst: false,
             sortingFn: (a, b, id) => {
-              const valA = a.getValue(id) as any;
-              const valB = b.getValue(id) as any;
+              const valA = a.getValue(id);
+              const valB = b.getValue(id);
 
               if (valA === null && valB === null) return 0;
               if (valA === null) return desc.current ? -1 : 1;
@@ -376,8 +376,8 @@ export function useTableColumns(boardData: Board, stateManager: StateManager) {
             },
             sortDescFirst: false,
             sortingFn: (a, b, id) => {
-              const valA = a.getValue(id) as any;
-              const valB = b.getValue(id) as any;
+              const valA = a.getValue(id);
+              const valB = b.getValue(id);
 
               if (!valA?.value && !valB?.value) return 0;
               if (!valA?.value) return desc.current ? -1 : 1;

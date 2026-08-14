@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
 
 import animateScrollTo from 'animated-scroll-to';
 import classcat from 'classcat';
@@ -84,18 +84,18 @@ export const Kanban = ({ view, stateManager }: KanbanProps) => {
   }, [boardData?.children.length, stateManager]);
 
   const onNewLane = useCallback(() => {
-    rootRef.current?.win.setTimeout(() => {
+    void rootRef.current?.win.setTimeout(() => {
       const board = rootRef.current?.getElementsByClassName(c('board'));
 
       if (board?.length) {
-        animateScrollTo([board[0].scrollWidth, 0], {
+        void animateScrollTo([board[0].scrollWidth, 0], {
           elementToScroll: board[0],
           speed: 300,
           minDuration: 150,
           easing: (x: number) => {
             return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
           },
-        });
+        }).catch(console.error);
       }
     });
   }, []);

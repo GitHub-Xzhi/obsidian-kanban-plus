@@ -43,7 +43,7 @@ export const ItemMenuButton = Preact.memo(function ItemMenuButton({
         <a
           data-ignore-drag={true}
           onPointerDown={(e) => e.preventDefault()}
-          onClick={showMenu as any}
+          onClick={showMenu}
           className={`${c('item-postfix-button')} clickable-icon`}
           aria-label={t('More options')}
         >

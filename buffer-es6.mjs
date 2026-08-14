@@ -261,7 +261,7 @@ export var INSPECT_MAX_BYTES = 50;
  * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
  * get the Object implementation, which is slower but behaves correctly.
  */
-const win = typeof window === 'undefined' ? global : window;
+const win = typeof window === 'undefined' ? window : window;
 Buffer.TYPED_ARRAY_SUPPORT =
   win.TYPED_ARRAY_SUPPORT !== undefined ? win.TYPED_ARRAY_SUPPORT : true;
 
@@ -532,7 +532,7 @@ function checked(length) {
 
 export function SlowBuffer(length) {
   if (+length != length) {
-    // eslint-disable-line eqeqeq
+     
     length = 0;
   }
   return Buffer.alloc(+length);

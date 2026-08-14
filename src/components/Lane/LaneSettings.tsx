@@ -31,7 +31,7 @@ export function LaneSettings({ lane, lanePath, editState }: LaneSettingsProps) {
           placeholder="#D8EAFE / rgb(216, 234, 254)"
           value={laneBackgroundColor}
           onInput={(e) => {
-            const inputEl = e.currentTarget as HTMLInputElement;
+            const inputEl = e.currentTarget;
             const nextColor = inputEl.value.trim();
 
             if (!nextColor) {

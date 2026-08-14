@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
 
 import { generateInstanceId } from 'src/components/helpers';
 import { DataTypes } from 'src/components/types';

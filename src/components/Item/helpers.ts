@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
 
 import { FileWithPath, fromEvent } from 'file-selector';
 import { Platform, TFile, TFolder, htmlToMarkdown, moment, parseLinktext, setIcon } from 'obsidian';
@@ -33,7 +33,7 @@ export function constructDatePicker(
 
           const clickHandler = (e: MouseEvent) => {
             if (
-              e.target instanceof (e.view as Window & typeof globalThis).HTMLElement &&
+              e.target instanceof (e.view as Window & typeof window).HTMLElement &&
               e.target.closest(`.${c('date-picker')}`) === null
             ) {
               selfDestruct();
@@ -106,7 +106,7 @@ export function constructMenuDatePickerOnChange({
   const contentMatch = shouldLinkDates
     ? '(?:\\[[^\\]]+\\]\\([^)]+\\)|\\[\\[[^\\]]+\\]\\])'
     : '{[^}]+}';
-  const dateRegEx = new RegExp(`(^|\\s)${escapeRegExpStr(dateTrigger as string)}${contentMatch}`);
+  const dateRegEx = new RegExp(`(^|\\s)${escapeRegExpStr(dateTrigger)}${contentMatch}`);
 
   return (dates: Date[]) => {
     const date = dates[0];
@@ -157,7 +157,7 @@ export function constructTimePicker(
 
     const clickHandler = (e: MouseEvent) => {
       if (
-        e.target instanceof (e.view as Window & typeof globalThis).HTMLElement &&
+        e.target instanceof (e.view as Window & typeof window).HTMLElement &&
         e.target.hasClass(c('time-picker-item')) &&
         e.target.dataset.value
       ) {
@@ -168,7 +168,7 @@ export function constructTimePicker(
 
     const clickOutsideHandler = (e: MouseEvent) => {
       if (
-        e.target instanceof (e.view as Window & typeof globalThis).HTMLElement &&
+        e.target instanceof (e.view as Window & typeof window).HTMLElement &&
         e.target.closest(`.${pickerClassName}`) === null
       ) {
         selfDestruct();
@@ -202,7 +202,7 @@ export function constructTimePicker(
           text: opt,
         },
         (item) => {
-          item.createEl('span', { cls: c('time-picker-check'), prepend: true }, (span) => {
+          item.createSpan({ cls: c('time-picker-check'), prepend: true }, (span) => {
             setIcon(span, 'lucide-check');
           });
 
@@ -260,7 +260,7 @@ export function constructMenuTimePickerOnChange({
   path,
 }: ConstructMenuTimePickerOnChangeParams) {
   const timeTrigger = stateManager.getSetting('time-trigger');
-  const timeRegEx = new RegExp(`(^|\\s)${escapeRegExpStr(timeTrigger as string)}{([^}]+)}`);
+  const timeRegEx = new RegExp(`(^|\\s)${escapeRegExpStr(timeTrigger)}{([^}]+)}`);
 
   return (time: string) => {
     let titleRaw = item.data.titleRaw;
@@ -330,7 +330,7 @@ interface FileData {
   originalName: string;
 }
 
-export function getFileListFromClipboard(win: Window & typeof globalThis) {
+export function getFileListFromClipboard(win: Window & typeof window) {
   const clipboard = win.require('electron').remote.clipboard;
 
   if (process.platform === 'darwin') {
@@ -378,7 +378,7 @@ export function getFileListFromClipboard(win: Window & typeof globalThis) {
         return formatFilePathStr
           .split(drivePrefix[0])
           .filter((item) => item)
-          .map((item) => drivePrefix + item);
+          .map((item) => `${drivePrefix[0]}${item}`);
       }
     } else {
       const clipboardImage = clipboard.readImage('clipboard');
@@ -425,7 +425,7 @@ async function linkFromBuffer(
   return linkTo(stateManager, newFile, stateManager.file.path);
 }
 
-async function handleElectronPaste(stateManager: StateManager, win: Window & typeof globalThis) {
+async function handleElectronPaste(stateManager: StateManager, win: Window & typeof window) {
   const list = getFileListFromClipboard(win);
 
   if (!list || list.length === 0) return null;
@@ -512,10 +512,10 @@ function handleFiles(stateManager: StateManager, files: FileWithPath[], isPaste?
             resolve(linkTo(stateManager, newFile, stateManager.file.path));
           } catch (e) {
             console.error(e);
-            reject(e);
+            reject(e instanceof Error ? e : new Error(String(e)));
           }
         };
-        reader.readAsArrayBuffer(file as FileWithPath);
+        reader.readAsArrayBuffer(file);
       });
     })
   );
@@ -524,7 +524,7 @@ function handleFiles(stateManager: StateManager, files: FileWithPath[], isPaste?
 async function handleNullDraggable(
   stateManager: StateManager,
   e: DragEvent | ClipboardEvent,
-  win: Window & typeof globalThis
+  win: Window & typeof window
 ) {
   const isClipboardEvent = (e as DragEvent).view ? false : true;
   const forcePlaintext = isClipboardEvent ? stateManager.getAView().isShiftPressed : false;
@@ -552,8 +552,7 @@ async function handleNullDraggable(
     const files: File[] = [];
     const items = (e as ClipboardEvent).clipboardData.items;
 
-    for (const index in items) {
-      const item = items[index];
+    for (const item of Array.from(items)) {
       if (item.kind === 'file') {
         files.push(item.getAsFile());
       }
@@ -576,7 +575,7 @@ async function handleNullDraggable(
 export async function handleDragOrPaste(
   stateManager: StateManager,
   e: DragEvent | ClipboardEvent,
-  win: Window & typeof globalThis
+  win: Window & typeof window
 ): Promise<string[]> {
   const draggable = (stateManager.app as any).dragManager.draggable;
   const transfer = (e as DragEvent).view

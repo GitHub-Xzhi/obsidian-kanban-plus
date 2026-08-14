@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
 
 import { insertBlankLine } from '@codemirror/commands';
 import { EditorSelection, Extension, Prec } from '@codemirror/state';
@@ -183,7 +183,7 @@ export function MarkdownEditor({
           if (this.app.vault.getConfig('smartIndentList')) {
             this.editor.newlineAndIndentContinueMarkdownList();
           } else {
-            insertBlankLine(cm as any);
+            insertBlankLine(cm);
           }
           return true;
         };

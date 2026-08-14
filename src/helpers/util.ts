@@ -1,10 +1,10 @@
-const { compare } = new Intl.Collator(undefined, {
+const collator = new Intl.Collator(undefined, {
   usage: 'sort',
   sensitivity: 'base',
   numeric: true,
 });
 
-export const defaultSort = compare;
+export const defaultSort = collator.compare.bind(collator);
 
 export class PromiseCapability<T = void> {
   promise: Promise<T>;
@@ -23,7 +23,7 @@ export class PromiseCapability<T = void> {
 
       this.reject = (reason) => {
         this.settled = true;
-        reject(reason);
+        reject(reason instanceof Error ? reason : new Error(String(reason)));
       };
     });
   }
@@ -46,7 +46,7 @@ export class PromiseQueue {
     this.queue.push(item);
 
     if (!this.isRunning) {
-      this.run();
+      void this.run();
     }
   }
 
@@ -69,7 +69,7 @@ export class PromiseQueue {
 
       const now = performance.now();
       if (now - intervalStart > 50) {
-        await new Promise((res) => activeWindow.setTimeout(res));
+        await new Promise((res) => window.setTimeout(res));
         intervalStart = now;
       }
     }

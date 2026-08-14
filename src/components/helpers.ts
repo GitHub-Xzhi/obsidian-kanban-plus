@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
 
 import update from 'immutability-helper';
 import { App, MarkdownView, TFile, moment } from 'obsidian';
@@ -217,7 +217,7 @@ export function getTemplatePlugins(app: App) {
   const templaterEnabled = (app as any).plugins.enabledPlugins.has('templater-obsidian');
   const templaterEmptyFileTemplate =
     templaterPlugin &&
-    (this.app as any).plugins.plugins['templater-obsidian'].settings?.empty_file_template;
+    (this.app).plugins.plugins['templater-obsidian'].settings?.empty_file_template;
 
   const templateFolder = templatesEnabled
     ? templatesPlugin.instance.options.folder

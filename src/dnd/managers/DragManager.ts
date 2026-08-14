@@ -497,7 +497,7 @@ export function createHTMLDndHandlers(stateManager: StateManager) {
       dndManager.dragManager.dragEndHTML(
         e,
         stateManager.getAView().id,
-        await handleDragOrPaste(stateManager, e, activeWindow as Window & typeof globalThis),
+        await handleDragOrPaste(stateManager, e, activeWindow as Window & typeof window),
         false
       );
     },

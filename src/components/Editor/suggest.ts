@@ -41,7 +41,8 @@ export class DateSuggest extends EditorSuggest<[]> {
     this.app = app;
     this.plugin = plugin;
 
-    [...(this.scope as any).keys].forEach((k: any) => this.scope.unregister(k));
+    const scopeKeys = (this.scope as { keys?: string[] }).keys || [];
+    [...scopeKeys].forEach((key) => this.scope.unregister(key));
 
     this.suggestEl.addClass(c('date-suggest'));
 

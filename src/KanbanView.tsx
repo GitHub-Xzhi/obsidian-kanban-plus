@@ -135,7 +135,7 @@ export class KanbanView extends TextFileView implements HoverParent {
 
   setView(view: KanbanFormat) {
     this.setViewState(frontmatterKey, view);
-    this.app.fileManager.processFrontMatter(this.file, (frontmatter) => {
+    void this.app.fileManager.processFrontMatter(this.file, (frontmatter) => {
       (frontmatter as Record<string, unknown>)[frontmatterKey] = view;
     });
   }
@@ -163,7 +163,7 @@ export class KanbanView extends TextFileView implements HoverParent {
   }
 
   getWindow() {
-    return getParentWindow(this.containerEl) as Window & typeof globalThis;
+    return getParentWindow(this.containerEl) as Window & typeof window;
   }
 
   async loadFile(file: TFile) {
@@ -248,7 +248,7 @@ export class KanbanView extends TextFileView implements HoverParent {
     if (!hasFrontmatterKeyRaw(data)) {
       this.plugin.kanbanFileModes[this.leafId || this.file.path] = 'markdown';
       this.plugin.removeView(this);
-      this.plugin.setMarkdownView(this.leaf, false);
+      void this.plugin.setMarkdownView(this.leaf, false);
 
       return;
     }
@@ -262,7 +262,7 @@ export class KanbanView extends TextFileView implements HoverParent {
       this.actionButtons = {};
     }
 
-    this.plugin.addView(this, data, !clear && this.isPrimary);
+    void this.plugin.addView(this, data, !clear && this.isPrimary);
   }
 
   async setState(state: any, result: ViewStateResult): Promise<void> {
@@ -371,7 +371,7 @@ export class KanbanView extends TextFileView implements HoverParent {
           .setSection('pane')
           .onClick(() => {
             this.plugin.kanbanFileModes[this.leafId || this.file.path] = 'markdown';
-            this.plugin.setMarkdownView(this.leaf);
+            void this.plugin.setMarkdownView(this.leaf);
           });
       })
       .addItem((item) => {
@@ -390,7 +390,7 @@ export class KanbanView extends TextFileView implements HoverParent {
           .setSection('pane')
           .onClick(() => {
             const stateManager = this.plugin.stateManagers.get(this.file);
-            stateManager.archiveCompletedCards();
+            void stateManager.archiveCompletedCards();
           });
       });
 
@@ -499,7 +499,7 @@ export class KanbanView extends TextFileView implements HoverParent {
         t('Open as markdown'),
         () => {
           this.plugin.kanbanFileModes[this.leafId || this.file.path] = 'markdown';
-          this.plugin.setMarkdownView(this.leaf);
+          void this.plugin.setMarkdownView(this.leaf);
         }
       );
     } else if (
@@ -516,7 +516,7 @@ export class KanbanView extends TextFileView implements HoverParent {
         t('Archive completed cards'),
         () => {
           const stateManager = this.plugin.stateManagers.get(this.file);
-          stateManager.archiveCompletedCards();
+          void stateManager.archiveCompletedCards();
         }
       );
     } else if (

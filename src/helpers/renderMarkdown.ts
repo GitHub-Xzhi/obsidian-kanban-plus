@@ -61,7 +61,7 @@ export function bindMarkdownEvents(view: KanbanView) {
   };
 
   contentEl.on('click', 'a.internal-link', onLinkClick);
-  contentEl.on('auxclick', 'a.internal-link', onLinkClick);
+  void contentEl.on('auxclick', 'a.internal-link', onLinkClick);
   contentEl.on('dragstart', 'a.internal-link', (evt: DragEvent) => {
     evt.preventDefault();
   });
@@ -95,7 +95,7 @@ export function bindMarkdownEvents(view: KanbanView) {
     if (!link.href || link.href.contains(' ')) return;
     try {
       new URL(link.href);
-    } catch (e) {
+    } catch {
       return;
     }
 

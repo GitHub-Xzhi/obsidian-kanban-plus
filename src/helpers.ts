@@ -4,7 +4,7 @@ import { getDailyNoteSettings, getDateFromFile } from 'obsidian-daily-notes-inte
 import { frontmatterKey } from './parsers/common';
 
 export function gotoNextDailyNote(app: App, file: TFile) {
-  const date = getDateFromFile(file as any, 'day');
+  const date = getDateFromFile(file, 'day');
 
   if (!date || !date.isValid()) {
     return;
@@ -16,7 +16,7 @@ export function gotoNextDailyNote(app: App, file: TFile) {
 }
 
 export function gotoPrevDailyNote(app: App, file: TFile) {
-  const date = getDateFromFile(file as any, 'day');
+  const date = getDateFromFile(file, 'day');
 
   if (!date || !date.isValid()) {
     return;

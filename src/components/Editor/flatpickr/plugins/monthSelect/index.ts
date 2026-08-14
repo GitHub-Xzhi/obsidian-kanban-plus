@@ -244,7 +244,7 @@ function monthSelectPlugin(pluginConfig?: Partial<Config>): Plugin {
 
       const currentlySelected = fp.rContainer.querySelector(
         '.flatpickr-monthSelect-month.selected'
-      ) as HTMLElement;
+      );
 
       let index = Array.prototype.indexOf.call(
         self.monthsContainer.children,

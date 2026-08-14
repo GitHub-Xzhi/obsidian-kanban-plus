@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
 
 import 'obsidian';
 
@@ -29,7 +29,7 @@ function rangePlugin(config: Config = {}): Plugin {
       if (config.input) {
         secondInput =
           typeof config.input === 'string'
-            ? (win.document.querySelector(config.input) as HTMLInputElement)
+            ? (win.document.querySelector(config.input))
             : config.input;
 
         if (!secondInput) {
@@ -38,7 +38,7 @@ function rangePlugin(config: Config = {}): Plugin {
         }
 
         if (fp.config.wrap) {
-          secondInput = secondInput.querySelector('[data-input]') as HTMLInputElement;
+          secondInput = secondInput.querySelector('[data-input]');
         }
       } else {
         secondInput = fp._input.cloneNode() as HTMLInputElement;
@@ -76,7 +76,7 @@ function rangePlugin(config: Config = {}): Plugin {
 
       if (fp.config.allowInput)
         fp._bind(secondInput, 'keydown', (e: KeyboardEvent) => {
-          if ((e as KeyboardEvent).key === 'Enter') {
+          if ((e).key === 'Enter') {
             fp.setDate([fp.selectedDates[0], secondInput.value], true, dateFormat);
             secondInput.click();
           }
@@ -113,7 +113,7 @@ function rangePlugin(config: Config = {}): Plugin {
 
         if (fp.config.allowInput)
           fp._bind(fp._input, 'keydown', (e: KeyboardEvent) => {
-            if ((e as KeyboardEvent).key === 'Enter')
+            if ((e).key === 'Enter')
               fp.setDate([fp._input.value, fp.selectedDates[1]], true, dateFormat);
           });
 

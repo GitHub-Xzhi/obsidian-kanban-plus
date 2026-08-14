@@ -1,5 +1,5 @@
 import animateScrollTo from 'animated-scroll-to';
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
 
 import classcat from 'classcat';
 import update from 'immutability-helper';
@@ -114,18 +114,18 @@ function DraggableLaneRaw({
       );
 
       // TODO: can we find a less brute force way to do this?
-      view.getWindow().setTimeout(() => {
+      void view.getWindow().setTimeout(() => {
         const laneItems = elementRef.current?.getElementsByClassName(c('lane-items'));
 
         if (laneItems.length) {
-          animateScrollTo([0, shouldPrepend ? 0 : laneItems[0].scrollHeight], {
+          void animateScrollTo([0, shouldPrepend ? 0 : laneItems[0].scrollHeight], {
             elementToScroll: laneItems[0],
             speed: 200,
             minDuration: 150,
             easing: (x: number) => {
               return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
             },
-          });
+          }).catch(console.error);
         }
       });
     },

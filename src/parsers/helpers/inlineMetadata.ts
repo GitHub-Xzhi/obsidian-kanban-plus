@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
 
 /*
 This code is modified from https://github.com/blacksmithgu/obsidian-dataview

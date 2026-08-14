@@ -1,7 +1,7 @@
 import merge from 'deepmerge';
 import update, { Spec } from 'immutability-helper';
-
 import { isPlainObject } from 'src/helpers/isPlainObject';
+
 import { Nestable, Path } from '../types';
 import { SiblingDirection, getSiblingDirection } from './path';
 

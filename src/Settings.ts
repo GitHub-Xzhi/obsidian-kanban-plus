@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
 
 import update, { Spec } from 'immutability-helper';
 import {
@@ -281,7 +281,7 @@ export class SettingsManager {
 
           const [value] = this.getSetting('language', local);
 
-          dropdown.setValue((value as KanbanLanguage) || getKanbanLanguage());
+          dropdown.setValue((value) || getKanbanLanguage());
           dropdown.onChange((value) => {
             const lang = value as KanbanLanguage;
             setKanbanLanguage(lang);
@@ -310,9 +310,9 @@ export class SettingsManager {
             const [value, globalValue] = this.getSetting('show-checkboxes', local);
 
             if (value !== undefined) {
-              toggle.setValue(value as boolean);
+              toggle.setValue(value);
             } else if (globalValue !== undefined) {
-              toggle.setValue(globalValue as boolean);
+              toggle.setValue(globalValue);
             }
 
             toggle.onChange((newValue) => {
@@ -350,7 +350,7 @@ export class SettingsManager {
 
         const [value, globalValue] = this.getSetting('new-line-trigger', local);
 
-        dropdown.setValue((value as string) || (globalValue as string) || 'shift-enter');
+        dropdown.setValue((value) || (globalValue) || 'shift-enter');
         dropdown.onChange((value) => {
           this.applySettingsUpdate({
             'new-line-trigger': {
@@ -372,7 +372,7 @@ export class SettingsManager {
 
         const [value, globalValue] = this.getSetting('new-card-insertion-method', local);
 
-        dropdown.setValue((value as string) || (globalValue as string) || 'append');
+        dropdown.setValue((value) || (globalValue) || 'append');
         dropdown.onChange((value) => {
           this.applySettingsUpdate({
             'new-card-insertion-method': {
@@ -398,7 +398,7 @@ export class SettingsManager {
           local
         );
 
-        dropdown.setValue((value as string) || (globalValue as string) || 'prepend');
+        dropdown.setValue((value) || (globalValue) || 'prepend');
         dropdown.onChange((value) => {
           this.applySettingsUpdate({
             'manual-completed-card-insertion-method': {
@@ -421,9 +421,9 @@ export class SettingsManager {
             const [value, globalValue] = this.getSetting('hide-card-count', local);
 
             if (value !== undefined) {
-              toggle.setValue(value as boolean);
+              toggle.setValue(value);
             } else if (globalValue !== undefined) {
-              toggle.setValue(globalValue as boolean);
+              toggle.setValue(globalValue);
             }
 
             toggle.onChange((newValue) => {
@@ -491,9 +491,9 @@ export class SettingsManager {
           const [value, globalValue] = this.getSetting('full-list-lane-width', local);
 
           if (value !== undefined) {
-            toggle.setValue(value as boolean);
+            toggle.setValue(value);
           } else if (globalValue !== undefined) {
-            toggle.setValue(globalValue as boolean);
+            toggle.setValue(globalValue);
           }
 
           toggle.onChange((newValue) => {
@@ -603,9 +603,9 @@ export class SettingsManager {
             const [value, globalValue] = this.getSetting('move-tags', local);
 
             if (value !== undefined) {
-              toggle.setValue(value as boolean);
+              toggle.setValue(value);
             } else if (globalValue !== undefined) {
-              toggle.setValue(globalValue as boolean);
+              toggle.setValue(globalValue);
             }
 
             toggle.onChange((newValue) => {
@@ -643,7 +643,7 @@ export class SettingsManager {
 
         const [value, globalValue] = this.getSetting('tag-action', local);
 
-        dropdown.setValue((value as string) || (globalValue as string) || 'obsidian');
+        dropdown.setValue((value) || (globalValue) || 'obsidian');
         dropdown.onChange((value) => {
           this.applySettingsUpdate({
             'tag-action': {
@@ -656,7 +656,7 @@ export class SettingsManager {
     new Setting(contentEl).then((setting) => {
       const [value, globalValue] = this.getSetting('tag-sort', local);
 
-      const keys: TagSortSetting[] = ((value || globalValue || []) as TagSort[]).map((k) => {
+      const keys: TagSortSetting[] = ((value || globalValue || [])).map((k) => {
         return {
           ...TagSortSettingTemplate,
           id: generateInstanceId(),
@@ -682,7 +682,7 @@ export class SettingsManager {
     new Setting(contentEl).then((setting) => {
       const [value] = this.getSetting('tag-colors', local);
 
-      const keys: TagColorSetting[] = ((value || []) as TagColor[]).map((k) => {
+      const keys: TagColorSetting[] = ((value || [])).map((k) => {
         return {
           ...TagColorSettingTemplate,
           id: generateInstanceId(),
@@ -722,9 +722,9 @@ export class SettingsManager {
             const [value, globalValue] = this.getSetting('move-dates', local);
 
             if (value !== undefined) {
-              toggle.setValue(value as boolean);
+              toggle.setValue(value);
             } else if (globalValue !== undefined) {
-              toggle.setValue(globalValue as boolean);
+              toggle.setValue(globalValue);
             }
 
             toggle.onChange((newValue) => {
@@ -740,7 +740,7 @@ export class SettingsManager {
               .setTooltip(t('Reset to default'))
               .onClick(() => {
                 const [, globalValue] = this.getSetting('move-dates', local);
-                toggleComponent.setValue((globalValue as boolean) ?? true);
+                toggleComponent.setValue((globalValue) ?? true);
 
                 this.applySettingsUpdate({
                   $unset: ['move-dates'],
@@ -756,10 +756,10 @@ export class SettingsManager {
         const [value, globalValue] = this.getSetting('date-trigger', local);
 
         if (value || globalValue) {
-          text.setValue((value || globalValue) as string);
+          text.setValue((value || globalValue));
         }
 
-        text.setPlaceholder((globalValue as string) || defaultDateTrigger);
+        text.setPlaceholder((globalValue) || defaultDateTrigger);
 
         text.onChange((newValue) => {
           if (newValue) {
@@ -783,10 +783,10 @@ export class SettingsManager {
         const [value, globalValue] = this.getSetting('time-trigger', local);
 
         if (value || globalValue) {
-          text.setValue((value || globalValue) as string);
+          text.setValue((value || globalValue));
         }
 
-        text.setPlaceholder((globalValue as string) || defaultTimeTrigger);
+        text.setPlaceholder((globalValue) || defaultTimeTrigger);
 
         text.onChange((newValue) => {
           if (newValue) {
@@ -834,7 +834,7 @@ export class SettingsManager {
         mf.setDefaultFormat(defaultFormat);
 
         if (value || globalValue) {
-          mf.setValue((value || globalValue) as string);
+          mf.setValue((value || globalValue));
         }
 
         mf.onChange((newValue) => {
@@ -882,7 +882,7 @@ export class SettingsManager {
         mf.setDefaultFormat(defaultFormat);
 
         if (value || globalValue) {
-          mf.setValue((value || globalValue) as string);
+          mf.setValue((value || globalValue));
         }
 
         mf.onChange((newValue) => {
@@ -932,7 +932,7 @@ export class SettingsManager {
         mf.setDefaultFormat(defaultFormat);
 
         if (value || globalValue) {
-          mf.setValue((value || globalValue) as string);
+          mf.setValue((value || globalValue));
         }
 
         mf.onChange((newValue) => {
@@ -967,9 +967,9 @@ export class SettingsManager {
             );
 
             if (value !== undefined) {
-              toggle.setValue(value as boolean);
+              toggle.setValue(value);
             } else if (globalValue !== undefined) {
-              toggle.setValue(globalValue as boolean);
+              toggle.setValue(globalValue);
             }
 
             toggle.onChange((newValue) => {
@@ -1010,9 +1010,9 @@ export class SettingsManager {
             const [value, globalValue] = this.getSetting('group-cards-by-created-time', local);
 
             if (value !== undefined) {
-              toggle.setValue(value as boolean);
+              toggle.setValue(value);
             } else if (globalValue !== undefined) {
-              toggle.setValue(globalValue as boolean);
+              toggle.setValue(globalValue);
             } else {
               toggle.setValue(true);
             }
@@ -1070,7 +1070,7 @@ export class SettingsManager {
         mf.setDefaultFormat(defaultFormat);
 
         if (value || globalValue) {
-          mf.setValue((value || globalValue) as string);
+          mf.setValue((value || globalValue));
         }
 
         mf.onChange((newValue) => {
@@ -1102,9 +1102,9 @@ export class SettingsManager {
             const [value, globalValue] = this.getSetting('group-cards-by-completed-time', local);
 
             if (value !== undefined) {
-              toggle.setValue(value as boolean);
+              toggle.setValue(value);
             } else if (globalValue !== undefined) {
-              toggle.setValue(globalValue as boolean);
+              toggle.setValue(globalValue);
             } else {
               toggle.setValue(true);
             }
@@ -1162,7 +1162,7 @@ export class SettingsManager {
         mf.setDefaultFormat(defaultFormat);
 
         if (value || globalValue) {
-          mf.setValue((value || globalValue) as string);
+          mf.setValue((value || globalValue));
         }
 
         mf.onChange((newValue) => {
@@ -1198,9 +1198,9 @@ export class SettingsManager {
             const [value, globalValue] = this.getSetting('show-relative-date', local);
 
             if (value !== undefined) {
-              toggle.setValue(value as boolean);
+              toggle.setValue(value);
             } else if (globalValue !== undefined) {
-              toggle.setValue(globalValue as boolean);
+              toggle.setValue(globalValue);
             }
 
             toggle.onChange((newValue) => {
@@ -1238,9 +1238,9 @@ export class SettingsManager {
             const [value, globalValue] = this.getSetting('link-date-to-daily-note', local);
 
             if (value !== undefined) {
-              toggle.setValue(value as boolean);
+              toggle.setValue(value);
             } else if (globalValue !== undefined) {
-              toggle.setValue(globalValue as boolean);
+              toggle.setValue(globalValue);
             }
 
             toggle.onChange((newValue) => {
@@ -1268,7 +1268,7 @@ export class SettingsManager {
     new Setting(contentEl).then((setting) => {
       const [value] = this.getSetting('date-colors', local);
 
-      const keys: DateColorSetting[] = ((value || []) as DateColor[]).map((k) => {
+      const keys: DateColorSetting[] = ((value || [])).map((k) => {
         return {
           ...DateColorSettingTemplate,
           id: generateInstanceId(),
@@ -1288,12 +1288,12 @@ export class SettingsManager {
         () => {
           const [value, globalValue] = this.getSetting('date-display-format', local);
           const defaultFormat = getDefaultDateFormat(this.app);
-          return (value as string | undefined) || (globalValue as string | undefined) || defaultFormat;
+          return (value) || (globalValue) || defaultFormat;
         },
         () => {
           const [value, globalValue] = this.getSetting('time-format', local);
           const defaultFormat = getDefaultTimeFormat(this.app);
-          return (value as string | undefined) || (globalValue as string | undefined) || defaultFormat;
+          return (value) || (globalValue) || defaultFormat;
         }
       );
 
@@ -1321,9 +1321,9 @@ export class SettingsManager {
             const [value, globalValue] = this.getSetting('archive-with-date', local);
 
             if (value !== undefined) {
-              toggle.setValue(value as boolean);
+              toggle.setValue(value);
             } else if (globalValue !== undefined) {
-              toggle.setValue(globalValue as boolean);
+              toggle.setValue(globalValue);
             }
 
             toggle.onChange((newValue) => {
@@ -1365,9 +1365,9 @@ export class SettingsManager {
             const [value, globalValue] = this.getSetting('append-archive-date', local);
 
             if (value !== undefined) {
-              toggle.setValue(value as boolean);
+              toggle.setValue(value);
             } else if (globalValue !== undefined) {
-              toggle.setValue(globalValue as boolean);
+              toggle.setValue(globalValue);
             }
 
             toggle.onChange((newValue) => {
@@ -1405,7 +1405,7 @@ export class SettingsManager {
             const [value, globalValue] = this.getSetting('archive-date-separator', local);
 
             text.inputEl.placeholder = globalValue ? `${globalValue} (default)` : '';
-            text.inputEl.value = value ? (value as string) : '';
+            text.inputEl.value = value ? (value) : '';
 
             text.onChange((val) => {
               if (val) {
@@ -1428,7 +1428,7 @@ export class SettingsManager {
               .setTooltip(t('Reset to default'))
               .onClick(() => {
                 const [, globalValue] = this.getSetting('archive-date-separator', local);
-                textComponent.setValue((globalValue as string) || '');
+                textComponent.setValue((globalValue) || '');
 
                 this.applySettingsUpdate({
                   $unset: ['archive-date-separator'],
@@ -1472,7 +1472,7 @@ export class SettingsManager {
         mf.setDefaultFormat(defaultFormat);
 
         if (value || globalValue) {
-          mf.setValue((value || globalValue) as string);
+          mf.setValue((value || globalValue));
         }
 
         mf.onChange((newValue) => {
@@ -1563,7 +1563,7 @@ export class SettingsManager {
             .setTooltip(t('Reset to default'))
             .onClick(() => {
               const [, globalValue] = this.getSetting('inline-metadata-position', local);
-              input.setValue((globalValue as string) || defaultMetadataPosition);
+              input.setValue((globalValue) || defaultMetadataPosition);
 
               this.applySettingsUpdate({
                 $unset: ['inline-metadata-position'],
@@ -1589,9 +1589,9 @@ export class SettingsManager {
             const [value, globalValue] = this.getSetting('move-task-metadata', local);
 
             if (value !== undefined) {
-              toggle.setValue(value as boolean);
+              toggle.setValue(value);
             } else if (globalValue !== undefined) {
-              toggle.setValue(globalValue as boolean);
+              toggle.setValue(globalValue);
             }
 
             toggle.onChange((newValue) => {
@@ -1607,7 +1607,7 @@ export class SettingsManager {
               .setTooltip(t('Reset to default'))
               .onClick(() => {
                 const [, globalValue] = this.getSetting('move-task-metadata', local);
-                toggleComponent.setValue((globalValue as boolean) ?? true);
+                toggleComponent.setValue((globalValue) ?? true);
 
                 this.applySettingsUpdate({
                   $unset: ['move-task-metadata'],
@@ -1630,7 +1630,7 @@ export class SettingsManager {
 
       const [value] = this.getSetting('metadata-keys', local);
 
-      const keys: MetadataSetting[] = ((value as DataKey[]) || ([] as DataKey[])).map((k) => {
+      const keys: MetadataSetting[] = ((value) || ([] as DataKey[])).map((k) => {
         return {
           ...MetadataSettingTemplate,
           id: generateInstanceId(),
@@ -1666,9 +1666,9 @@ export class SettingsManager {
           const [value, globalValue] = this.getSetting('show-add-list', local);
 
           if (value !== undefined && value !== null) {
-            toggle.setValue(value as boolean);
+            toggle.setValue(value);
           } else if (globalValue !== undefined && globalValue !== null) {
-            toggle.setValue(globalValue as boolean);
+            toggle.setValue(globalValue);
           } else {
             // default
             toggle.setValue(true);
@@ -1706,9 +1706,9 @@ export class SettingsManager {
           const [value, globalValue] = this.getSetting('show-archive-all', local);
 
           if (value !== undefined && value !== null) {
-            toggle.setValue(value as boolean);
+            toggle.setValue(value);
           } else if (globalValue !== undefined && globalValue !== null) {
-            toggle.setValue(globalValue as boolean);
+            toggle.setValue(globalValue);
           } else {
             // default
             toggle.setValue(true);
@@ -1746,9 +1746,9 @@ export class SettingsManager {
           const [value, globalValue] = this.getSetting('show-archive-toggle', local);
 
           if (value !== undefined && value !== null) {
-            toggle.setValue(value as boolean);
+            toggle.setValue(value);
           } else if (globalValue !== undefined && globalValue !== null) {
-            toggle.setValue(globalValue as boolean);
+            toggle.setValue(globalValue);
           } else {
             toggle.setValue(true);
           }
@@ -1785,9 +1785,9 @@ export class SettingsManager {
           const [value, globalValue] = this.getSetting('show-view-as-markdown', local);
 
           if (value !== undefined && value !== null) {
-            toggle.setValue(value as boolean);
+            toggle.setValue(value);
           } else if (globalValue !== undefined && globalValue !== null) {
-            toggle.setValue(globalValue as boolean);
+            toggle.setValue(globalValue);
           } else {
             // default
             toggle.setValue(true);
@@ -1825,9 +1825,9 @@ export class SettingsManager {
           const [value, globalValue] = this.getSetting('show-board-settings', local);
 
           if (value !== undefined && value !== null) {
-            toggle.setValue(value as boolean);
+            toggle.setValue(value);
           } else if (globalValue !== undefined && globalValue !== null) {
-            toggle.setValue(globalValue as boolean);
+            toggle.setValue(globalValue);
           } else {
             // default
             toggle.setValue(true);
@@ -1865,9 +1865,9 @@ export class SettingsManager {
           const [value, globalValue] = this.getSetting('show-toggle-all-card-created-times', local);
 
           if (value !== undefined && value !== null) {
-            toggle.setValue(value as boolean);
+            toggle.setValue(value);
           } else if (globalValue !== undefined && globalValue !== null) {
-            toggle.setValue(globalValue as boolean);
+            toggle.setValue(globalValue);
           } else {
             toggle.setValue(true);
           }
@@ -1907,9 +1907,9 @@ export class SettingsManager {
           );
 
           if (value !== undefined && value !== null) {
-            toggle.setValue(value as boolean);
+            toggle.setValue(value);
           } else if (globalValue !== undefined && globalValue !== null) {
-            toggle.setValue(globalValue as boolean);
+            toggle.setValue(globalValue);
           } else {
             toggle.setValue(true);
           }
@@ -1949,9 +1949,9 @@ export class SettingsManager {
           const [value, globalValue] = this.getSetting('show-search', local);
 
           if (value !== undefined && value !== null) {
-            toggle.setValue(value as boolean);
+            toggle.setValue(value);
           } else if (globalValue !== undefined && globalValue !== null) {
-            toggle.setValue(globalValue as boolean);
+            toggle.setValue(globalValue);
           } else {
             // default
             toggle.setValue(true);
@@ -1989,9 +1989,9 @@ export class SettingsManager {
           const [value, globalValue] = this.getSetting('show-set-view', local);
 
           if (value !== undefined && value !== null) {
-            toggle.setValue(value as boolean);
+            toggle.setValue(value);
           } else if (globalValue !== undefined && globalValue !== null) {
-            toggle.setValue(globalValue as boolean);
+            toggle.setValue(globalValue);
           } else {
             // default
             toggle.setValue(true);

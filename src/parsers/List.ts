@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+ 
 
 import { TFile } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
@@ -62,7 +62,7 @@ export class ListFormat implements BaseFormat {
         (val: any) => {
           if (!val) return String(val);
           if (val instanceof TFile) return val.path;
-          if (isPlainObject(val) || Array.isArray(val)) return String(val);
+          if (isPlainObject(val) || Array.isArray(val)) return JSON.stringify(val);
           if (dv && !dv.value.isObject(val)) return dv.value.toString(val);
           return String(val);
         }

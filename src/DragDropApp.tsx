@@ -292,7 +292,7 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
 
             if (from < to) to -= 1;
 
-            const collapsedState = (view.getViewState('list-collapse') as boolean[] | undefined) || [];
+            const collapsedState = (view.getViewState('list-collapse')) || [];
             const op = (collapsedState?: boolean[]) => {
               const currentState = collapsedState || [];
               const newState = [...currentState];
@@ -462,9 +462,9 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
 
           if (isLaneEntity(entity)) {
             const collapsedState =
-              (destinationView.getViewState('list-collapse') as boolean[] | undefined) || [];
+              (destinationView.getViewState('list-collapse')) || [];
             const sourceCollapsedState =
-              (sourceView.getViewState('list-collapse') as boolean[] | undefined) || [];
+              (sourceView.getViewState('list-collapse')) || [];
             const from = dragPath.last();
             const to = dropPath.last();
 
@@ -492,7 +492,7 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
 
         if (isLaneEntity(entity)) {
           const collapsedState =
-            (sourceView.getViewState('list-collapse') as boolean[] | undefined) || [];
+            (sourceView.getViewState('list-collapse')) || [];
           const from = dragPath.last();
 
           if (from === undefined) {
@@ -582,7 +582,7 @@ export function DragDropApp({ win, plugin }: { win: Window; plugin: KanbanPlugin
                 context.view.viewSettings[frontmatterKey] || context.stateManager.getSetting(frontmatterKey);
               const collapseState =
                 (context.view.viewSettings['list-collapse'] ||
-                  context.stateManager.getSetting('list-collapse') || []) as boolean[];
+                  context.stateManager.getSetting('list-collapse') || []);
               const laneIndex = entity.getPath().last();
 
               return (

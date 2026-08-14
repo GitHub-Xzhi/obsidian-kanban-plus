@@ -18,6 +18,12 @@ import { c } from '../helpers';
 import { Board } from '../types';
 import { fuzzyAnyFilter, useTableColumns } from './helpers';
 
+interface FilterMeta {
+  itemRank?: {
+    passed: boolean;
+  };
+}
+
 function useIntersectionObserver() {
   const observerRef = useRef<IntersectionObserver>();
   const targetRef = useRef<HTMLElement>();
@@ -104,7 +110,7 @@ export function TableView({
     columnResizeMode: 'onChange',
     columnResizeDirection: (stateManager.app.vault.getConfig('rightToLeft')
       ? 'rtl'
-      : 'ltr') as ColumnResizeDirection,
+      : 'ltr') as 'rtl' | 'ltr',
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -118,8 +124,8 @@ export function TableView({
       dbTimer.current = 0;
       return;
     }
-    activeWindow.clearTimeout(dbTimer.current);
-    dbTimer.current = activeWindow.setTimeout(() => {
+    window.clearTimeout(dbTimer.current);
+    dbTimer.current = window.setTimeout(() => {
       if (!stateManager.getAView()) return;
       stateManager.setState((board) => {
         return update(board, {
@@ -205,7 +211,7 @@ export function TableView({
                       className={classcat({
                         'mod-has-icon': cell.column.id === 'lane',
                         'mod-search-match': row.columnFiltersMeta[cell.column.id]
-                          ? (row.columnFiltersMeta[cell.column.id] as any).itemRank.passed
+                          ? !!(row.columnFiltersMeta[cell.column.id] as FilterMeta).itemRank?.passed
                           : false,
                       })}
                     >

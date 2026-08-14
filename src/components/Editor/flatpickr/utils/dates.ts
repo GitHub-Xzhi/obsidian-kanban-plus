@@ -92,10 +92,10 @@ export const createDateParser =
         parsedDate =
           !config || !config.noCalendar
             ? new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0)
-            : (new Date(new Date().setHours(0, 0, 0, 0)) as Date);
+            : (new Date(new Date().setHours(0, 0, 0, 0)));
 
         ops.forEach(
-          ({ fn, val }) => (parsedDate = fn(parsedDate as Date, val, locale) || parsedDate)
+          ({ fn, val }) => (parsedDate = fn(parsedDate, val, locale) || parsedDate)
         );
 
         parsedDate = matched ? parsedDate : undefined;
@@ -103,7 +103,7 @@ export const createDateParser =
     }
 
     /* istanbul ignore next */
-    if (!((parsedDate as Date).getDate && !isNaN(parsedDate.getTime()))) {
+    if (!((parsedDate).getDate && !isNaN(parsedDate.getTime()))) {
       config.errorHandler(new Error(`Invalid date provided: ${dateOrig}`));
       return undefined;
     }

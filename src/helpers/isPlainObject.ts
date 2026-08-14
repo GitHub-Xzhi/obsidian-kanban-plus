@@ -3,6 +3,6 @@ export function isPlainObject(value: unknown): value is Record<string, unknown> 
     return false;
   }
 
-  const prototype = Object.getPrototypeOf(value);
+  const prototype = Object.getPrototypeOf(value) as object | null;
   return prototype === null || prototype === Object.prototype;
 }

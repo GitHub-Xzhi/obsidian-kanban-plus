@@ -19,13 +19,7 @@ import {
 } from './components/types';
 import { Path } from './dnd/types';
 import { insertEntity, moveEntity, removeEntity, updateEntity } from './dnd/util/data';
-import {
-  getArchivedCardSource,
-  getCard,
-  getCompletedCardSource,
-  sanitizeCards,
-  updateCard,
-} from './helpers/cardSettings';
+import { getCard, getCompletedCardSource, sanitizeCards, updateCard } from './helpers/cardSettings';
 import { defaultSort } from './helpers/util';
 import { ListFormat } from './parsers/List';
 import { BaseFormat, frontmatterKey, shouldRefreshBoard } from './parsers/common';
@@ -61,7 +55,7 @@ export class StateManager {
     this.getGlobalSettings = getGlobalSettings;
     this.parser = new ListFormat(this);
 
-    this.registerView(initialView, initialData, true);
+    void this.registerView(initialView, initialData, true);
   }
 
   getAView(): KanbanView {
@@ -78,7 +72,7 @@ export class StateManager {
     }
 
     // This helps delay blocking the UI until the the loading indicator is displayed
-    await new Promise((res) => activeWindow.setTimeout(res, 10));
+    await new Promise((res) => window.setTimeout(res, 10));
 
     if (shouldParseData) {
       await this.newBoard(view, data);
@@ -887,7 +881,7 @@ export class StateManager {
   }
 
   onFileMetadataChange() {
-    this.reparseBoardFromMd();
+    void this.reparseBoardFromMd();
   }
 
   async reparseBoardFromMd() {
@@ -943,8 +937,7 @@ export class StateManager {
 
     const archivedAt = Date.now();
     let nextCards = sanitizeCards(board.data.settings.cards) || [];
-    const archivedItems = await Promise.all(
-      archived.map(({ item, sourceLane, sourceItemIndex }) => {
+    const archivedItems = archived.map(({ item, sourceLane, sourceItemIndex }) => {
         const blockId = item.data.blockId || generateInstanceId(6);
         const itemWithBlockId = item.data.blockId
           ? item
@@ -963,8 +956,7 @@ export class StateManager {
         }));
 
         return shouldAppendArchiveDate ? appendArchiveDate(itemWithBlockId) : itemWithBlockId;
-      })
-    );
+      });
 
     try {
       this.setState(

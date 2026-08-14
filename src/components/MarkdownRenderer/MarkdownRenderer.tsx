@@ -80,7 +80,7 @@ export class BasicMarkdownRenderer extends Component {
   }
 
   onload() {
-    this.render();
+    void this.render();
   }
 
   async render() {
@@ -312,7 +312,7 @@ export const MarkdownRenderer = memo(function MarkdownPreviewRenderer({
     preview.renderCapability.resolve();
 
     preview.set(markdownString);
-    preview.renderCapability.promise.then(() => {
+    void preview.renderCapability.promise.then(() => {
       colorizeTags(elRef.current, getTagColor);
       colorizeDates(elRef.current, getDateColor);
     });

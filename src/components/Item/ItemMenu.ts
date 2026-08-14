@@ -41,13 +41,13 @@ export function useItemMenu({
     (e: MouseEvent) => {
       const coordinates = { x: e.clientX, y: e.clientY };
       const fileManager = stateManager.app.fileManager;
-      const pickerWindow = activeWindow as Window;
+      const pickerWindow = activeWindow;
       const hasDate = !!card.data.metadata.date;
       const hasTime = !!card.data.metadata.time;
       const copyCardLink = () => {
         const blockId = card.data.blockId || generateInstanceId(6);
 
-        navigator.clipboard.writeText(
+        void navigator.clipboard.writeText(
           `${fileManager.generateMarkdownLink(stateManager.file, '', '#^' + blockId)}`
         );
 
@@ -87,7 +87,7 @@ export function useItemMenu({
               const newNoteTemplatePath = stateManager.getSetting('new-note-template');
 
               const targetFolder = newNoteFolder
-                ? (stateManager.app.vault.getAbstractFileByPath(newNoteFolder as string) as TFolder)
+                ? (stateManager.app.vault.getAbstractFileByPath(newNoteFolder) as TFolder)
                 : stateManager.app.fileManager.getNewFileParent(stateManager.file.path);
 
               const newFile = (await (stateManager.app.fileManager as any).createNewMarkdownFile(
@@ -101,7 +101,7 @@ export function useItemMenu({
 
               stateManager.app.workspace.setActiveLeaf(newLeaf, false, true);
 
-              await applyTemplate(stateManager, newNoteTemplatePath as string | undefined);
+              await applyTemplate(stateManager, newNoteTemplatePath);
 
               const newTitleRaw = card.data.titleRaw.replace(
                 prevTitle,
@@ -122,11 +122,7 @@ export function useItemMenu({
             .setTitle(t('Split card'))
             .onClick(async () => {
               const titles = card.data.titleRaw.split(/[\r\n]+/g).map((t) => t.trim());
-              const newItems = await Promise.all(
-                titles.map((title) => {
-                  return stateManager.getNewItem(title, ' ');
-                })
-              );
+              const newItems = titles.map((title) => stateManager.getNewItem(title, ' '));
 
               boardModifiers.splitItem(path, newItems);
             });
@@ -209,7 +205,7 @@ export function useItemMenu({
                 ? '(?:\\[[^\\]]+\\]\\([^\\)]+\\)|\\[\\[[^\\]]+\\]\\])'
                 : '{[^}]+}';
               const dateRegEx = new RegExp(
-                `(^|\\s)${escapeRegExpStr(dateTrigger as string)}${contentMatch}`
+                `(^|\\s)${escapeRegExpStr(dateTrigger)}${contentMatch}`
               );
 
               const titleRaw = card.data.titleRaw.replace(dateRegEx, '').trim();
@@ -245,7 +241,7 @@ export function useItemMenu({
               .onClick(() => {
                 const timeTrigger = stateManager.getSetting('time-trigger');
                 const timeRegEx = new RegExp(
-                  `(^|\\s)${escapeRegExpStr(timeTrigger as string)}{([^}]+)}`
+                  `(^|\\s)${escapeRegExpStr(timeTrigger)}{([^}]+)}`
                 );
 
                 const titleRaw = card.data.titleRaw.replace(timeRegEx, '').trim();
