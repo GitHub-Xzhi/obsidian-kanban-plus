@@ -3,6 +3,7 @@ import update from 'immutability-helper';
 import {
   HoverParent,
   HoverPopover,
+  MarkdownFileInfo,
   Menu,
   Platform,
   TFile,
@@ -28,24 +29,41 @@ import { frontmatterKey } from './parsers/common';
 export const kanbanViewType = 'kanban';
 export const kanbanIcon = 'lucide-trello';
 
+interface KanbanViewEvents {
+  hotkey: [{ commandId: string; data?: string }];
+  queueEmpty: [];
+  showLaneForm: [];
+}
+
+type SharedViewSettingKey = keyof KanbanViewSettings & keyof KanbanSettings;
+
+function isSharedViewSettingKey(key: keyof KanbanViewSettings): key is SharedViewSettingKey {
+  return key === frontmatterKey || key === 'list-collapse';
+}
+
 export class KanbanView extends TextFileView implements HoverParent {
+  declare file: TFile;
   plugin: KanbanPlugin;
-  hoverPopover: HoverPopover | null;
-  emitter: EventEmitter;
+  hoverPopover: HoverPopover | null = null;
+  emitter: EventEmitter<KanbanViewEvents>;
   actionButtons: Record<string, HTMLElement> = {};
 
   previewCache: Map<string, BasicMarkdownRenderer>;
   previewQueue: PromiseQueue;
 
-  activeEditor: any;
+  activeEditor: MarkdownFileInfo | null = null;
   viewSettings: KanbanViewSettings = {};
+
+  private get leafId(): string | undefined {
+    return (this.leaf as WorkspaceLeaf & { id?: string }).id;
+  }
 
   get isPrimary(): boolean {
     return this.plugin.getStateManager(this.file)?.getAView() === this;
   }
 
   get id(): string {
-    return `${(this.leaf as any).id}:::${this.file?.path}`;
+    return `${this.leafId}:::${this.file?.path}`;
   }
 
   get isShiftPressed(): boolean {
@@ -55,7 +73,7 @@ export class KanbanView extends TextFileView implements HoverParent {
   constructor(leaf: WorkspaceLeaf, plugin: KanbanPlugin) {
     super(leaf);
     this.plugin = plugin;
-    this.emitter = new EventEmitter();
+    this.emitter = new EventEmitter<KanbanViewEvents>();
     this.previewCache = new Map();
 
     this.previewQueue = new PromiseQueue(() => this.emitter.emit('queueEmpty'));
@@ -91,7 +109,7 @@ export class KanbanView extends TextFileView implements HoverParent {
 
     if (this.previewQueue.isRunning) {
       await new Promise((res) => {
-        this.emitter.once('queueEmpty', res);
+        this.emitter.once('queueEmpty', () => res(undefined));
       });
     }
 
@@ -118,7 +136,7 @@ export class KanbanView extends TextFileView implements HoverParent {
   setView(view: KanbanFormat) {
     this.setViewState(frontmatterKey, view);
     this.app.fileManager.processFrontMatter(this.file, (frontmatter) => {
-      frontmatter[frontmatterKey] = view;
+      (frontmatter as Record<string, unknown>)[frontmatterKey] = view;
     });
   }
 
@@ -174,8 +192,9 @@ export class KanbanView extends TextFileView implements HoverParent {
   onload() {
     super.onload();
     if (Platform.isMobile) {
+      const mobileNavbar = (this.app as { mobileNavbar?: { containerEl: HTMLElement } }).mobileNavbar;
       this.containerEl.setCssProps({
-        '--mobile-navbar-height': (this.app as any).mobileNavbar.containerEl.clientHeight + 'px',
+        '--mobile-navbar-height': `${mobileNavbar?.containerEl.clientHeight || 0}px`,
       });
     }
 
@@ -226,7 +245,7 @@ export class KanbanView extends TextFileView implements HoverParent {
 
   setViewData(data: string, clear?: boolean) {
     if (!hasFrontmatterKeyRaw(data)) {
-      this.plugin.kanbanFileModes[(this.leaf as any).id || this.file.path] = 'markdown';
+      this.plugin.kanbanFileModes[this.leafId || this.file.path] = 'markdown';
       this.plugin.removeView(this);
       this.plugin.setMarkdownView(this.leaf, false);
 
@@ -246,7 +265,8 @@ export class KanbanView extends TextFileView implements HoverParent {
   }
 
   async setState(state: any, result: ViewStateResult): Promise<void> {
-    this.viewSettings = { ...state.kanbanViewState };
+    const nextViewState = (state as { kanbanViewState?: KanbanViewSettings }).kanbanViewState;
+    this.viewSettings = { ...(nextViewState || {}) };
     await super.setState(state, result);
   }
 
@@ -282,18 +302,33 @@ export class KanbanView extends TextFileView implements HoverParent {
 
   getViewState<K extends keyof KanbanViewSettings>(key: K) {
     const stateManager = this.plugin.stateManagers.get(this.file);
-    const settingVal = stateManager.getSetting(key);
+
+    if (!stateManager) {
+      return this.viewSettings[key];
+    }
+
+    const settingVal = isSharedViewSettingKey(key) ? stateManager.getSetting(key) : undefined;
     return this.viewSettings[key] ?? settingVal;
   }
 
   useViewState<K extends keyof KanbanViewSettings>(key: K) {
     const stateManager = this.plugin.stateManagers.get(this.file);
-    const settingVal = stateManager.useSetting(key);
+
+    if (!stateManager) {
+      return this.viewSettings[key];
+    }
+
+    const settingVal = isSharedViewSettingKey(key) ? stateManager.useSetting(key) : undefined;
     return this.viewSettings[key] ?? settingVal;
   }
 
   getPortal() {
     const stateManager = this.plugin.stateManagers.get(this.file);
+
+    if (!stateManager) {
+      return null;
+    }
+
     return <Kanban stateManager={stateManager} view={this} />;
   }
 
@@ -334,7 +369,7 @@ export class KanbanView extends TextFileView implements HoverParent {
           .setIcon('lucide-file-text')
           .setSection('pane')
           .onClick(() => {
-            this.plugin.kanbanFileModes[(this.leaf as any).id || this.file.path] = 'markdown';
+            this.plugin.kanbanFileModes[this.leafId || this.file.path] = 'markdown';
             this.plugin.setMarkdownView(this.leaf);
           });
       })
@@ -462,7 +497,7 @@ export class KanbanView extends TextFileView implements HoverParent {
         'lucide-file-text',
         t('Open as markdown'),
         () => {
-          this.plugin.kanbanFileModes[(this.leaf as any).id || this.file.path] = 'markdown';
+          this.plugin.kanbanFileModes[this.leafId || this.file.path] = 'markdown';
           this.plugin.setMarkdownView(this.leaf);
         }
       );
@@ -515,7 +550,7 @@ export class KanbanView extends TextFileView implements HoverParent {
 
     if (stateManager.getSetting('show-add-list') && !this.actionButtons['show-add-list']) {
       const btn = this.addAction('lucide-plus-circle', t('Add a list'), () => {
-        this.emitter.emit('showLaneForm', undefined);
+        this.emitter.emit('showLaneForm');
       });
 
       btn.addClass(c('ignore-click-outside'));

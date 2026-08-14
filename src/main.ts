@@ -461,7 +461,7 @@ export default class KanbanPlugin extends Plugin {
                   .setIcon('lucide-plus-circle')
                   .setSection('pane')
                   .onClick(() => {
-                    kanbanView.emitter.emit('showLaneForm', undefined);
+                    kanbanView.emitter.emit('showLaneForm');
                   });
               })
               .addItem((item) => {
@@ -659,7 +659,7 @@ export default class KanbanPlugin extends Plugin {
         }
 
         if (view && view instanceof KanbanView) {
-          view.emitter.emit('showLaneForm', undefined);
+          view.emitter.emit('showLaneForm');
         }
       },
     });
