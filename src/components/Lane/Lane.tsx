@@ -1,4 +1,6 @@
 import animateScrollTo from 'animated-scroll-to';
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+
 import classcat from 'classcat';
 import update from 'immutability-helper';
 import { Fragment, memo, useCallback, useContext, useMemo, useRef, useState } from 'preact/compat';

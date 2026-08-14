@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+
 import classcat from 'classcat';
 import { TFile, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';

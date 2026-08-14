@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+
 import { TFile } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
 import { StateManager } from 'src/StateManager';

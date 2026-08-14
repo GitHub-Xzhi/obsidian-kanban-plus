@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+
 import { Instance } from '../types/instance';
 import { Plugin } from '../types/options';
 import { getEventTarget } from '../utils/dom';

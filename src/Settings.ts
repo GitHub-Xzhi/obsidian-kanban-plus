@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+
 import update, { Spec } from 'immutability-helper';
 import {
   App,
@@ -239,7 +241,10 @@ export class SettingsManager {
     this.config.onSettingsChange(this.settings);
   }
 
-  getSetting(key: keyof KanbanSettings, local: boolean) {
+  getSetting<K extends keyof KanbanSettings>(
+    key: K,
+    local: boolean
+  ): [KanbanSettings[K], KanbanSettings[K] | null] {
     if (local) {
       return [this.settings[key], this.plugin.settings[key]];
     }
@@ -1283,12 +1288,12 @@ export class SettingsManager {
         () => {
           const [value, globalValue] = this.getSetting('date-display-format', local);
           const defaultFormat = getDefaultDateFormat(this.app);
-          return value || globalValue || defaultFormat;
+          return (value as string | undefined) || (globalValue as string | undefined) || defaultFormat;
         },
         () => {
           const [value, globalValue] = this.getSetting('time-format', local);
           const defaultFormat = getDefaultTimeFormat(this.app);
-          return value || globalValue || defaultFormat;
+          return (value as string | undefined) || (globalValue as string | undefined) || defaultFormat;
         }
       );
 

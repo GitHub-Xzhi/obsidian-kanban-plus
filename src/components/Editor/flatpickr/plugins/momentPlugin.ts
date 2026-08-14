@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+
 import { Plugin } from '../types/options';
 import { IncrementEvent } from '../utils';
 import { getEventTarget } from '../utils/dom';

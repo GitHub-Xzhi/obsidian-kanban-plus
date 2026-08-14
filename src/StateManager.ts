@@ -65,7 +65,7 @@ export class StateManager {
   }
 
   getAView(): KanbanView {
-    return this.viewSet.values().next().value;
+    return this.viewSet.values().next().value as KanbanView;
   }
 
   hasError(): boolean {

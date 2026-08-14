@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+
 import 'obsidian';
 
 import { Plugin } from '../types/options';

@@ -168,12 +168,13 @@ export class KanbanView extends TextFileView implements HoverParent {
 
   async loadFile(file: TFile) {
     this.plugin.removeView(this);
-    const loadFile = (TextFileView.prototype as TextFileView & {
+    const loadFile = (TextFileView.prototype as unknown as TextFileView & {
       loadFile?: (this: TextFileView, file: TFile) => Promise<void>;
     }).loadFile;
 
     if (loadFile) {
-      return loadFile.call(this, file);
+      const result: Promise<void> = loadFile.call(this, file);
+      return result;
     }
 
     return super.onLoadFile(file);

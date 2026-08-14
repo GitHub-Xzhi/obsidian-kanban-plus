@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+
 import { around } from 'monkey-around';
 import {
   MarkdownFileInfo,

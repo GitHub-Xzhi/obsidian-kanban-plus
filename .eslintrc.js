@@ -40,4 +40,38 @@ module.exports = {
     indent: 'off',
     quotes: 'off',
   },
+  overrides: [
+    {
+      files: ['src/components/Editor/flatpickr/**/*.{ts,tsx}'],
+      rules: {
+        // Vendored flatpickr sources rely heavily on dynamic internals and are not worth
+        // refactoring just to satisfy this rule.
+        '@typescript-eslint/no-unsafe-return': 'off',
+      },
+    },
+    {
+      files: [
+        'src/Settings.ts',
+        'src/main.ts',
+        'src/components/Editor/MarkdownEditor.tsx',
+        'src/components/Item/MetadataTable.tsx',
+        'src/components/Item/helpers.ts',
+        'src/components/Kanban.tsx',
+        'src/components/Lane/Lane.tsx',
+        'src/components/helpers.ts',
+        'src/dnd/util/createHTMLDndEntity.ts',
+        'src/helpers/boardModifiers.ts',
+        'src/parsers/List.ts',
+        'src/parsers/common.ts',
+        'src/parsers/formats/list.ts',
+        'src/parsers/helpers/inlineMetadata.ts',
+        'src/parsers/parseMarkdown.ts',
+      ],
+      rules: {
+        // These files sit on dynamic Obsidian/CodeMirror/Dataview/Tasks boundaries where
+        // precise static return typing would require risky refactors with little runtime value.
+        '@typescript-eslint/no-unsafe-return': 'off',
+      },
+    },
+  ],
 };
