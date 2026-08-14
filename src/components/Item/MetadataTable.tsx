@@ -1,11 +1,11 @@
 import classcat from 'classcat';
-import { isPlainObject } from 'is-plain-object';
 import { TFile, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
 import { ComponentChild } from 'preact';
 import { memo, useContext, useMemo } from 'preact/compat';
 import { KanbanView } from 'src/KanbanView';
 import { StateManager } from 'src/StateManager';
+import { isPlainObject } from 'src/helpers/isPlainObject';
 import { getCardCreatedTime, getCardCompletedTime } from 'src/helpers/cardSettings';
 import { t } from 'src/lang/helpers';
 import { InlineField, taskFields } from 'src/parsers/helpers/inlineMetadata';

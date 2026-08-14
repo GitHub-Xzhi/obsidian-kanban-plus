@@ -1,4 +1,4 @@
-import builtins from 'builtin-modules';
+import { builtinModules } from 'node:module';
 import esbuild from 'esbuild';
 import { lessLoader } from 'esbuild-plugin-less';
 import fs from 'fs';
@@ -244,7 +244,7 @@ const context = await esbuild.context({
     '@codemirror/tooltip',
     '@codemirror/view',
     'node:*',
-    ...builtins,
+    ...builtinModules,
   ],
   format: 'cjs',
   target: 'es2018',

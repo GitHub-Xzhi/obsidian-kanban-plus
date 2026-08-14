@@ -1,8 +1,8 @@
-import { isPlainObject } from 'is-plain-object';
 import { TFile } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
 import { StateManager } from 'src/StateManager';
 import { Board, Item } from 'src/components/types';
+import { isPlainObject } from 'src/helpers/isPlainObject';
 
 import { diff, diffApply } from '../helpers/patch';
 import { BaseFormat } from './common';

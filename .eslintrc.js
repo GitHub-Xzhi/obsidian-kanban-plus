@@ -8,7 +8,6 @@ module.exports = {
   ignorePatterns: ['./src/docs'],
   extends: [
     'eslint:recommended',
-    'plugin:react/recommended',
     'plugin:@typescript-eslint/recommended',
   ],
   globals: {
@@ -25,7 +24,7 @@ module.exports = {
     ecmaVersion: 2018,
     sourceType: 'module',
   },
-  plugins: ['react', '@typescript-eslint'],
+  plugins: ['@typescript-eslint'],
   rules: {
     '@typescript-eslint/await-thenable': 'error',
     '@typescript-eslint/explicit-function-return-type': 'off',
@@ -37,16 +36,8 @@ module.exports = {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-this-alias': 'off',
     '@typescript-eslint/no-inferrable-types': 'off',
-    'react/no-unescaped-entities': 'off',
-    'react/prop-types': 'off',
-    'react/react-in-jsx-scope': 'off',
     'linebreak-style': ['error', 'unix'],
     indent: 'off',
     quotes: 'off',
-  },
-  settings: {
-    react: {
-      version: '16.13',
-    },
   },
 };
