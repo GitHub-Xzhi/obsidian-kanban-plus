@@ -32,6 +32,14 @@ import {
 import { escapeRegExpStr, generateInstanceId } from '../components/helpers';
 import { Board, DataTypes, Item, Lane } from '../components/types';
 
+function asLane(entity: Board | Lane | Item): Lane | null {
+  return entity.type === DataTypes.Lane ? entity : null;
+}
+
+function asItem(entity: Board | Lane | Item): Item | null {
+  return entity.type === DataTypes.Item ? entity : null;
+}
+
 export interface BoardModifiers {
   appendItems: (path: Path, items: Item[]) => void;
   prependItems: (path: Path, items: Item[]) => void;
@@ -51,6 +59,8 @@ export interface BoardModifiers {
   unarchiveItem: (archiveIndex: number) => void;
   duplicateEntity: (path: Path) => void;
 }
+
+type SettingsSpec = Record<string, unknown>;
 
 export function getBoardModifiers(view: KanbanView, stateManager: StateManager): BoardModifiers {
   const getArchiveDateSettings = () => {
@@ -129,17 +139,27 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
   };
 
   const collectBlockIds = (entity: Item | Lane): string[] => {
-    if (entity.type === DataTypes.Item) {
-      return entity.data.blockId ? [entity.data.blockId] : [];
+    const item = asItem(entity);
+
+    if (item) {
+      const blockId = item.data.blockId;
+      return typeof blockId === 'string' && blockId.length > 0 ? [blockId] : [];
     }
 
-    return entity.children.flatMap(collectBlockIds);
+    const nextIds: string[] = [];
+    for (const child of entity.children as Item[]) {
+      nextIds.push(...collectBlockIds(child));
+    }
+    return nextIds;
   };
 
-  const applySettingsSpec = (boardData: Board, settingsSpec: any) => {
-    return Object.keys(settingsSpec).length
-      ? update<Board>(boardData, { data: { settings: settingsSpec } })
-      : boardData;
+  const applySettingsSpec = (boardData: Board, settingsSpec: SettingsSpec) => {
+    if (!Object.keys(settingsSpec).length) {
+      return boardData;
+    }
+
+    const nextBoard = update<Board>(boardData, { data: { settings: settingsSpec as never } });
+    return nextBoard;
   };
 
   const addCreatedTimes = (boardData: Board, items: Item[]) => {
@@ -311,7 +331,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     }
 
     if (entity.type !== DataTypes.Lane) {
-      const settingsSpec: any = {};
+      const settingsSpec: SettingsSpec = {};
 
       if (didUpdateCards) {
         settingsSpec.cards = { $set: nextCards };
@@ -321,7 +341,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     }
 
     const laneBackgroundColors = boardData.data.settings['lane-background-colors'];
-    const settingsSpec: any = {};
+    const settingsSpec: SettingsSpec = {};
     const unsetSettings: string[] = [];
 
     if (didUpdateCards) {
@@ -398,7 +418,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const created = addCreatedTimes(boardData, items);
 
         return applySettingsSpec(
-          appendEntities(boardData, path, created.items),
+          appendEntities(boardData, path, created.items) as Board,
           created.settingsSpec
         );
       });
@@ -409,7 +429,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const created = addCreatedTimes(boardData, items);
 
         return applySettingsSpec(
-          prependEntities(boardData, path, created.items),
+          prependEntities(boardData, path, created.items) as Board,
           created.settingsSpec
         );
       });
@@ -420,7 +440,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const created = addCreatedTimes(boardData, items);
 
         return applySettingsSpec(
-          insertEntity(boardData, path, created.items),
+          insertEntity(boardData, path, created.items) as Board,
           created.settingsSpec
         );
       });
@@ -431,7 +451,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const created = addCreatedTimes(boardData, items);
 
         return applySettingsSpec(
-          insertEntity(removeEntity(boardData, path), path, created.items),
+          insertEntity(removeEntity(boardData, path) as Board, path, created.items) as Board,
           created.settingsSpec
         );
       });
@@ -442,21 +462,21 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const created = addCreatedTimes(boardData, items);
 
         return applySettingsSpec(
-          insertEntity(removeEntity(boardData, path), path, created.items),
+          insertEntity(removeEntity(boardData, path) as Board, path, created.items) as Board,
           created.settingsSpec
         );
       });
     },
 
     moveItemToTop: (path: Path) => {
-      stateManager.setState((boardData) => moveEntity(boardData, path, [path[0], 0]));
+      stateManager.setState((boardData) => moveEntity(boardData, path, [path[0], 0]) as Board);
     },
 
     moveItemToBottom: (path: Path) => {
       stateManager.setState((boardData) => {
         const laneIndex = path[0];
         const lane = boardData.children[laneIndex];
-        return moveEntity(boardData, path, [laneIndex, lane.children.length]);
+        return moveEntity(boardData, path, [laneIndex, lane.children.length]) as Board;
       });
     },
 
@@ -470,7 +490,8 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         };
 
         view.setViewState('list-collapse', undefined, op);
-        return update<Board>(appendEntities(boardData, [], [lane]), {
+        const appendedBoard = appendEntities(boardData, [], [lane]) as Board;
+        return update<Board>(appendedBoard, {
           data: { settings: { 'list-collapse': { $set: op(collapseState) } } },
         });
       });
@@ -478,7 +499,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     insertLane: (path: Path, lane: Lane) => {
       stateManager.setState((boardData) => {
-        const collapseState = view.getViewState('list-collapse');
+        const collapseState = view.getViewState('list-collapse') || [];
         const op = (collapseState: boolean[]) => {
           const newState = [...collapseState];
           newState.splice(path.last(), 0, false);
@@ -487,7 +508,8 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
         view.setViewState('list-collapse', undefined, op);
 
-        return update<Board>(insertEntity(boardData, path, [lane]), {
+        const insertedBoard = insertEntity(boardData, path, [lane]) as Board;
+        return update<Board>(insertedBoard, {
           data: { settings: { 'list-collapse': { $set: op(collapseState) } } },
         });
       });
@@ -507,12 +529,13 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     archiveLane: (path: Path) => {
       stateManager.setState((boardData) => {
-        const lane = getEntityFromPath(boardData, path);
+        const lane = asLane(getEntityFromPath(boardData, path) as Board | Lane | Item);
+        if (!lane) return boardData;
         const items = lane.children;
 
         try {
           const archived = archiveItemsWithSources(items, lane, (itemIndex) => itemIndex);
-          const collapseState = view.getViewState('list-collapse');
+          const collapseState = view.getViewState('list-collapse') || [];
           const op = (collapseState: boolean[]) => {
             const newState = [...collapseState];
             newState.splice(path.last(), 1);
@@ -520,8 +543,10 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           };
           view.setViewState('list-collapse', undefined, op);
 
+          const removedBoard = removeEntity(boardData, path) as Board;
+
           return updateCards(
-            update<Board>(removeEntity(boardData, path), {
+            update<Board>(removedBoard, {
               data: {
                 settings: { 'list-collapse': { $set: op(collapseState) } },
                 archive: {
@@ -532,7 +557,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
             archived.cards
           );
         } catch (e) {
-          stateManager.setError(e);
+          stateManager.setError(e instanceof Error ? e : new Error(String(e)));
           return boardData;
         }
       });
@@ -540,19 +565,22 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     archiveLaneItems: (path: Path) => {
       stateManager.setState((boardData) => {
-        const lane = getEntityFromPath(boardData, path);
+        const lane = asLane(getEntityFromPath(boardData, path) as Board | Lane | Item);
+        if (!lane) return boardData;
         const items = lane.children;
 
         try {
           const archived = archiveItemsWithSources(items, lane, (itemIndex) => itemIndex);
 
+          const updatedBoard = updateEntity(boardData, path, {
+            children: {
+              $set: [],
+            },
+          }) as Board;
+
           return updateCards(
             update(
-              updateEntity(boardData, path, {
-                children: {
-                  $set: [],
-                },
-              }),
+              updatedBoard,
               {
                 data: {
                   archive: {
@@ -564,7 +592,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
             archived.cards
           );
         } catch (e) {
-          stateManager.setError(e);
+          stateManager.setError(e instanceof Error ? e : new Error(String(e)));
           return boardData;
         }
       });
@@ -572,11 +600,11 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     deleteEntity: (path: Path) => {
       stateManager.setState((boardData) => {
-        const entity = getEntityFromPath(boardData, path);
-        const nextBoard = clearDeletedEntityReferences(removeEntity(boardData, path), entity, path);
+        const entity = getEntityFromPath(boardData, path) as Board | Lane | Item;
+        const nextBoard = clearDeletedEntityReferences(removeEntity(boardData, path) as Board, entity, path);
 
         if (entity.type === DataTypes.Lane) {
-          const collapseState = view.getViewState('list-collapse');
+          const collapseState = view.getViewState('list-collapse') || [];
           const op = (collapseState: boolean[]) => {
             const newState = [...collapseState];
             newState.splice(path.last(), 1);
@@ -595,7 +623,8 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     updateItem: (path: Path, item: Item) => {
       stateManager.setState((boardData) => {
-        const previousItem = getEntityFromPath(boardData, path) as Item;
+        const previousItem = asItem(getEntityFromPath(boardData, path) as Board | Lane | Item);
+        if (!previousItem) return boardData;
         const itemWithBlockId =
           previousItem.data.blockId && !item.data.blockId
             ? update<Item>(item, { data: { blockId: { $set: previousItem.data.blockId } } })
@@ -607,7 +636,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
               $set: created.items[0],
             },
           },
-        });
+        }) as Board;
 
         return applySettingsSpec(nextBoard, {
           ...created.settingsSpec,
@@ -618,11 +647,12 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     archiveItem: (path: Path) => {
       stateManager.setState((boardData) => {
-        const item = getEntityFromPath(boardData, path);
+        const item = asItem(getEntityFromPath(boardData, path) as Board | Lane | Item);
+        if (!item) return boardData;
         try {
           const lane = boardData.children[path[0]];
           const archived = archiveItemsWithSources([item], lane, () => path[1]);
-          let nextBoard = removeEntity(boardData, path);
+          let nextBoard = removeEntity(boardData, path) as Board;
           const blockId = item.data.blockId;
 
           if (blockId && getCompletedCardSource(nextBoard.data.settings, blockId)) {
@@ -645,15 +675,17 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
           nextBoard = updateCards(nextBoard, archived.cards);
 
-          return update(nextBoard, {
+          const archivedBoard = update<Board>(nextBoard, {
             data: {
               archive: {
                 $push: archived.items,
               },
             },
           });
+
+          return archivedBoard;
         } catch (e) {
-          stateManager.setError(e);
+          stateManager.setError(e instanceof Error ? e : new Error(String(e)));
           return boardData;
         }
       });
@@ -668,7 +700,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         }
 
         const blockId = item.data.blockId;
-  const source = getArchivedCardSource(boardData.data.settings, blockId);
+        const source = getArchivedCardSource(boardData.data.settings, blockId);
 
         if (!blockId || !source) {
           new Notice(t('Unable to find source list'));
@@ -720,7 +752,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
     duplicateEntity: (path: Path) => {
       stateManager.setState((boardData) => {
-        const entity = getEntityFromPath(boardData, path);
+        const entity = getEntityFromPath(boardData, path) as Board | Lane | Item;
         let entityWithNewID = update(entity, {
           id: { $set: generateInstanceId() },
         });
@@ -734,7 +766,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         }
 
         if (entity.type === DataTypes.Lane) {
-          const collapseState = view.getViewState('list-collapse');
+          const collapseState = view.getViewState('list-collapse') || [];
           const op = (collapseState: boolean[]) => {
             const newState = [...collapseState];
             newState.splice(path.last(), 0, collapseState[path.last()]);
@@ -742,7 +774,8 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           };
           view.setViewState('list-collapse', undefined, op);
 
-          return update<Board>(insertEntity(boardData, path, [entityWithNewID]), {
+          const insertedBoard = insertEntity(boardData, path, [entityWithNewID]) as Board;
+          return update<Board>(insertedBoard, {
             data: { settings: { 'list-collapse': { $set: op(collapseState) } } },
           });
         }
@@ -750,7 +783,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         const created = addCreatedTimes(boardData, [entityWithNewID as Item]);
 
         return applySettingsSpec(
-          insertEntity(boardData, path, created.items),
+          insertEntity(boardData, path, created.items) as Board,
           created.settingsSpec
         );
       });
