@@ -454,7 +454,7 @@ export default class KanbanPlugin extends Plugin {
           fileIsFile &&
           leaf &&
           source === 'sidebar-context-menu' &&
-          hasFrontmatterKey(file)
+          hasFrontmatterKey(this.app, file)
         ) {
           const views = this.getKanbanViews(getParentWindow(leaf.view.containerEl));
           let haveKanbanView = false;
@@ -487,7 +487,7 @@ export default class KanbanPlugin extends Plugin {
           leafIsMarkdown &&
           fileIsFile &&
           ['more-options', 'pane-more-options', 'tab-header'].includes(source) &&
-          hasFrontmatterKey(file)
+          hasFrontmatterKey(this.app, file)
         ) {
           menu.addItem((item) => {
             item

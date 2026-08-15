@@ -34,15 +34,15 @@ interface KanbanProps {
   view: KanbanView;
 }
 
-function getCSSClass(frontmatter: Record<string, any>): string[] {
-  const classes = [];
+function getCSSClass(frontmatter: Record<string, unknown>): string[] {
+  const classes: string[] = [];
   if (Array.isArray(frontmatter.cssclass)) {
-    classes.push(...frontmatter.cssclass);
+    classes.push(...frontmatter.cssclass.filter((item): item is string => typeof item === 'string'));
   } else if (typeof frontmatter.cssclass === 'string') {
     classes.push(frontmatter.cssclass);
   }
   if (Array.isArray(frontmatter.cssclasses)) {
-    classes.push(...frontmatter.cssclasses);
+    classes.push(...frontmatter.cssclasses.filter((item): item is string => typeof item === 'string'));
   } else if (typeof frontmatter.cssclasses === 'string') {
     classes.push(frontmatter.cssclasses);
   }

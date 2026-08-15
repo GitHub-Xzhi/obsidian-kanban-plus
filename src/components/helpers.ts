@@ -206,16 +206,6 @@ interface TemplaterPlugin {
   };
 }
 
-interface TemplatesPlugin {
-  enabled?: boolean;
-  instance?: {
-    options?: {
-      folder?: string;
-    };
-    insertTemplate?: (file: TFile) => Promise<void>;
-  };
-}
-
 interface ObsidianPluginApp extends App {
   internalPlugins?: {
     plugins: Record<string, InternalPluginEntry>;

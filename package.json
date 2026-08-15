@@ -62,6 +62,7 @@
     "mdast-util-frontmatter": "^1.0.0",
     "mdast-util-to-markdown": "^1.2.6",
     "mdast-util-to-string": "^3.1.0",
+    "micromark-extension-frontmatter": "^1.1.1",
     "micromark-util-character": "^1.1.0",
     "micromark-util-types": "^1.0.1",
     "monkey-around": "^2.1.0",

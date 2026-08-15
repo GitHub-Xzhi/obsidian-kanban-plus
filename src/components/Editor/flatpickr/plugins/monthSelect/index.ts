@@ -68,7 +68,7 @@ function monthSelectPlugin(pluginConfig?: Partial<Config>): Plugin {
 
       clearNode(self.monthsContainer);
 
-      const frag = self.monthsContainer.doc.createDocumentFragment();
+      const frag = self.monthsContainer.doc.win.createFragment();
 
       for (let i = 0; i < 12; i++) {
         const month = fp.createDay(
@@ -227,16 +227,17 @@ function monthSelectPlugin(pluginConfig?: Partial<Config>): Plugin {
       setCurrentlySelected();
     }
 
-    const shifts: Record<number, number> = {
-      37: -1,
-      39: 1,
-      40: 3,
-      38: -3,
+    const shifts: Record<string, number | undefined> = {
+      ArrowLeft: -1,
+      ArrowRight: 1,
+      ArrowDown: 3,
+      ArrowUp: -3,
     };
 
     function onKeyDown(_: any, __: any, ___: any, e: KeyboardEvent) {
-      const shouldMove = shifts[e.keyCode] !== undefined;
-      if (!shouldMove && e.keyCode !== 13) {
+      const shift = shifts[e.key];
+      const shouldMove = shift !== undefined;
+      if (!shouldMove && e.key !== 'Enter') {
         return;
       }
 
@@ -258,11 +259,9 @@ function monthSelectPlugin(pluginConfig?: Partial<Config>): Plugin {
       }
 
       if (shouldMove) {
-        (
-          self.monthsContainer.children[(12 + index + shifts[e.keyCode]) % 12] as HTMLElement
-        ).focus();
+        (self.monthsContainer.children[(12 + index + shift) % 12] as HTMLElement).focus();
       } else if (
-        e.keyCode === 13 &&
+        e.key === 'Enter' &&
         self.monthsContainer.contains(self.monthsContainer.doc.activeElement)
       ) {
         setMonth((self.monthsContainer.doc.activeElement as MonthElement).dateObj);

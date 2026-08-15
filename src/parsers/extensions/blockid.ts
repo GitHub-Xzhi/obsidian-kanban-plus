@@ -1,8 +1,8 @@
-import { Extension as FromMarkdownExtension, Token } from 'mdast-util-from-markdown';
+import { CompileContext, Extension as FromMarkdownExtension, Token } from 'mdast-util-from-markdown';
 import { markdownLineEnding, markdownSpace } from 'micromark-util-character';
 import { Effects, Extension, State } from 'micromark-util-types';
 
-import { getSelf } from './helpers';
+import { getValueNode } from './helpers';
 
 export function blockidExtension(): Extension {
   const name = 'blockid';
@@ -17,15 +17,15 @@ export function blockidExtension(): Extension {
     function start(code: number) {
       if (code !== startMarker.charCodeAt(startMarkerCursor)) return nok(code);
 
-      effects.enter(name as any);
-      effects.enter(`${name}Marker` as any);
+      effects.enter(name);
+      effects.enter('blockidMarker');
 
       return consumeStart(code);
     }
 
     function consumeStart(code: number) {
       if (startMarkerCursor === startMarker.length) {
-        effects.exit(`${name}Marker` as any);
+        effects.exit('blockidMarker');
         return consumeData(code);
       }
 
@@ -40,8 +40,8 @@ export function blockidExtension(): Extension {
     }
 
     function consumeData(code: number) {
-      effects.enter(`${name}Data` as any);
-      effects.enter(`${name}Target` as any);
+      effects.enter('blockidData');
+      effects.enter('blockidTarget');
       return consumeTarget(code);
     }
 
@@ -52,9 +52,9 @@ export function blockidExtension(): Extension {
 
       if (markdownLineEnding(code) || code === null) {
         if (!data) return nok(code);
-        effects.exit(`${name}Target` as any);
-        effects.exit(`${name}Data` as any);
-        effects.exit(name as any);
+        effects.exit('blockidTarget');
+        effects.exit('blockidData');
+        effects.exit(name);
 
         return ok(code);
       }
@@ -76,7 +76,7 @@ export function blockidExtension(): Extension {
 export function blockidFromMarkdown(): FromMarkdownExtension {
   const name = 'blockid';
 
-  function enter(token: Token) {
+  function enter(this: CompileContext, token: Token) {
     this.enter(
       {
         type: name,
@@ -86,14 +86,14 @@ export function blockidFromMarkdown(): FromMarkdownExtension {
     );
   }
 
-  function exitTarget(token: Token) {
+  function exitTarget(this: CompileContext, token: Token) {
     const target = this.sliceSerialize(token);
-    const current = getSelf(this.stack);
+    const current = getValueNode(this.stack);
 
-    (current as any).value = target;
+    current.value = target;
   }
 
-  function exit(token: Token) {
+  function exit(this: CompileContext, token: Token) {
     this.exit(token);
   }
 

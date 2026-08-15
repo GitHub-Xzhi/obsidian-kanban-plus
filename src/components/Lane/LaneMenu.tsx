@@ -1,5 +1,5 @@
 import update from 'immutability-helper';
-import { Menu, Platform, setTooltip } from 'obsidian';
+import { Menu, MenuItem, Platform, moment, setTooltip } from 'obsidian';
 import { Dispatch, StateUpdater, useContext, useEffect, useMemo, useState } from 'preact/hooks';
 import { Path } from 'src/dnd/types';
 import { getCardCompletedTime, getCardCreatedTime } from 'src/helpers/cardSettings';
@@ -15,6 +15,12 @@ import { EditState, Lane, LaneSort, LaneTemplate, manualSortRule } from '../type
 export type LaneAction = 'delete' | 'archive' | 'archive-items' | null;
 
 type SortOrder = 'asc' | 'desc';
+type MomentValue = ReturnType<typeof moment>;
+
+interface MenuItemWithSubmenu extends MenuItem {
+  dom?: HTMLElement;
+  setSubmenu: () => Menu;
+}
 
 function getSortTitle(label: string, order: SortOrder) {
   const orderLabel = order === 'asc' ? t('Ascending') : t('Descending');
@@ -31,7 +37,7 @@ function getSortIcon(lane: Lane) {
 }
 
 function setSortIcon(
-  item: any,
+  item: MenuItem,
   currentSort: Lane['data']['sorted'],
   currentOptionSort: LaneSort | string
 ) {
@@ -292,7 +298,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         if (lane.data.shouldMarkItemsComplete) {
           item.setDisabled(true);
 
-          const menuItemEl = (item as any).dom as HTMLElement | undefined;
+          const menuItemEl = (item as MenuItemWithSubmenu).dom;
           if (menuItemEl) {
             const tooltip = t('Only incomplete lists can set a default complete list');
             setTooltip(menuItemEl, tooltip);
@@ -301,11 +307,11 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           return;
         }
 
-        const submenu = (item as any).setSubmenu();
+        const submenu = (item as MenuItemWithSubmenu).setSubmenu();
         const defaultLaneIndex = stateManager.getDefaultCompleteLaneIndex(path[0]);
 
         if (defaultLaneIndex !== null) {
-          submenu.addItem((item: any) => {
+          submenu.addItem((item) => {
             item
               .setIcon('lucide-x')
               .setTitle(t('Clear default complete list'))
@@ -316,7 +322,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         }
 
         completeLanes.forEach(({ lane, index }) => {
-          submenu.addItem((item: any) => {
+          submenu.addItem((item) => {
             item
               .setIcon('lucide-list-checks')
               .setTitle(lane.data.title || t('Untitled'))
@@ -528,9 +534,9 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
               const mod = lane.data.sorted === LaneSort.DateAsc ? -1 : 1;
 
               children.sort((a, b) => {
-                const aDate: moment.Moment | undefined =
+                const aDate: MomentValue | undefined =
                   a.data.metadata.time || a.data.metadata.date;
-                const bDate: moment.Moment | undefined =
+                const bDate: MomentValue | undefined =
                   b.data.metadata.time || b.data.metadata.date;
 
                 if (aDate && !bDate) return -1 * mod;
@@ -719,7 +725,10 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       addSortOptions(menu);
     } else {
       menu.addItem((item) => {
-        const submenu = (item as any).setTitle(t('Sort by')).setIcon('arrow-down-up').setSubmenu();
+        const submenu = (item as MenuItemWithSubmenu)
+          .setTitle(t('Sort by'))
+          .setIcon('arrow-down-up')
+          .setSubmenu();
 
         addSortOptions(submenu);
       });

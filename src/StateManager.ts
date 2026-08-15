@@ -20,6 +20,7 @@ import {
 import { Path } from './dnd/types';
 import { insertEntity, moveEntity, removeEntity, updateEntity } from './dnd/util/data';
 import { getCard, getCompletedCardSource, sanitizeCards, updateCard } from './helpers/cardSettings';
+import { asError } from './helpers/unknown';
 import { defaultSort } from './helpers/util';
 import { ListFormat } from './parsers/List';
 import { BaseFormat, frontmatterKey, shouldRefreshBoard } from './parsers/common';
@@ -107,7 +108,7 @@ export class StateManager {
       await view.prerender(board);
       this.setState(board, false);
     } catch (e) {
-      this.setError(e);
+      this.setError(asError(e));
     }
   }
 
@@ -145,7 +146,7 @@ export class StateManager {
         this.viewSet.forEach((view) => view.initHeaderButtons());
       } catch (e) {
         console.error(e);
-        this.setError(e);
+        this.setError(asError(e));
       }
     }
   }
@@ -191,7 +192,7 @@ export class StateManager {
       }
     } catch (e) {
       console.error(e);
-      this.setError(e);
+      this.setError(asError(e));
     }
   }
 
@@ -659,10 +660,10 @@ export class StateManager {
         },
       });
       const sourceReplacements = replacements.filter((_, index) => index !== completedIndex);
-      let nextBoard = removeEntity(board, path);
+      let nextBoard = removeEntity(board, path) as Board;
 
       if (sourceReplacements.length) {
-        nextBoard = insertEntity(nextBoard, path, sourceReplacements);
+        nextBoard = insertEntity(nextBoard, path, sourceReplacements) as Board;
       }
 
       const destinationLane = nextBoard.children[laneIndex];
@@ -674,7 +675,7 @@ export class StateManager {
         ? 0
         : destinationLane.children.length;
 
-      nextBoard = insertEntity(nextBoard, [laneIndex, destinationIndex], [completedItem]);
+      nextBoard = insertEntity(nextBoard, [laneIndex, destinationIndex], [completedItem]) as Board;
       nextBoard = this.updateCompletedTime(nextBoard, completedItem, true);
 
       nextBoard = update(nextBoard, {
@@ -736,10 +737,10 @@ export class StateManager {
         },
       });
       const sourceReplacements = replacements.filter((_, index) => index !== completedIndex);
-      let nextBoard = removeEntity(board, path);
+      let nextBoard = removeEntity(board, path) as Board;
 
       if (sourceReplacements.length) {
-        nextBoard = insertEntity(nextBoard, path, sourceReplacements);
+        nextBoard = insertEntity(nextBoard, path, sourceReplacements) as Board;
       }
 
       const sourceLane = nextBoard.children[sourceLaneIndex];
@@ -748,7 +749,7 @@ export class StateManager {
         sourceLane.children.length
       );
 
-      nextBoard = insertEntity(nextBoard, [sourceLaneIndex, destinationIndex], [returnedItem]);
+      nextBoard = insertEntity(nextBoard, [sourceLaneIndex, destinationIndex], [returnedItem]) as Board;
       nextBoard = this.updateCompletedTime(nextBoard, returnedItem, false);
 
       return update(nextBoard, {
@@ -807,7 +808,7 @@ export class StateManager {
         return board;
       }
 
-      let nextBoard = moveEntity(board, path, [laneIndex, 0]);
+      let nextBoard = moveEntity(board, path, [laneIndex, 0]) as Board;
       const blockId = item.data.blockId;
 
       if (blockId && getCompletedCardSource(nextBoard.data.settings, blockId)) {
@@ -858,7 +859,7 @@ export class StateManager {
       board = update(board, {
         data: {
           errors: {
-            $push: [{ description: e.toString(), stack: e.stack }],
+            $push: [{ description: asError(e).toString(), stack: asError(e).stack }],
           },
         },
       });
@@ -889,7 +890,7 @@ export class StateManager {
       this.setState(this.getParsedBoard(this.getAView().data), false);
     } catch (e) {
       console.error(e);
-      this.setError(e);
+      this.setError(asError(e));
     }
   }
 
@@ -977,7 +978,7 @@ export class StateManager {
         })
       );
     } catch (e) {
-      this.setError(e);
+      this.setError(asError(e));
     }
   }
 

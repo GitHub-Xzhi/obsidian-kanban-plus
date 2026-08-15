@@ -36,7 +36,7 @@ export function getTemplateChoices(app: App, folderStr?: string) {
     folder = app.vault.getRoot();
   }
 
-  Vault.recurseChildren(folder as TFolder, (f) => {
+  Vault.recurseChildren(folder, (f) => {
     if (f instanceof TFile) {
       fileList.push({
         value: f.path,
@@ -147,10 +147,10 @@ export function createSearchSelect({
           c.setChoiceByValue(value);
         }
 
-        const onChange = (e: CustomEvent) => {
+        const onChange = (e: CustomEvent<{ value?: unknown }>) => {
           const val = e.detail.value;
 
-          if (val) {
+          if (typeof val === 'string' && val) {
             manager.applySettingsUpdate({
               [key]: {
                 $set: val,

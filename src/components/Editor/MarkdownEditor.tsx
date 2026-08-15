@@ -56,6 +56,27 @@ interface VimPluginValue {
   cm: string;
 }
 
+function getPluginValue(plugin: unknown): unknown {
+  if (!plugin || typeof plugin !== 'object' || !('value' in plugin)) return undefined;
+  const pluginRecord = plugin as { value?: unknown };
+  return pluginRecord.value;
+}
+
+function isUnknownArray(value: unknown): value is unknown[] {
+  return Array.isArray(value);
+}
+
+function isVimPluginValue(value: unknown): value is VimPluginValue {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    'useNextTextInput' in value &&
+    'waitForCopy' in value &&
+    'cm' in value &&
+    typeof (value as { cm?: unknown }).cm === 'string'
+  );
+}
+
 interface MarkdownController {
   app: KanbanView['app'];
   showSearch: typeof noop;
@@ -150,20 +171,13 @@ function setInsertMode(cm: EditorView) {
 }
 
 function getVimPlugin(cm: EditorView): string | undefined {
-  const rawPlugins = (cm as EditorView & { plugins?: unknown[] }).plugins || [];
+  const editorViewWithPlugins = cm as unknown as { plugins?: unknown };
+  const pluginsValue: unknown = editorViewWithPlugins.plugins;
+  const rawPlugins: unknown[] = isUnknownArray(pluginsValue) ? pluginsValue : [];
 
   for (const plugin of rawPlugins) {
-    if (!plugin || typeof plugin !== 'object' || !('value' in plugin)) continue;
-
-    const value = plugin.value;
-    if (
-      value &&
-      typeof value === 'object' &&
-      'useNextTextInput' in value &&
-      'waitForCopy' in value &&
-      'cm' in value &&
-      typeof value.cm === 'string'
-    ) {
+    const value: unknown = getPluginValue(plugin);
+    if (isVimPluginValue(value)) {
       return value.cm;
     }
   }

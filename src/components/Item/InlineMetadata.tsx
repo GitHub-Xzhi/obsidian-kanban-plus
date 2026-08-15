@@ -18,6 +18,20 @@ interface InlineMetadataProps {
   stateManager: StateManager;
 }
 
+interface DataviewParser {
+  api?: {
+    parse?: (value: string) => unknown;
+  };
+}
+
+function parseDataviewValue(value: string, dataview: DataviewParser | null): unknown {
+  return dataview?.api?.parse?.(value) ?? value;
+}
+
+function hasTimestamp(value: unknown): value is { ts: unknown } {
+  return !!value && typeof value === 'object' && 'ts' in value;
+}
+
 export function InlineMetadata({ item, stateManager }: InlineMetadataProps) {
   const search = useContext(SearchContext);
   const metaKeys = stateManager.getSetting('metadata-keys');
@@ -27,7 +41,7 @@ export function InlineMetadata({ item, stateManager }: InlineMetadataProps) {
 
   if (!inlineMetadata || (!showInlineMetadata && !showTaskMetadata)) return null;
 
-  const dataview = getDataviewPlugin();
+  const dataview = getDataviewPlugin() as DataviewParser | null;
 
   return (
     <span className={c('item-task-metadata')}>
@@ -40,9 +54,9 @@ export function InlineMetadata({ item, stateManager }: InlineMetadataProps) {
         if (!showInlineMetadata && !isTaskMetadata) return null;
 
         const isEmoji = m.wrapping === 'emoji-shorthand';
-        const val = dataview?.api?.parse(value) ?? value;
+        const val = parseDataviewValue(value, dataview);
         const isEmojiPriority = isEmoji && key === 'priority';
-        const isDate = !!val?.ts;
+        const isDate = hasTimestamp(val);
         const classNameSlug = key.replace(/[^a-zA-Z0-9_]/g, '-');
 
         let label = '';

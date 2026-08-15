@@ -21,6 +21,7 @@ import { Board } from './components/types';
 import { getParentWindow } from './dnd/util/getWindow';
 import { gotoNextDailyNote, gotoPrevDailyNote, hasFrontmatterKeyRaw } from './helpers';
 import { bindMarkdownEvents } from './helpers/renderMarkdown';
+import { asError } from './helpers/unknown';
 import { PromiseQueue } from './helpers/util';
 import { t } from './lang/helpers';
 import KanbanPlugin from './main';
@@ -173,8 +174,8 @@ export class KanbanView extends TextFileView implements HoverParent {
     }).loadFile;
 
     if (loadFile) {
-      const result: Promise<void> = loadFile.call(this, file);
-      return result;
+      await loadFile.apply(this, [file]);
+      return;
     }
 
     return super.onLoadFile(file);
@@ -185,7 +186,7 @@ export class KanbanView extends TextFileView implements HoverParent {
       return await super.onLoadFile(file);
     } catch (e) {
       const stateManager = this.plugin.stateManagers.get(this.file);
-      stateManager?.setError(e);
+      stateManager?.setError(asError(e));
       throw e;
     }
   }

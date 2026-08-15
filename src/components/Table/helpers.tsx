@@ -1,4 +1,4 @@
-import { compareItems, rankItem, rankings } from '@tanstack/match-sorter-utils';
+import { RankingInfo, compareItems, rankItem, rankings } from '@tanstack/match-sorter-utils';
 import {
   ColumnDef,
   FilterFn,
@@ -8,45 +8,80 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import classcat from 'classcat';
-import moment from 'moment';
 import { useCallback, useContext, useMemo, useRef, useState } from 'preact/hooks';
 import { StateManager } from 'src/StateManager';
 import { c } from 'src/components/helpers';
 import { defaultSort } from 'src/helpers/util';
 import { t } from 'src/lang/helpers';
-import { getDataviewPlugin, lableToName, taskFields } from 'src/parsers/helpers/inlineMetadata';
+import {
+  InlineField,
+  getDataviewPlugin,
+  lableToName,
+  taskFields,
+} from 'src/parsers/helpers/inlineMetadata';
 
 import { Tags } from '../Item/ItemContent';
 import { MetadataValue, anyToString } from '../Item/MetadataTable';
 import { SearchContext } from '../context';
-import { Board, Lane } from '../types';
+import { Board, Lane, PageData } from '../types';
 import { DateCell, ItemCell, LaneCell } from './Cells';
 import { TableData, TableItem } from './types';
 
 export const columnHelper = createColumnHelper<TableItem>();
 
+interface ValueWrapper {
+  value: unknown;
+}
+
+interface DataviewParser {
+  api?: {
+    parse?: (value: string) => unknown;
+  };
+}
+
+function hasValue(value: unknown): value is ValueWrapper {
+  return !!value && typeof value === 'object' && 'value' in value;
+}
+
+function parseDataviewValue(value: string): unknown {
+  const dataviewPlugin = getDataviewPlugin() as DataviewParser | null;
+  return dataviewPlugin?.api?.parse?.(value) ?? value;
+}
+
+function hasTimestamp(value: unknown): value is { ts: unknown } {
+  return !!value && typeof value === 'object' && 'ts' in value;
+}
+
+function getSearchQuery(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
 export const fuzzyAnyFilter: FilterFn<TableItem> = (row, columnId, search, addMeta) => {
-  const val = row.getValue(columnId);
+  const val = row.getValue<unknown>(columnId);
 
   if (val === null) return false;
 
   const stateManager = row.original.stateManager;
-  const str = val.value ? anyToString(val.value, stateManager) : anyToString(val, stateManager);
-  const itemRank = rankItem(str, search, {
+  const str = hasValue(val) ? anyToString(val.value, stateManager) : anyToString(val, stateManager);
+  const itemRank = rankItem(str, getSearchQuery(search) || '', {
     threshold: rankings.CONTAINS,
   });
   addMeta({ itemRank });
   return itemRank.passed;
 };
 
-export const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
+export const fuzzySort: SortingFn<TableItem> = (rowA, rowB, columnId) => {
   if (!rowA.columnFiltersMeta[columnId] && !rowB.columnFiltersMeta[columnId]) return null;
   if (!rowA.columnFiltersMeta[columnId]) return -1;
   if (!rowB.columnFiltersMeta[columnId]) return 1;
 
   return compareItems(
-    (rowA.columnFiltersMeta[columnId] as any)?.itemRank,
-    (rowB.columnFiltersMeta[columnId] as any)?.itemRank
+    rowA.columnFiltersMeta[columnId]?.itemRank as RankingInfo,
+    rowB.columnFiltersMeta[columnId]?.itemRank as RankingInfo
   );
 };
 
@@ -189,7 +224,7 @@ export function useTableColumns(boardData: Board, stateManager: StateManager) {
                 id: 'date',
                 size: tableSizing.date,
                 cell: (info) => {
-                  const date = info.getValue();
+                  const date = info.getValue<{ valueOf: () => number } | null>();
                   if (!date) return null;
                   return (
                     <DateCell
@@ -227,8 +262,8 @@ export function useTableColumns(boardData: Board, stateManager: StateManager) {
                 id: 'card-tags',
                 size: tableSizing['card-tags'],
                 cell: (info) => {
-                  const searchQuery = info.table.getState().globalFilter;
-                  const tags = info.getValue();
+                  const searchQuery = getSearchQuery(info.table.getState().globalFilter);
+                  const tags = info.getValue<string[] | null>();
                   if (!tags?.length) return null;
                   return <Tags tags={tags} searchQuery={searchQuery} />;
                 },
@@ -284,7 +319,7 @@ export function useTableColumns(boardData: Board, stateManager: StateManager) {
             id: key,
             header: metadataLabels.get(key) ?? key,
             cell: (info) => {
-              const m = info.getValue();
+              const m = info.getValue<InlineField | null>();
               if (!m) return null;
 
               const isTaskMetadata = taskFields.has(m.key);
@@ -292,9 +327,9 @@ export function useTableColumns(boardData: Board, stateManager: StateManager) {
               if (!moveInlineMetadata && !isTaskMetadata) return null;
 
               const isEmoji = m.wrapping === 'emoji-shorthand';
-              const val = getDataviewPlugin()?.api?.parse(m.value) ?? m.value;
+              const val = parseDataviewValue(m.value);
               const isEmojiPriority = isEmoji && m.key === 'priority';
-              const isDate = !!val?.ts;
+              const isDate = hasTimestamp(val);
 
               return (
                 <span
@@ -327,8 +362,8 @@ export function useTableColumns(boardData: Board, stateManager: StateManager) {
             },
             sortDescFirst: false,
             sortingFn: (a, b, id) => {
-              const valA = a.getValue(id);
-              const valB = b.getValue(id);
+              const valA = a.getValue<InlineField | null>(id);
+              const valB = b.getValue<InlineField | null>(id);
 
               if (valA === null && valB === null) return 0;
               if (valA === null) return desc.current ? -1 : 1;
@@ -366,18 +401,18 @@ export function useTableColumns(boardData: Board, stateManager: StateManager) {
             id: key,
             header: metadataLabels.get(key) ?? key,
             cell: (info) => {
-              const val = info.getValue();
+              const val = info.getValue<PageData | null>();
               if (!val) return null;
-              const searchQuery = info.table.getState().globalFilter;
+              const searchQuery = getSearchQuery(info.table.getState().globalFilter);
               if (key === 'tags') {
-                return <Tags searchQuery={searchQuery} tags={val.value as string[]} alwaysShow />;
+                return <Tags searchQuery={searchQuery} tags={isStringArray(val.value) ? val.value : []} alwaysShow />;
               }
               return <MetadataValue data={val} searchQuery={searchQuery} />;
             },
             sortDescFirst: false,
             sortingFn: (a, b, id) => {
-              const valA = a.getValue(id);
-              const valB = b.getValue(id);
+              const valA = a.getValue<PageData | null>(id);
+              const valB = b.getValue<PageData | null>(id);
 
               if (!valA?.value && !valB?.value) return 0;
               if (!valA?.value) return desc.current ? -1 : 1;
@@ -387,10 +422,12 @@ export function useTableColumns(boardData: Board, stateManager: StateManager) {
               if (sorted === null) {
                 if (id === 'tags') {
                   const tagSortOrder = stateManager.getSetting('tag-sort');
+                  const tagsA = isStringArray(valA.value) ? valA.value : [];
+                  const tagsB = isStringArray(valB.value) ? valB.value : [];
                   const aSortOrder =
-                    tagSortOrder?.findIndex((sort) => valA.value.includes(sort.tag)) ?? -1;
+                    tagSortOrder?.findIndex((sort) => tagsA.includes(sort.tag)) ?? -1;
                   const bSortOrder =
-                    tagSortOrder?.findIndex((sort) => valB.value.includes(sort.tag)) ?? -1;
+                    tagSortOrder?.findIndex((sort) => tagsB.includes(sort.tag)) ?? -1;
 
                   if (aSortOrder > -1 && bSortOrder < 0) return -1;
                   if (bSortOrder > -1 && aSortOrder < 0) return 1;

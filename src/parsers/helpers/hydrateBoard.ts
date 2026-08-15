@@ -39,7 +39,7 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
 
   title = title.replace(
     new RegExp(`(^|\\s)${escapeRegExpStr(dateTrigger)}\\[\\[([^\\]]+)\\]\\]`, 'g'),
-    (match, space, content) => {
+    (match: string, space: string, content: string) => {
       const parsed = moment(content, dateFormat);
       if (!parsed.isValid()) return match;
       date = parsed;
@@ -51,7 +51,7 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
   );
   title = title.replace(
     new RegExp(`(^|\\s)${escapeRegExpStr(dateTrigger)}\\[([^\\]]+)\\]\\([^)]+\\)`, 'g'),
-    (match, space, content) => {
+    (match: string, space: string, content: string) => {
       const parsed = moment(content, dateFormat);
       if (!parsed.isValid()) return match;
       date = parsed;
@@ -63,7 +63,7 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
   );
   title = title.replace(
     new RegExp(`(^|\\s)${escapeRegExpStr(dateTrigger)}{([^}]+)}`, 'g'),
-    (match, space, content) => {
+    (match: string, space: string, content: string) => {
       const parsed = moment(content, dateFormat);
       if (!parsed.isValid()) return match;
       date = parsed;
@@ -75,7 +75,7 @@ export function preprocessTitle(stateManager: StateManager, title: string) {
 
   title = title.replace(
     new RegExp(`(^|\\s)${escapeRegExpStr(timeTrigger)}{([^}]+)}`, 'g'),
-    (match, space, content) => {
+    (match: string, space: string, content: string) => {
       const parsed = moment(content, timeFormat);
       if (!parsed.isValid()) return match;
 
@@ -144,7 +144,7 @@ export function hydrateBoard(stateManager: StateManager, board: Board): Board {
       });
     });
   } catch (e) {
-    stateManager.setError(e);
+    stateManager.setError(e instanceof Error ? e : new Error(String(e)));
     throw e;
   }
 
@@ -193,11 +193,11 @@ export function hydratePostOp(stateManager: StateManager, board: Board, ops: Op[
     const entity = getEntityFromPath(board, path);
 
     if (entity.type === DataTypes.Lane) {
-      return hydrateLane(stateManager, entity);
+      return hydrateLane(stateManager, entity as Lane);
     }
 
     if (entity.type === DataTypes.Item) {
-      return hydrateItem(stateManager, entity);
+      return hydrateItem(stateManager, entity as Item);
     }
   });
 

@@ -1,4 +1,4 @@
-import { TFile } from 'obsidian';
+import { TFile, moment } from 'obsidian';
 import { KanbanSettings } from 'src/Settings';
 import { Nestable } from 'src/dnd/types';
 import { InlineField } from 'src/parsers/helpers/inlineMetadata';
@@ -86,9 +86,9 @@ export interface FileMetadata {
 
 export interface ItemMetadata {
   dateStr?: string;
-  date?: moment.Moment;
+  date?: ReturnType<typeof moment>;
   timeStr?: string;
-  time?: moment.Moment;
+  time?: ReturnType<typeof moment>;
   tags?: string[];
   fileAccessor?: FileAccessor;
   file?: TFile | null;

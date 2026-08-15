@@ -235,7 +235,7 @@ export class DragManager {
       const [scrollEntity, scrollStrength] = this.scrollIntersection;
       const scrollEntityData = scrollEntity.getData();
       const scrollEntityId = scrollEntity.entityId;
-      const scrollEntitySide = scrollEntityData.side;
+      const scrollEntitySide = scrollEntityData.side as Side;
 
       this.emitter.emit(
         'endDragScroll',
@@ -259,7 +259,7 @@ export class DragManager {
       const [scrollEntity, scrollStrength] = scrollIntersection;
       const scrollEntityData = scrollEntity.getData();
       const scrollEntityId = scrollEntity.entityId;
-      const scrollEntitySide = scrollEntityData.side;
+      const scrollEntitySide = scrollEntityData.side as Side;
 
       this.emitter.emit(
         'beginDragScroll',
@@ -282,7 +282,7 @@ export class DragManager {
       const [scrollEntity, scrollStrength] = scrollIntersection;
       const scrollEntityData = scrollEntity.getData();
       const scrollEntityId = scrollEntity.entityId;
-      const scrollEntitySide = scrollEntityData.side;
+      const scrollEntitySide = scrollEntityData.side as Side;
 
       this.emitter.emit(
         'updateDragScroll',

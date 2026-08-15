@@ -126,7 +126,7 @@ interface MetadataSettingsProps {
 }
 
 interface UseKeyModifiersParams {
-  onChange(keys: MetadataSetting[]): void;
+  onChange: (keys: MetadataSetting[]) => void;
   inputValue: string;
   keys: MetadataSetting[];
   setKeys: Dispatch<StateUpdater<MetadataSetting[]>>;
@@ -317,7 +317,7 @@ function MetadataSettings(props: MetadataSettingsProps) {
     newKey,
     moveKey,
   } = useKeyModifiers({
-    onChange: props.onChange,
+    onChange: (nextKeys) => props.onChange(nextKeys),
     inputValue,
     keys,
     setKeys,
@@ -326,7 +326,7 @@ function MetadataSettings(props: MetadataSettingsProps) {
 
   return (
     <>
-      <DndContext win={win} onDrop={moveKey}>
+      <DndContext win={win} onDrop={(dragEntity, dropEntity) => moveKey(dragEntity, dropEntity)}>
         <RespondToScroll scrollEl={props.scrollEl} />
         <DndScope>
           <Sortable axis="vertical">

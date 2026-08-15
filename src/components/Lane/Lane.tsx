@@ -135,8 +135,8 @@ function DraggableLaneRaw({
   const DroppableComponent = isStatic ? StaticDroppable : Droppable;
   const SortableComponent = isStatic ? StaticSortable : Sortable;
   const CollapsedDropArea = !isCollapsed || isStatic ? Fragment : Droppable;
-  const dropAreaProps: DraggableProps = useMemo(() => {
-    if (!isCollapsed || isStatic) return {} as any;
+  const dropAreaProps: Partial<DraggableProps> = useMemo(() => {
+    if (!isCollapsed || isStatic) return {};
     const data = {
       id: generateInstanceId(),
       type: 'lane',

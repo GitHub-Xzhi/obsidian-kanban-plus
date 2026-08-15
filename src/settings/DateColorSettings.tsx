@@ -19,6 +19,14 @@ interface ItemProps {
   getDateFormat: () => string;
 }
 
+function isDateColorUnit(value: string): value is DateColor['unit'] {
+  return value === 'hours' || value === 'days' || value === 'weeks' || value === 'months';
+}
+
+function isDateColorDirection(value: string): value is DateColor['direction'] {
+  return value === 'after' || value === 'before';
+}
+
 function Item({
   dateColorKey,
   deleteKey,
@@ -89,9 +97,11 @@ function Item({
                     className="dropdown"
                     defaultValue={dateColorKey.unit}
                     onChange={(e) => {
+                      const unit = (e.target as HTMLSelectElement).value;
+                      if (!isDateColorUnit(unit)) return;
                       updateKey({
                         ...dateColorKey,
-                        unit: (e.target as HTMLSelectElement).value as any,
+                        unit,
                       });
                     }}
                   >
@@ -104,9 +114,11 @@ function Item({
                     className="dropdown"
                     defaultValue={dateColorKey.direction}
                     onChange={(e) => {
+                      const direction = (e.target as HTMLSelectElement).value;
+                      if (!isDateColorDirection(direction)) return;
                       updateKey({
                         ...dateColorKey,
-                        direction: (e.target as HTMLSelectElement).value as any,
+                        direction,
                       });
                     }}
                   >

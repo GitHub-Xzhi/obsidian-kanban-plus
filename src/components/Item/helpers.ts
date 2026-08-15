@@ -393,7 +393,7 @@ interface FileData {
 export function getFileListFromClipboard(win: Window & typeof window) {
   const clipboard = getElectronClipboard(win);
 
-  if (process.platform === 'darwin') {
+  if (Platform.isMacOS) {
     // https://github.com/electron/electron/issues/9035#issuecomment-359554116
     if (clipboard.has('NSFilenamesPboardType')) {
       return (
@@ -517,7 +517,9 @@ async function handleElectronPaste(stateManager: StateManager, win: Window & typ
           // Wait for Obsidian to update
           await new Promise((resolve) => win.setTimeout(resolve, 50));
 
-          const newFile = stateManager.app.vault.getAbstractFileByPath(path) as TFile;
+          const newFile = stateManager.app.vault.getAbstractFileByPath(path);
+
+          if (!(newFile instanceof TFile)) return path;
 
           return linkTo(stateManager, newFile, stateManager.file.path);
         } else {

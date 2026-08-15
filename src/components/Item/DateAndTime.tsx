@@ -105,7 +105,7 @@ export function DateAndTime({
       dateDisplayStr
     );
 
-  const dateProps: HTMLAttributes<HTMLSpanElement> = {};
+  const dateProps: JSX.HTMLAttributes<HTMLSpanElement> = {};
 
   if (!shouldLinkDate) {
     dateProps['aria-label'] = t('Change date');

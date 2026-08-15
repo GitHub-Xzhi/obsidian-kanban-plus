@@ -31,7 +31,7 @@ export function createHTMLDndEntity(
       return initialScrollShift;
     },
     recalcInitial() {},
-    getHitbox() {
+    getHitbox(this: Entity) {
       return this.initial;
     },
     getPath() {

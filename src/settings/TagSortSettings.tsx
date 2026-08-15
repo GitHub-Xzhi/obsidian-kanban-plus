@@ -34,7 +34,7 @@ interface TagSortSettingsProps {
 }
 
 interface UseKeyModifiersParams {
-  onChange(tags: TagSortSetting[]): void;
+  onChange: (tags: TagSortSetting[]) => void;
   inputValue: string;
   tags: TagSortSetting[];
   setTags: Dispatch<StateUpdater<TagSortSetting[]>>;
@@ -224,7 +224,7 @@ function TagSettings(props: TagSortSettingsProps) {
   const win = getParentWindow(props.scrollEl);
 
   const { updateTag, deleteTag, newTag, moveTag } = useKeyModifiers({
-    onChange: props.onChange,
+    onChange: (nextTags) => props.onChange(nextTags),
     inputValue,
     tags,
     setTags,

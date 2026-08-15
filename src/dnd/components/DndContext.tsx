@@ -7,7 +7,7 @@ import { DndManagerContext } from './context';
 
 interface DndContextProps extends WithChildren {
   win: Window;
-  onDrop(dragEntity: Entity, dropEntity: Entity): void;
+  onDrop: (dragEntity: Entity, dropEntity: Entity) => void;
 }
 
 export function DndContext({ win, children, onDrop }: DndContextProps) {
@@ -23,7 +23,7 @@ export function DndContext({ win, children, onDrop }: DndContextProps) {
 
   useEffect(() => {
     return () => {
-      dndManager.destroy();
+      void dndManager.destroy();
     };
   }, [dndManager]);
 

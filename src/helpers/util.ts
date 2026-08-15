@@ -4,7 +4,7 @@ const collator = new Intl.Collator(undefined, {
   numeric: true,
 });
 
-export const defaultSort = collator.compare.bind(collator);
+export const defaultSort = (a: string, b: string): number => collator.compare(a, b);
 
 export class PromiseCapability<T = void> {
   promise: Promise<T>;

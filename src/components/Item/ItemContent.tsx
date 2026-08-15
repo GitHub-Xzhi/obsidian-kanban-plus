@@ -31,6 +31,18 @@ import {
   constructTimePicker,
 } from './helpers';
 
+interface GlobalSearchPlugin {
+  instance: {
+    openGlobalSearch: (query: string) => void;
+  };
+}
+
+type AppWithGlobalSearch = StateManager['app'] & {
+  internalPlugins: {
+    getPluginById: (id: string) => GlobalSearchPlugin | null;
+  };
+};
+
 export function useDatePickers(item: Item, explicitPath?: Path) {
   const { stateManager, boardModifiers } = useContext(KanbanContext);
   const path = explicitPath || useNestedEntityPath();
@@ -156,9 +168,9 @@ export function Tags({
                 return;
               }
 
-              (stateManager.app as any).internalPlugins
+              (stateManager.app as AppWithGlobalSearch).internalPlugins
                 .getPluginById('global-search')
-                .instance.openGlobalSearch(`tag:${tag}`);
+                ?.instance.openGlobalSearch(`tag:${tag}`);
             }}
             key={i}
             className={`tag ${c('item-tag')} ${

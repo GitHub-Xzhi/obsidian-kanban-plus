@@ -29,7 +29,7 @@ function confirmDatePlugin(pluginConfig: Config): Plugin {
     const svgElement = svgDocument.documentElement;
 
     if (svgElement.nodeName === 'parsererror') {
-      return doc.createDocumentFragment();
+      return doc.win.createFragment();
     }
 
     return doc.importNode(svgElement, true);
@@ -60,7 +60,7 @@ function confirmDatePlugin(pluginConfig: Config): Plugin {
         );
 
         confirmContainer.tabIndex = -1;
-  confirmContainer.appendChild(createConfirmIcon(fp.calendarContainer.doc));
+        confirmContainer.appendChild(createConfirmIcon(fp.calendarContainer.doc));
 
         confirmContainer.addEventListener('click', fp.close);
         fp.calendarContainer.appendChild(confirmContainer);

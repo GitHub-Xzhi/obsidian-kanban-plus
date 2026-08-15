@@ -11,7 +11,7 @@ export function createElement<T extends HTMLElement>(
   className: string,
   content?: string
 ): T {
-  const e = doc.createElement(tag) as T;
+  const e = doc.win.createEl(tag) as T;
   className = className || '';
   content = content || '';
 
@@ -66,7 +66,7 @@ export function getEventTarget(event: Event): EventTarget | null {
       return path[0];
     }
     return event.target;
-  } catch (error) {
+  } catch {
     return event.target;
   }
 }

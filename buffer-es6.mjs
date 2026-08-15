@@ -452,7 +452,7 @@ function fromArrayLike(that, array) {
 }
 
 function fromArrayBuffer(that, array, byteOffset, length) {
-  array.byteLength; // this throws if `array` is not a valid ArrayBuffer
+  void array.byteLength; // this throws if `array` is not a valid ArrayBuffer
 
   if (byteOffset < 0 || array.byteLength < byteOffset) {
     throw new RangeError("'offset' is out of bounds");

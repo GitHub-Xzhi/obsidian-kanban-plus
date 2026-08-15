@@ -1,9 +1,15 @@
-import { factorySpace } from 'micromark-factory-space';
 import { markdownLineEndingOrSpace, markdownSpace } from 'micromark-util-character';
-import { codes } from 'micromark-util-symbol/codes.js';
-import { types } from 'micromark-util-symbol/types.js';
-import { Effects, Extension, State, Token, TokenizeContext, Tokenizer } from 'micromark-util-types';
-import type { CompileContext, ListItem, Paragraph, Parent, Content, Text } from 'mdast-util-from-markdown';
+import { Effects, Extension, State, Token, TokenizeContext } from 'micromark-util-types';
+import type { CompileContext } from 'mdast-util-from-markdown';
+import type { ListItem, Paragraph, Parent, Text } from 'mdast';
+
+const codes = {
+  eof: null,
+  leftSquareBracket: '['.charCodeAt(0),
+  rightSquareBracket: ']'.charCodeAt(0),
+} as const;
+
+const whitespaceType = 'whitespace';
 
 const taskListCheckType = 'taskListCheck';
 const taskListCheckMarkerType = 'taskListCheckMarker';
@@ -85,14 +91,34 @@ function tokenizeTasklistCheck(this: TaskListTokenizeContext, effects: Effects, 
 function spaceThenNonSpace(this: TaskListTokenizeContext, effects: Effects, ok: State, nok: State) {
   const self = this;
 
-  return factorySpace(effects, after, types.whitespace);
+  return start;
+
+  function start(code: number) {
+    if (!markdownSpace(code)) {
+      return after(code);
+    }
+
+    effects.enter(whitespaceType);
+
+    return consume(code);
+  }
+
+  function consume(code: number) {
+    if (markdownSpace(code)) {
+      effects.consume(code);
+      return consume;
+    }
+
+    effects.exit(whitespaceType);
+    return after(code);
+  }
 
   /** @type {State} */
   function after(code: number) {
     const tail = self.events[self.events.length - 1];
 
     return tail &&
-      tail[1].type === types.whitespace &&
+      tail[1].type === whitespaceType &&
       code !== codes.eof &&
       !markdownLineEndingOrSpace(code)
       ? ok(code)
@@ -121,7 +147,7 @@ function exitCheck(this: CompileContext, token: Token) {
 function exitParagraphWithTaskListItem(this: CompileContext, token: Token) {
   const parent = this.stack[this.stack.length - 2] as Parent;
   const node = this.stack[this.stack.length - 1] as Paragraph;
-  const siblings = parent.children as Content[];
+  const siblings = parent.children;
   const head = node.children[0] as Text | undefined;
   let index = -1;
   let firstParaghraph: Paragraph | undefined;
@@ -136,7 +162,7 @@ function exitParagraphWithTaskListItem(this: CompileContext, token: Token) {
     while (++index < siblings.length) {
       const sibling = siblings[index];
       if (sibling.type === 'paragraph') {
-        firstParaghraph = sibling as Paragraph;
+        firstParaghraph = sibling;
         break;
       }
     }

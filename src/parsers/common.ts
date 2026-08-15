@@ -1,11 +1,12 @@
  
 
-import { App, TFile, moment } from 'obsidian';
+import { App, CachedMetadata, TFile, TagCache, moment } from 'obsidian';
 import { KanbanSettings } from 'src/Settings';
 import { StateManager } from 'src/StateManager';
 import { anyToString } from 'src/components/Item/MetadataTable';
-import { Board, FileMetadata, Item } from 'src/components/types';
+import { Board, FileMetadata, Item, PageDataValue } from 'src/components/types';
 import { defaultSort } from 'src/helpers/util';
+import { getRecordValue, isRecord } from 'src/helpers/unknown';
 
 export const frontmatterKey = 'kanban-plugin';
 
@@ -72,24 +73,46 @@ export function getSearchValue(item: Item, stateManager: StateManager) {
   return searchValue.join(' ').toLocaleLowerCase();
 }
 
-export function getDataViewCache(app: App, linkedFile: TFile, sourceFile: TFile) {
+interface DataviewApi {
+  page: (linkedPath: string, sourcePath: string) => unknown;
+}
+
+interface DataviewPlugin {
+  api?: DataviewApi;
+}
+
+interface PluginHost {
+  plugins: {
+    enabledPlugins: Set<string>;
+    plugins?: Record<string, DataviewPlugin | undefined>;
+  };
+}
+
+function getPluginHost(app: App): PluginHost {
+  return app as unknown as PluginHost;
+}
+
+export function getDataViewCache(app: App, linkedFile: TFile, sourceFile: TFile): unknown {
+  const plugins = getPluginHost(app).plugins;
+
   if (
-    (app as any).plugins.enabledPlugins.has('dataview') &&
-    (app as any).plugins?.plugins?.dataview?.api
+    plugins.enabledPlugins.has('dataview') &&
+    plugins.plugins?.dataview?.api
   ) {
-    return (app as any).plugins.plugins.dataview.api.page(linkedFile.path, sourceFile.path);
+    return plugins.plugins.dataview.api.page(linkedFile.path, sourceFile.path);
   }
 }
 
-function getPageData(obj: any, path: string) {
+function getPageData(obj: unknown, path: string): unknown {
   if (!obj) return null;
-  if (obj[path]) return obj[path];
+  const direct = getRecordValue(obj, path);
+  if (direct) return direct;
 
   const split = path.split('.');
-  let ctx = obj;
+  let ctx: unknown = obj;
 
   for (const p of split) {
-    if (typeof ctx === 'object' && p in ctx) {
+    if (isRecord(ctx) && p in ctx) {
       ctx = ctx[p];
     } else {
       ctx = null;
@@ -98,6 +121,26 @@ function getPageData(obj: any, path: string) {
   }
 
   return ctx;
+}
+
+function isMetadataValue(value: unknown): value is PageDataValue {
+  if (typeof value === 'string' || typeof value === 'number') {
+    return true;
+  }
+
+  if (Array.isArray(value)) {
+    return value.every((item) => typeof item === 'string' || typeof item === 'number');
+  }
+
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return Object.values(value).every(isMetadataValue);
+}
+
+function getFrontmatterValue(cache: CachedMetadata | null | undefined, key: string): unknown {
+  return getPageData(cache?.frontmatter, key);
 }
 
 export function getLinkedPageMetadata(
@@ -134,12 +177,13 @@ export function getLinkedPageMetadata(
     seenKey[k.metadataKey] = true;
 
     if (k.metadataKey === 'tags') {
-      let tags = cache?.tags || [];
+      let tags: TagCache[] = cache?.tags || [];
 
       if (Array.isArray(cache?.frontmatter?.tags)) {
-        tags = [].concat(
-          tags,
-          cache.frontmatter.tags.map((tag: string) => ({ tag: `#${tag}` }))
+        tags = tags.concat(
+          cache.frontmatter.tags
+            .filter((tag): tag is string => typeof tag === 'string')
+            .map((tag) => ({ tag: `#${tag}` }))
         );
       }
 
@@ -158,7 +202,7 @@ export function getLinkedPageMetadata(
             seenTags[t] = true;
             return true;
           })
-          .sort(defaultSort),
+          .sort((a, b) => defaultSort(a, b)),
       };
 
       haveData = true;
@@ -166,7 +210,7 @@ export function getLinkedPageMetadata(
     }
 
     const dataviewVal = getPageData(dataviewCache, k.metadataKey);
-    let cacheVal = getPageData(cache?.frontmatter, k.metadataKey);
+    let cacheVal = getFrontmatterValue(cache, k.metadataKey);
     if (
       cacheVal !== null &&
       cacheVal !== undefined &&
@@ -189,7 +233,7 @@ export function getLinkedPageMetadata(
           }
         }
       } else if (Array.isArray(cacheVal)) {
-        cacheVal = cacheVal.map<any>((v, i) => {
+        cacheVal = cacheVal.map((v, i): unknown => {
           if (typeof v === 'string' && /^\[\[[^\]]+\]\]$/.test(v)) {
             const link = (cache.frontmatterLinks || []).find(
               (l) => l.key === k.metadataKey + '.' + i.toString()
@@ -220,12 +264,12 @@ export function getLinkedPageMetadata(
       dataviewVal !== '' &&
       !(Array.isArray(dataviewVal) && dataviewVal.length === 0)
     ) {
-      const cachedValue = dataviewCache[k.metadataKey];
+      const cachedValue = getRecordValue(dataviewCache, k.metadataKey);
 
       order.push(k.metadataKey);
       metadata[k.metadataKey] = {
         ...k,
-        value: cachedValue,
+        value: isMetadataValue(cachedValue) ? cachedValue : anyToString(cachedValue, stateManager),
       };
       haveData = true;
     }

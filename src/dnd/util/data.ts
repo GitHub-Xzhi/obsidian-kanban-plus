@@ -5,11 +5,11 @@ import { isPlainObject } from 'src/helpers/isPlainObject';
 import { Nestable, Path } from '../types';
 import { SiblingDirection, getSiblingDirection } from './path';
 
-export function getEntityFromPath(root: Nestable, path: Path): Nestable {
+export function getEntityFromPath<T extends Nestable>(root: T, path: Path): Nestable {
   const step = path.length ? path[0] : null;
 
   if (step !== null && root.children && root.children[step]) {
-    return getEntityFromPath(root.children[step], path.slice(1));
+    return getEntityFromPath(root.children[step] as Nestable, path.slice(1));
   }
 
   return root;

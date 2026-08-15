@@ -8,7 +8,7 @@ import { emptyHitbox } from '../util/hitbox';
 import { DndManagerContext } from './context';
 
 export interface DragOverlayProps {
-  children(entity: Entity, styles: JSX.CSSProperties): JSX.Element;
+  children: (entity: Entity, styles: JSX.CSSProperties) => JSX.Element;
 }
 
 function getDragOverlayStyles(

@@ -1,8 +1,7 @@
  
 
 import update from 'immutability-helper';
-import { Content, List, Parent, Root } from 'mdast';
-import { ListItem } from 'mdast-util-from-markdown/lib';
+import { Content, Image, InlineCode, Link, List, ListItem, Root, Text } from 'mdast';
 import { toString } from 'mdast-util-to-string';
 import { stringifyYaml } from 'obsidian';
 import { KanbanSettings, PersistedLaneSetting } from 'src/Settings';
@@ -50,6 +49,8 @@ import {
 } from '../helpers/parser';
 import { parseFragment } from '../parseMarkdown';
 
+type SearchNode = Text | InlineCode | Image | Link | ValueNode;
+
 interface TaskItem extends ListItem {
   checkChar?: string;
 }
@@ -84,13 +85,15 @@ export function listItemToItemData(stateManager: StateManager, md: string, item:
   visit(
     item,
     ['text', 'wikilink', 'embedWikilink', 'image', 'inlineCode', 'code', 'hashtag'],
-    (node: any, i, parent) => {
+    (node: SearchNode, i, parent) => {
       if (node.type === 'hashtag') {
-        if (!parent.children.first()?.value?.startsWith('```')) {
+        const firstChild = parent?.children.first() as Partial<ValueNode> | undefined;
+
+        if (!firstChild?.value?.startsWith('```')) {
           titleSearch += ' #' + node.value;
         }
       } else {
-        titleSearch += node.value || node.alt || '';
+        titleSearch += 'value' in node ? node.value || '' : node.alt || '';
       }
     }
   );
@@ -131,7 +134,7 @@ export function listItemToItemData(stateManager: StateManager, md: string, item:
 
       if (
         genericNode.type === 'hashtag' &&
-        !(parent.children.first() as any)?.value?.startsWith('```')
+        !(parent?.children.first() as Partial<ValueNode> | undefined)?.value?.startsWith('```')
       ) {
         if (!itemData.metadata.tags) {
           itemData.metadata.tags = [];
@@ -203,12 +206,15 @@ export function listItemToItemData(stateManager: StateManager, md: string, item:
   const inlineFields = extractInlineFields(itemData.title, true);
 
   if (inlineFields?.length) {
-    const inlineMetadata = (itemData.metadata.inlineMetadata = inlineFields.reduce((acc, curr) => {
-      if (!taskFields.has(curr.key)) acc.push(curr);
-      else if (firstLineEnd <= 0 || curr.end < firstLineEnd) acc.push(curr);
+    const inlineMetadata = (itemData.metadata.inlineMetadata = inlineFields.reduce(
+      (acc, curr) => {
+        if (!taskFields.has(curr.key)) acc.push(curr);
+        else if (firstLineEnd <= 0 || curr.end < firstLineEnd) acc.push(curr);
 
-      return acc;
-    }, []));
+        return acc;
+      },
+      [] as typeof inlineFields
+    ));
 
     const moveTaskData = stateManager.getSetting('move-task-metadata');
     const moveMetadata = stateManager.getSetting('inline-metadata-position') !== 'body';
@@ -228,7 +234,7 @@ export function listItemToItemData(stateManager: StateManager, md: string, item:
     }
   }
 
-  itemData.metadata.tags?.sort(defaultSort);
+  itemData.metadata.tags?.sort((a, b) => defaultSort(a, b));
 
   return itemData;
 }
@@ -597,6 +603,7 @@ export function updateItemContent(stateManager: StateManager, oldItem: Item, new
     hydrateItem(stateManager, newItem);
   } catch (e) {
     console.error(e);
+    if (!(e instanceof Error)) throw e;
   }
 
   return newItem;
@@ -608,7 +615,7 @@ export function newItem(
   checkChar: string,
   forceEdit?: boolean
 ) {
-  const md = `- [${checkChar}] ${indentNewLines(newContent)}`;
+  const md = `- [${checkChar}] ${indentNewLines(newContent, stateManager.app)}`;
   const ast = parseFragment(stateManager, md);
   const itemData = listItemToItemData(stateManager, md, (ast.children[0] as List).children[0]);
 
@@ -645,16 +652,16 @@ export function reparseBoard(stateManager: StateManager, board: Board) {
       },
     });
   } catch (e) {
-    stateManager.setError(e);
+    stateManager.setError(e instanceof Error ? e : new Error(String(e)));
     throw e;
   }
 }
 
-function itemToMd(item: Item) {
-  return `- [${item.data.checkChar}] ${addBlockId(indentNewLines(item.data.titleRaw), item)}`;
+function itemToMd(stateManager: StateManager, item: Item) {
+    return `- [${item.data.checkChar}] ${addBlockId(indentNewLines(item.data.titleRaw, stateManager.app), item)}`;
 }
 
-function laneToMd(lane: Lane) {
+  function laneToMd(stateManager: StateManager, lane: Lane) {
   const lines: string[] = [];
 
   lines.push(`## ${replaceNewLines(laneTitleWithMaxItems(lane.data.title, lane.data.maxItems))}`);
@@ -666,7 +673,7 @@ function laneToMd(lane: Lane) {
   }
 
   lane.children.forEach((item) => {
-    lines.push(itemToMd(item));
+     lines.push(itemToMd(stateManager, item));
   });
 
   lines.push('');
@@ -676,12 +683,12 @@ function laneToMd(lane: Lane) {
   return lines.join('\n');
 }
 
-function archiveToMd(archive: Item[]) {
+  function archiveToMd(stateManager: StateManager, archive: Item[]) {
   if (archive.length) {
     const lines: string[] = [archiveString, '', '## Archive', ''];
 
     archive.forEach((item) => {
-      lines.push(itemToMd(item));
+        lines.push(itemToMd(stateManager, item));
     });
 
     return lines.join('\n');
@@ -690,7 +697,7 @@ function archiveToMd(archive: Item[]) {
   return '';
 }
 
-export function boardToMd(board: Board) {
+  export function boardToMd(stateManager: StateManager, board: Board) {
   board = update(board, {
     data: {
       settings: {
@@ -700,10 +707,10 @@ export function boardToMd(board: Board) {
   });
 
   const lanes = board.children.reduce((md, lane) => {
-    return md + laneToMd(lane);
+      return md + laneToMd(stateManager, lane);
   }, '');
 
   const frontmatter = ['---', '', stringifyYaml(board.data.frontmatter), '---', '', ''].join('\n');
 
-  return frontmatter + lanes + archiveToMd(board.data.archive) + settingsToCodeblock(board);
+    return frontmatter + lanes + archiveToMd(stateManager, board.data.archive) + settingsToCodeblock(board);
 }

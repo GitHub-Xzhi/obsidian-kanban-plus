@@ -1,7 +1,6 @@
 import classcat from 'classcat';
 import Mark from 'mark.js';
-import moment from 'moment';
-import { Component, MarkdownRenderer as ObsidianRenderer, getLinkpath } from 'obsidian';
+import { Component, MarkdownRenderer as ObsidianRenderer, getLinkpath, moment } from 'obsidian';
 import { CSSProperties, memo, useEffect, useRef } from 'preact/compat';
 import { useContext } from 'preact/hooks';
 import { KanbanView } from 'src/KanbanView';
@@ -13,12 +12,12 @@ import { IntersectionObserverContext, KanbanContext, SortContext } from '../cont
 import { c, useGetDateColorFn, useGetTagColorFn } from '../helpers';
 import { DateColor, TagColor } from '../types';
 
-interface MarkdownRendererProps extends HTMLAttributes<HTMLDivElement> {
+type MarkdownRendererProps = import('preact/compat').HTMLAttributes<HTMLDivElement> & {
   className?: string;
   markdownString: string;
   searchQuery?: string;
   entityId?: string;
-}
+};
 
 function colorizeTags(wrapperEl: HTMLElement, getTagColor: (tag: string) => TagColor) {
   if (!wrapperEl) return;
@@ -52,6 +51,10 @@ function colorizeDates(wrapperEl: HTMLElement, getDateColor: (date: moment.Momen
       '--date-background-color': color.backgroundColor,
     });
   });
+}
+
+interface LoadableComponent {
+  _loaded?: boolean;
 }
 
 export class BasicMarkdownRenderer extends Component {
@@ -95,7 +98,7 @@ export class BasicMarkdownRenderer extends Component {
     );
 
     this.renderCapability.resolve();
-    if (!(this.view as any)?._loaded || !(this as any)._loaded) return;
+    if (!(this.view as LoadableComponent)?._loaded || !(this as LoadableComponent)._loaded) return;
 
     const { containerEl } = this;
 
@@ -186,7 +189,7 @@ export class BasicMarkdownRenderer extends Component {
   }
 
   set(markdown: string) {
-    if ((this as any)._loaded) {
+    if ((this as LoadableComponent)._loaded) {
       this.markdown = markdown;
       this.renderCapability = new PromiseCapability<void>();
       this.unload();

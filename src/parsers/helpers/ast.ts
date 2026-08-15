@@ -9,7 +9,7 @@ export function getNodeContentBoundary(node: Parent): ContentBoundary {
   if (node.children.length === 0) return null;
   const last = node.children.length - 1;
 
-  if ((node.children[last] as any).type === 'blockid') {
+  if (node.children[last].type === 'blockid') {
     if (last === 0) {
       return {
         start: node.children[0].position.start.offset,

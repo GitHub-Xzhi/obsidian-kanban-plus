@@ -164,10 +164,64 @@ interface MetadataValueProps {
   searchQuery?: string;
 }
 
-export function getDateFromObj(v: any, stateManager: StateManager) {
-  let m: moment.Moment;
+interface DataviewDateLike {
+  ts: string | number | Date;
+}
 
-  if (v.ts) {
+interface DataviewLinkLike {
+  path: string;
+  subpath?: string;
+  display?: string;
+  embed?: boolean;
+}
+
+interface RRuleLike {
+  rrule: unknown;
+  toText: () => string;
+}
+
+interface DataviewValueApi {
+  isDate: (value: unknown) => value is DataviewDateLike;
+  toString: (value: unknown) => string;
+}
+
+interface DataviewApiLike {
+  value: DataviewValueApi;
+}
+
+function getDataviewApi(): DataviewApiLike | null {
+  return getAPI() as DataviewApiLike | null;
+}
+
+function isDataviewDateLike(value: unknown): value is DataviewDateLike {
+  return isPlainObject(value) && 'ts' in value;
+}
+
+function isDataviewLinkLike(value: unknown): value is DataviewLinkLike {
+  return isPlainObject(value) && typeof value.path === 'string';
+}
+
+function isRRuleLike(value: unknown): value is RRuleLike {
+  return isPlainObject(value) && 'rrule' in value && typeof value.toText === 'function';
+}
+
+function safeUnknownToString(value: unknown): string {
+  if (value === null) return 'null';
+  if (value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'bigint') return value.toString(10);
+  if (typeof value === 'symbol') return '[symbol]';
+  if (typeof value === 'function') return '[function]';
+
+  const jsonValue = JSON.stringify(value);
+  return typeof jsonValue === 'string' ? jsonValue : '[object]';
+}
+
+export function getDateFromObj(v: unknown, stateManager: StateManager) {
+  let m: ReturnType<typeof moment> | undefined;
+
+  if (isDataviewDateLike(v)) {
     m = moment(v.ts);
   } else if (moment.isMoment(v)) {
     m = v;
@@ -186,19 +240,24 @@ export function getDateFromObj(v: any, stateManager: StateManager) {
   return null;
 }
 
-export function getLinkFromObj(v: any, view: KanbanView) {
-  if (typeof v !== 'object' || !v.path) return null;
+export function getLinkFromObj(v: unknown, view: KanbanView) {
+  if (!isDataviewLinkLike(v)) return null;
 
-  const file = app.vault.getAbstractFileByPath(v.path);
+  const file = view.app.vault.getAbstractFileByPath(v.path);
   if (file && file instanceof TFile) {
-    const link = app.fileManager.generateMarkdownLink(file, view.file.path, v.subpath, v.display);
+    const link = view.app.fileManager.generateMarkdownLink(
+      file,
+      view.file.path,
+      v.subpath,
+      v.display
+    );
     return `${v.embed && link[0] !== '!' ? '!' : ''}${link}`;
   }
 
   return `${v.embed ? '!' : ''}[[${v.path}${v.display ? `|${v.display}` : ''}]]`;
 }
 
-function getDate(v: any) {
+function getDate(v: unknown) {
   if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) {
     const d = moment(v);
     if (d.isValid()) {
@@ -207,12 +266,12 @@ function getDate(v: any) {
   }
   if (moment.isMoment(v)) return v;
   if (v instanceof Date) return moment(v);
-  const dv = getAPI();
+  const dv = getDataviewApi();
   if (dv?.value.isDate(v)) return moment(v.ts);
   return null;
 }
 
-export function anyToString(v: any, stateManager: StateManager): string {
+export function anyToString(v: unknown, stateManager: StateManager): string {
   if (isPlainObject(v) && v.value) v = v.value;
   const date = getDate(v);
   if (date) return getDateFromObj(date, stateManager);
@@ -221,10 +280,10 @@ export function anyToString(v: any, stateManager: StateManager): string {
   if (Array.isArray(v)) {
     return v.map((v2) => anyToString(v2, stateManager)).join(' ');
   }
-  if (v.rrule) return v.toText();
-  const dv = getAPI();
+  if (isRRuleLike(v)) return v.toText();
+  const dv = getDataviewApi();
   if (dv) return dv.value.toString(v);
-  return `${v}`;
+  return safeUnknownToString(v);
 }
 
 export function pageDataToString(data: PageData, stateManager: StateManager): string {
@@ -235,7 +294,7 @@ export function MetadataValue({ data, dateLabel, searchQuery }: MetadataValuePro
   const { view, stateManager } = useContext(KanbanContext);
   const getDateColor = useGetDateColorFn(stateManager);
 
-  const renderChild = (v: any, sep?: string) => {
+  const renderChild = (v: unknown, sep?: string) => {
     const link = getLinkFromObj(v, view);
     const date = getDate(v);
     const str = date && data.format ? date.format(data.format) : anyToString(v, stateManager);

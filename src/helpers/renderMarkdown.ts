@@ -9,6 +9,26 @@ interface NormalizedPath {
   alias: string;
 }
 
+interface MenuWithSections extends Menu {
+  addSections: (sections: string[]) => void;
+}
+
+type WorkspaceWithExternalLinkMenu = KanbanView['app']['workspace'] & {
+  handleExternalLinkContextMenu: (menu: Menu, url: string) => boolean;
+};
+
+interface GlobalSearchPlugin {
+  instance: {
+    openGlobalSearch: (query: string) => void;
+  };
+}
+
+type AppWithGlobalSearch = KanbanView['app'] & {
+  internalPlugins: {
+    getPluginById: (id: string) => GlobalSearchPlugin | null;
+  };
+};
+
 export function getNormalizedPath(path: string): NormalizedPath {
   const stripped = path.replace(noBreakSpace, ' ').normalize('NFC');
 
@@ -57,11 +77,11 @@ export function bindMarkdownEvents(view: KanbanView) {
     if (!link) return;
 
     evt.preventDefault();
-    app.workspace.openLinkText(link.href, view.file.path, Keymap.isModEvent(evt));
+    void app.workspace.openLinkText(link.href, view.file.path, Keymap.isModEvent(evt));
   };
 
   contentEl.on('click', 'a.internal-link', onLinkClick);
-  void contentEl.on('auxclick', 'a.internal-link', onLinkClick);
+  contentEl.on('auxclick', 'a.internal-link', onLinkClick);
   contentEl.on('dragstart', 'a.internal-link', (evt: DragEvent) => {
     evt.preventDefault();
   });
@@ -70,8 +90,8 @@ export function bindMarkdownEvents(view: KanbanView) {
     if (!link) return;
 
     const menu = new Menu();
-    (menu as any).addSections(['title', 'open', 'action', 'view', 'info', '', 'danger']);
-    (app.workspace as any).handleLinkContextMenu(menu, link.href, view.file.path);
+    (menu as MenuWithSections).addSections(['title', 'open', 'action', 'view', 'info', '', 'danger']);
+    app.workspace.handleLinkContextMenu(menu, link.href, view.file.path);
     menu.showAtMouseEvent(evt);
   });
   contentEl.on('mouseover', 'a.internal-link', (evt: MouseEvent, targetEl: HTMLElement) => {
@@ -108,7 +128,7 @@ export function bindMarkdownEvents(view: KanbanView) {
     if (!link) return;
 
     const menu = new Menu();
-    (menu as any).addSections([
+    (menu as MenuWithSections).addSections([
       'title',
       'open',
       'selection',
@@ -119,14 +139,14 @@ export function bindMarkdownEvents(view: KanbanView) {
       '',
       'danger',
     ]);
-    (app.workspace as any).handleExternalLinkContextMenu(menu, link.href);
+    (app.workspace as WorkspaceWithExternalLinkMenu).handleExternalLinkContextMenu(menu, link.href);
     menu.showAtMouseEvent(evt);
   });
   contentEl.on('click', 'a.tag', (evt: MouseEvent, targetEl: HTMLElement) => {
     if (evt.button !== 0) return;
 
     const tag = targetEl.getText();
-    const searchPlugin = (app as any).internalPlugins.getPluginById('global-search');
+    const searchPlugin = (app as AppWithGlobalSearch).internalPlugins.getPluginById('global-search');
     const stateManager = view.plugin.getStateManager(view.file);
     const tagAction = stateManager.getSetting('tag-action');
 

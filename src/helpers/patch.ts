@@ -1,4 +1,4 @@
-import moment from 'moment';
+import { moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
 
 import { isPlainObject } from 'src/helpers/isPlainObject';
@@ -11,6 +11,7 @@ interface DiffObject {
 type Key = string | number;
 type Diffable = DiffObject | DiffValue[];
 type OpPath = Array<Key>;
+type DiffRecord = Record<Key, DiffValue>;
 
 const REMOVE = 'remove';
 const REPLACE = 'replace';
@@ -32,7 +33,14 @@ type SkipFn = (k: OpPath, val?: DiffValue) => boolean;
 type ToStringFn = (val: DiffValue) => string;
 
 function stringifyDiffValue(val: DiffValue): string {
-  return typeof val === 'object' && val !== null ? JSON.stringify(val) : String(val);
+  if (val === null) return 'null';
+  if (val === undefined) return 'undefined';
+  if (typeof val === 'object') {
+    const jsonValue = JSON.stringify(val);
+    return typeof jsonValue === 'string' ? jsonValue : '[object]';
+  }
+
+  return String(val);
 }
 
 interface DataviewApiLike {
@@ -89,7 +97,7 @@ function getDiff(
   const obj1Keys = Object.keys(obj1);
   const obj2Keys = Object.keys(obj2);
   const obj2KeysLength = obj2Keys.length;
-  const lengthDelta = obj1.length - obj2.length;
+  const lengthDelta = Array.isArray(obj1) && Array.isArray(obj2) ? obj1.length - obj2.length : 0;
 
   let path: OpPath;
 
@@ -131,7 +139,7 @@ function getDiff(
     }
 
     // now make a copy of obj1 with excess elements left trimmed and see if there any replaces
-    const obj1Trimmed = obj1.slice(lengthDelta);
+    const obj1Trimmed = Array.isArray(obj1) ? obj1.slice(lengthDelta) : [];
     for (let i = 0; i < obj2KeysLength; i++) {
       pushReplaces(
         i,
@@ -161,8 +169,8 @@ function pushReplaces(
   skip: SkipFn,
   toString: ToStringFn
 ) {
-  const obj1AtKey = obj1[key as keyof typeof obj1] as DiffValue | undefined;
-  const obj2AtKey = obj2[key as keyof typeof obj2] as DiffValue | undefined;
+  const obj1AtKey = (obj1 as DiffRecord)[key];
+  const obj2AtKey = (obj2 as DiffRecord)[key];
 
   if (skip(path, obj2AtKey)) return;
 
@@ -184,8 +192,8 @@ function pushReplaces(
         diffs.replace.push({ op: REPLACE, path, value: obj2AtKey });
       } else {
         getDiff(
-          obj1[key as keyof typeof obj1] as Diffable,
-          obj2[key as keyof typeof obj2] as Diffable,
+          obj1AtKey as Diffable,
+          obj2AtKey as Diffable,
           path,
           pathForRemoves,
           diffs,
@@ -201,8 +209,8 @@ function differentTypes(a: DiffValue, b: DiffValue) {
   return Object.prototype.toString.call(a) !== Object.prototype.toString.call(b);
 }
 
-function trimFromRight(obj1: Record<string, DiffValue> | DiffValue[], obj2: Record<string, DiffValue> | DiffValue[]) {
-  const lengthDelta = obj1.length - obj2.length;
+function trimFromRight(obj1: Diffable, obj2: Diffable) {
+  const lengthDelta = Array.isArray(obj1) && Array.isArray(obj2) ? obj1.length - obj2.length : 0;
 
   if (Array.isArray(obj1) && Array.isArray(obj2) && lengthDelta > 0) {
     let leftMatches = 0;
@@ -242,14 +250,18 @@ export function diffApply(obj: Diffable, diff: Op[]) {
   if (Array.isArray(obj)) obj = obj.slice();
   else obj = { ...obj };
 
-  type MutableDiffObject = Record<Key, DiffValue | MutableDiffObject | DiffValue[]>;
+  type MutableDiffValue = DiffValue | MutableDiffObject | DiffValue[];
+  interface MutableDiffObject {
+    [key: string]: MutableDiffValue;
+    [key: number]: MutableDiffValue;
+  }
 
   for (const thisDiff of diff) {
     const thisOp = thisDiff.op;
     const thisPath = thisDiff.path;
     const pathCopy = thisPath.slice();
     const lastProp = pathCopy.pop();
-    let subObject: MutableDiffObject | DiffValue[] = obj as MutableDiffObject | DiffValue[];
+    let subObject: MutableDiffObject | DiffValue[] = obj;
 
     prototypeCheck(lastProp);
     if (lastProp == null) return false;
@@ -263,8 +275,9 @@ export function diffApply(obj: Diffable, diff: Op[]) {
         const nextObject: MutableDiffObject = {};
         subObject[thisProp] = nextObject;
         subObject = nextObject;
-      } else if (Array.isArray(subObject[thisProp])) {
-        const nextArray = subObject[thisProp].slice() as DiffValue[];
+      } else if (Array.isArray((subObject as MutableDiffObject)[thisProp])) {
+        const currentValue = (subObject as MutableDiffObject)[thisProp] as DiffValue[];
+        const nextArray = currentValue.slice();
         subObject[thisProp] = nextArray;
         subObject = nextArray;
       } else if (isPlainObject(subObject[thisProp])) {

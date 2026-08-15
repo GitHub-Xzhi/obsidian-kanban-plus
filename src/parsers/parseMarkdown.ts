@@ -7,6 +7,7 @@ import { parseYaml } from 'obsidian';
 import { KanbanSettings, settingKeyLookup } from 'src/Settings';
 import { StateManager } from 'src/StateManager';
 import { getNormalizedPath } from 'src/helpers/renderMarkdown';
+import { toRecord } from 'src/helpers/unknown';
 
 import { frontmatterKey, getLinkedPageMetadata } from './common';
 import { blockidExtension, blockidFromMarkdown } from './extensions/blockid';
@@ -16,7 +17,7 @@ import { tagExtension, tagFromMarkdown } from './extensions/tag';
 import { gfmTaskListItem, gfmTaskListItemFromMarkdown } from './extensions/taskList';
 import { FileAccessor } from './helpers/parser';
 
-function extractFrontmatter(md: string) {
+function extractFrontmatter(md: string): Record<string, unknown> {
   let frontmatterStart = -1;
   let openDashCount = 0;
 
@@ -33,12 +34,14 @@ function extractFrontmatter(md: string) {
     if (frontmatterStart < 0) frontmatterStart = i;
 
     if (md[i] === '-' && /[\r\n]/.test(md[i - 1]) && md[i + 1] === '-' && md[i + 2] === '-') {
-      return parseYaml(md.slice(frontmatterStart, i - 1).trim());
+      return toRecord(parseYaml(md.slice(frontmatterStart, i - 1).trim()));
     }
   }
+
+  return {};
 }
 
-function extractSettingsFooter(md: string) {
+function extractSettingsFooter(md: string): Record<string, unknown> {
   let hasEntered = false;
   let openTickCount = 0;
   let settingsEnd = -1;
@@ -59,9 +62,11 @@ function extractSettingsFooter(md: string) {
     }
 
     if (md[i] === '`' && md[i - 1] === '`' && md[i - 2] === '`' && /[\r\n]/.test(md[i - 3])) {
-      return JSON.parse(md.slice(i + 1, settingsEnd).trim());
+      return toRecord(JSON.parse(md.slice(i + 1, settingsEnd).trim()) as unknown);
     }
   }
+
+  return {};
 }
 
 function getExtensions(stateManager: StateManager) {
@@ -131,25 +136,27 @@ function getMdastExtensions(stateManager: StateManager) {
       }
     }),
     internalMarkdownLinks((node, isEmbed) => {
-      if (!node.url || /:\/\//.test(node.url) || !/.md$/.test(node.url)) {
+      const url = typeof node.url === 'string' ? node.url : '';
+
+      if (!url || /:\/\//.test(url) || !/.md$/.test(url)) {
         return;
       }
 
       const file = stateManager.app.metadataCache.getFirstLinkpathDest(
-        decodeURIComponent(node.url),
+        decodeURIComponent(url),
         stateManager.file.path
       );
 
       if (isEmbed) {
         node.type = 'embedLink';
         node.fileAccessor = {
-          target: decodeURIComponent(node.url),
+          target: decodeURIComponent(url),
           isEmbed: true,
-          stats: file.stat,
+          stats: file?.stat,
         } as FileAccessor;
       } else {
         node.fileAccessor = {
-          target: decodeURIComponent(node.url),
+          target: decodeURIComponent(url),
           isEmbed: false,
         } as FileAccessor;
 
@@ -169,18 +176,29 @@ function getMdastExtensions(stateManager: StateManager) {
 export function parseMarkdown(stateManager: StateManager, md: string) {
   const mdFrontmatter = extractFrontmatter(md);
   const mdSettings = extractSettingsFooter(md);
-  const settings = { ...mdSettings };
-  const fileFrontmatter: Record<string, any> = {};
+  const settings: Record<string, unknown> = { ...mdSettings };
+  const fileFrontmatter: Record<string, number | string | Array<number | string>> = {};
 
   Object.keys(mdFrontmatter).forEach((key) => {
+    const frontmatterValue = mdFrontmatter[key];
+
     if (key === frontmatterKey) {
-      const val = mdFrontmatter[key] === 'basic' ? 'board' : mdFrontmatter[key];
-      settings[key] = val;
-      fileFrontmatter[key] = val;
+      const val = frontmatterValue === 'basic' ? 'board' : frontmatterValue;
+      if (typeof val === 'string') {
+        settings[key] = val;
+        fileFrontmatter[key] = val;
+      }
     } else if (settingKeyLookup.has(key as keyof KanbanSettings)) {
-      settings[key] = mdFrontmatter[key];
+      settings[key] = frontmatterValue;
     } else {
-      fileFrontmatter[key] = mdFrontmatter[key];
+      if (
+        typeof frontmatterValue === 'string' ||
+        typeof frontmatterValue === 'number' ||
+        (Array.isArray(frontmatterValue) &&
+          frontmatterValue.every((value) => typeof value === 'string' || typeof value === 'number'))
+      ) {
+        fileFrontmatter[key] = frontmatterValue;
+      }
     }
   });
 

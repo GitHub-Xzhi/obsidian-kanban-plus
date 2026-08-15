@@ -1,5 +1,4 @@
 import {
-  type ColumnResizeDirection,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -17,6 +16,10 @@ import { IntersectionObserverContext } from '../context';
 import { c } from '../helpers';
 import { Board } from '../types';
 import { fuzzyAnyFilter, useTableColumns } from './helpers';
+
+type VaultWithConfig = StateManager['app']['vault'] & {
+  getConfig: (key: string) => unknown;
+};
 
 interface FilterMeta {
   itemRank?: {
@@ -108,9 +111,9 @@ export function TableView({
     getColumnCanGlobalFilter: () => true,
     enableColumnResizing: true,
     columnResizeMode: 'onChange',
-    columnResizeDirection: (stateManager.app.vault.getConfig('rightToLeft')
+    columnResizeDirection: ((stateManager.app.vault as VaultWithConfig).getConfig('rightToLeft')
       ? 'rtl'
-      : 'ltr') as 'rtl' | 'ltr',
+      : 'ltr'),
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),

@@ -1,5 +1,5 @@
 import update from 'immutability-helper';
-import { Menu, Platform, TFile, TFolder } from 'obsidian';
+import { Menu, MenuItem, Platform, TFile, TFolder } from 'obsidian';
 import { Dispatch, StateUpdater, useCallback } from 'preact/hooks';
 import { StateManager } from 'src/StateManager';
 import { Path } from 'src/dnd/types';
@@ -21,6 +21,14 @@ const wikilinkRegEx = /!?\[\[([^\]]*)\]\]/g;
 const mdLinkRegEx = /!?\[([^\]]*)\]\([^)]*\)/g;
 const tagRegEx = /#([^\u2000-\u206F\u2E00-\u2E7F'!"#$%&()*+,.:;<=>?@^`{|}~[\]\\\s\n\r]+)/g;
 const condenceWhiteSpaceRE = /\s+/g;
+
+type FileManagerWithCreate = StateManager['app']['fileManager'] & {
+  createNewMarkdownFile: (folder: TFolder, title: string) => Promise<TFile>;
+};
+
+interface MenuItemWithSubmenu extends MenuItem {
+  setSubmenu: () => Menu;
+}
 
 interface UseItemMenuParams {
   setEditState: Dispatch<StateUpdater<EditState>>;
@@ -86,20 +94,21 @@ export function useItemMenu({
               const newNoteFolder = stateManager.getSetting('new-note-folder');
               const newNoteTemplatePath = stateManager.getSetting('new-note-template');
 
-              const targetFolder = newNoteFolder
-                ? (stateManager.app.vault.getAbstractFileByPath(newNoteFolder) as TFolder)
+              const configuredFolder = newNoteFolder
+                ? stateManager.app.vault.getAbstractFileByPath(newNoteFolder)
+                : null;
+              const targetFolder = configuredFolder instanceof TFolder
+                ? configuredFolder
                 : stateManager.app.fileManager.getNewFileParent(stateManager.file.path);
 
-              const newFile = (await (stateManager.app.fileManager as any).createNewMarkdownFile(
+              const newFile = await (stateManager.app.fileManager as FileManagerWithCreate).createNewMarkdownFile(
                 targetFolder,
                 sanitizedTitle
-              )) as TFile;
+              );
 
-              const newLeaf = stateManager.app.workspace.splitActiveLeaf();
+              const newLeaf = stateManager.app.workspace.getLeaf(true);
 
               await newLeaf.openFile(newFile);
-
-              stateManager.app.workspace.setActiveLeaf(newLeaf, false, true);
 
               await applyTemplate(stateManager, newNoteTemplatePath);
 
@@ -274,7 +283,7 @@ export function useItemMenu({
         addMoveToOptions(menu);
       } else {
         menu.addItem((item) => {
-          const submenu = (item as any)
+          const submenu = (item as MenuItemWithSubmenu)
             .setTitle(t('Move to list'))
             .setIcon('lucide-square-kanban')
             .setSubmenu();
