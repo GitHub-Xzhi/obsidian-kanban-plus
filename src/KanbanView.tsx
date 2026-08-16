@@ -28,7 +28,7 @@ import KanbanPlugin from './main';
 import { frontmatterKey } from './parsers/common';
 
 export const kanbanViewType = 'kanban';
-export const kanbanIcon = 'lucide-trello';
+export const kanbanIcon = 'lucide-square-kanban';
 
 interface KanbanViewEvents {
   hotkey: [{ commandId: string; data?: string }];
