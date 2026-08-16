@@ -245,7 +245,7 @@ export class StateManager {
       this.getSettingRaw('time-format', suppliedSettings) || getDefaultTimeFormat(this.app);
 
     const archiveDateFormat =
-      this.getSettingRaw('archive-date-format', suppliedSettings) || `${dateFormat} ${timeFormat}`;
+      this.getSettingRaw('archive-date-format', suppliedSettings) || 'YYYY-MM-DD HH:mm:ss';
     const cardCreatedTimeFormat =
       this.getSettingRaw('card-created-time-format', suppliedSettings) || 'YYYY-MM-DD HH:mm';
     const cardCompletedTimeFormat =
@@ -1059,8 +1059,7 @@ export class StateManager {
     const shouldAppendArchiveDate = !!this.getSetting('archive-with-date');
     const archiveDateSeparator = this.getSetting('archive-date-separator');
     const archiveDateFormat =
-      this.getSetting('archive-date-format') ||
-      `${getDefaultDateFormat(this.app)} ${getDefaultTimeFormat(this.app)}`;
+      this.getSetting('archive-date-format') || 'YYYY-MM-DD HH:mm:ss';
     const archiveDateAfterTitle = this.getSetting('append-archive-date');
 
     const appendArchiveDate = (item: Item, archivedAt: number) => {

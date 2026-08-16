@@ -1481,12 +1481,7 @@ export class SettingsManager {
 
         const [value, globalValue] = this.getSetting('archive-date-format', local);
 
-        const [dateFmt, globalDateFmt] = this.getSetting('date-format', local);
-        const defaultDateFmt = dateFmt || globalDateFmt || getDefaultDateFormat(this.app);
-        const [timeFmt, globalTimeFmt] = this.getSetting('time-format', local);
-        const defaultTimeFmt = timeFmt || globalTimeFmt || getDefaultTimeFormat(this.app);
-
-        const defaultFormat = `${defaultDateFmt} ${defaultTimeFmt}`;
+        const defaultFormat = 'YYYY-MM-DD HH:mm:ss';
 
         mf.setPlaceholder(defaultFormat);
         mf.setDefaultFormat(defaultFormat);
