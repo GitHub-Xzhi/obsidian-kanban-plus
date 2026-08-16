@@ -23,7 +23,7 @@ import uk from './locale/tr';
 import zhCN from './locale/zh-cn';
 import zhTW from './locale/zh-tw';
 
-export type KanbanLanguage = 'en' | 'zh';
+export type KanbanLanguage = 'auto' | 'en' | 'zh';
 
 const kanbanLanguageKey = 'kanban-language';
 const obsidianLanguageKey = 'language';
@@ -78,7 +78,7 @@ export function getKanbanLanguage(): KanbanLanguage {
 }
 
 export function setKanbanLanguage(lang?: KanbanLanguage) {
-  if (lang) {
+  if (lang && lang !== 'auto') {
     window.localStorage.setItem(kanbanLanguageKey, lang);
   } else {
     window.localStorage.removeItem(kanbanLanguageKey);

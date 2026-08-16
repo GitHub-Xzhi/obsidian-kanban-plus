@@ -24,7 +24,7 @@ Kanban Plus++ is a Markdown-backed Kanban plugin for Obsidian. It stores boards 
 
 | 功能                     | 描述                                                                                      | 默认值                                               |
 | ------------------------ | ----------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| 中英文界面               | 看板界面和设置页支持 English / 中文切换。                                                 | English                                              |
+| 中英文界面               | 看板界面和设置页支持 English / 中文切换。                                                 | 自动 (跟随系统)；非中文环境使用 English             |
 | 完成列自动流转           | 可将某个列标记为完成列，点击卡片复选框后自动移动到默认完成列。                            | 未设置默认完成列；若仅有一个完成列则自动使用该完成列 |
 | 默认完成列按来源列设置   | 非完成列可以分别选择默认完成列，并可从列菜单中清除默认完成列；配置按稳定列 ID 保存。      | 未设置                                               |
 | 取消完成返回来源列       | 完成任务时会记录来源列和原位置，取消完成后尽量返回来源列。                                | 始终启用                                             |
@@ -43,7 +43,7 @@ Kanban Plus++ is a Markdown-backed Kanban plugin for Obsidian. It stores boards 
 
 | Feature                                 | Description                                                                                                                      | Default                                                           |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Bilingual UI                            | Switch the board UI and settings page between English and Chinese.                                                               | English                                                           |
+| Bilingual UI                            | Switch the board UI and settings page between English and Chinese.                                                               | Auto (follow system); English outside Chinese locales             |
 | Automatic complete-list movement        | Mark a list as complete and move cards there automatically when their checkbox is checked.                                       | No default complete list; a single complete list is used directly |
 | Source-specific default complete lists  | Incomplete lists can choose and clear their own default complete list from the list menu; settings are stored by stable list ID. | Not configured                                                    |
 | Return to source on uncomplete          | Source list and original position are recorded when tasks are completed, so uncompleted cards can return to their source list.   | Always enabled                                                    |

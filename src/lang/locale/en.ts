@@ -66,6 +66,7 @@ const en = {
     'Set the default Kanban board settings. Settings can be overridden on a board-by-board basis.',
   Language: 'Language',
   'Select the Kanban plugin language.': 'Select the Kanban plugin language.',
+  'Auto (follow system)': 'Auto (follow system)',
   'Note template': 'Note template',
   'This template will be used when creating new notes from Kanban cards.':
     'This template will be used when creating new notes from Kanban cards.',

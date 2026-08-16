@@ -34,7 +34,7 @@ import {
 } from './components/types';
 import { getParentWindow } from './dnd/util/getWindow';
 import { PersistedCard } from './helpers/cardSettings';
-import { KanbanLanguage, getKanbanLanguage, setKanbanLanguage, t } from './lang/helpers';
+import { KanbanLanguage, setKanbanLanguage, t } from './lang/helpers';
 import KanbanPlugin from './main';
 import { frontmatterKey } from './parsers/common';
 import {
@@ -279,21 +279,28 @@ export class SettingsManager {
         .setName(t('Language'))
         .setDesc(t('Select the Kanban plugin language.'))
         .addDropdown((dropdown) => {
+          dropdown.addOption('auto', t('Auto (follow system)'));
           dropdown.addOption('en', 'English');
           dropdown.addOption('zh', '中文');
 
           const [value] = this.getSetting('language', local);
 
-          dropdown.setValue((value) || getKanbanLanguage());
+          dropdown.setValue(value || 'auto');
           dropdown.onChange((value) => {
             const lang = value as KanbanLanguage;
             setKanbanLanguage(lang);
 
-            this.applySettingsUpdateNow({
-              language: {
-                $set: lang,
-              },
-            });
+            if (lang === 'auto') {
+              this.applySettingsUpdateNow({
+                $unset: ['language'],
+              });
+            } else {
+              this.applySettingsUpdateNow({
+                language: {
+                  $set: lang,
+                },
+              });
+            }
 
             this.plugin.settingsTab.display();
           });

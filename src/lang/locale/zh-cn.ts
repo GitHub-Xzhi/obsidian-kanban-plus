@@ -65,6 +65,7 @@ const lang: Partial<Lang> = {
     '更改默认的看板设置。为每个看板单独进行设置将覆盖默认设置。',
   Language: '语言',
   'Select the Kanban plugin language.': '选择看板插件语言。',
+  'Auto (follow system)': '自动 (跟随系统)',
   'Note template': '笔记模板',
   'This template will be used when creating new notes from Kanban cards.':
     '从看板卡片创建新笔记时会使用该模板。',
