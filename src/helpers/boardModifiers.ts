@@ -143,6 +143,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
 
   const addCreatedTimes = (boardData: Board, items: Item[]) => {
     const createdAt = Date.now();
+    const completedAt = Date.now();
     let nextCards = sanitizeCards(boardData.data.settings.cards) || [];
     let didUpdateCards = false;
 
@@ -156,6 +157,16 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         nextCards = updateCard({ ...boardData.data.settings, cards: nextCards }, blockId, (card) => ({
           ...card,
           'created-time': createdAt,
+        }));
+        didUpdateCards = true;
+      }
+
+      const isComplete =
+        itemWithBlockId.data.checked && itemWithBlockId.data.checkChar === getTaskStatusDone();
+      if (isComplete && !getCardCompletedTime({ ...boardData.data.settings, cards: nextCards }, blockId)) {
+        nextCards = updateCard({ ...boardData.data.settings, cards: nextCards }, blockId, (card) => ({
+          ...card,
+          'completed-time': completedAt,
         }));
         didUpdateCards = true;
       }
