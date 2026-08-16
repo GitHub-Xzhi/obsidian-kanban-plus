@@ -1,10 +1,14 @@
 import classcat from 'classcat';
-import { Menu } from 'obsidian';
+import update from 'immutability-helper';
+import { Menu, moment } from 'obsidian';
 import { memo } from 'preact/compat';
-import { useCallback, useContext } from 'preact/hooks';
+import { useCallback, useContext, useMemo } from 'preact/hooks';
+import { KanbanSettings } from 'src/Settings';
+import { getArchivedCardSource } from 'src/helpers/cardSettings';
 import { t } from 'src/lang/helpers';
 
 import { Icon } from '../Icon/Icon';
+import { MetadataTable } from '../Item/MetadataTable';
 import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
 import { KanbanContext } from '../context';
 import { c } from '../helpers';
@@ -18,10 +22,36 @@ interface ArchiveLaneProps {
 interface ArchiveItemProps {
   item: Item;
   archiveIndex: number;
+  cards: KanbanSettings['cards'];
+  archiveDateFormat: string;
+  showArchiveTime: boolean;
 }
 
-const ArchiveItem = memo(function ArchiveItem({ item, archiveIndex }: ArchiveItemProps) {
+const ArchiveItem = memo(function ArchiveItem({
+  item,
+  archiveIndex,
+  cards,
+  archiveDateFormat,
+  showArchiveTime,
+}: ArchiveItemProps) {
   const { boardModifiers } = useContext(KanbanContext);
+  const archivedAt = getArchivedCardSource({ cards }, item.data.blockId)?.archivedAt;
+  const archiveTimeMetadata = useMemo(() => {
+    if (!showArchiveTime || !archivedAt) {
+      return null;
+    }
+
+    return {
+      'card-archive-time': {
+        metadataKey: 'card-archive-time',
+        label: t('Archive time'),
+        shouldHideLabel: false,
+        containsMarkdown: false,
+        value: moment(archivedAt).format(archiveDateFormat),
+        format: archiveDateFormat,
+      },
+    };
+  }, [archiveDateFormat, archivedAt, showArchiveTime]);
 
   const showMenu = useCallback(
     (e: MouseEvent) => {
@@ -57,6 +87,11 @@ const ArchiveItem = memo(function ArchiveItem({ item, archiveIndex }: ArchiveIte
               </a>
             </div>
           </div>
+          {archiveTimeMetadata && (
+            <div className={c('item-metadata-wrapper')}>
+              <MetadataTable metadata={archiveTimeMetadata} order={['card-archive-time']} />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -64,14 +99,44 @@ const ArchiveItem = memo(function ArchiveItem({ item, archiveIndex }: ArchiveIte
 });
 
 export const ArchiveLane = memo(function ArchiveLane({ items, collapseDir }: ArchiveLaneProps) {
+  const { stateManager } = useContext(KanbanContext);
+  const cards = stateManager.useSetting('cards');
+  const archiveDateFormat = stateManager.useSetting('archive-date-format');
+  const showArchiveTime = !!stateManager.useSetting('show-card-archive-time-in-archive-lane');
+  const showLaneMenu = useCallback(
+    (e: MouseEvent) => {
+      e.preventDefault();
+
+      new Menu()
+        .addItem((menuItem) => {
+          menuItem
+            .setIcon('lucide-archive')
+            .setTitle(showArchiveTime ? t('Hide archive time') : t('Show archive time'))
+            .onClick(() => {
+              stateManager.setState((boardData) =>
+                update(boardData, {
+                  data: {
+                    settings: {
+                      'show-card-archive-time-in-archive-lane': {
+                        $set: !showArchiveTime,
+                      },
+                    },
+                  },
+                })
+              );
+            });
+        })
+        .showAtMouseEvent(e);
+    },
+    [showArchiveTime, stateManager]
+  );
+
   return (
     <div
       className={classcat([
         c('lane-wrapper'),
         c('archive-lane-wrapper'),
-        {
-          [c('archive-lane-wrapper-vertical')]: collapseDir === 'vertical',
-        },
+        collapseDir === 'vertical' && c('archive-lane-wrapper-vertical'),
       ])}
     >
       <div className={classcat([c('lane'), c('archive-lane')])}>
@@ -80,10 +145,26 @@ export const ArchiveLane = memo(function ArchiveLane({ items, collapseDir }: Arc
             <div className={c('lane-title-text')}>{t('Archive')}</div>
           </div>
           <div className={c('lane-title-count')}>{items.length}</div>
+          <div className={c('lane-settings-button-wrapper')}>
+            <a
+              aria-label={t('More options')}
+              className={`${c('lane-settings-button')} clickable-icon`}
+              onClick={showLaneMenu}
+            >
+              <Icon name="lucide-more-vertical" />
+            </a>
+          </div>
         </div>
         <div className={classcat([c('lane-items'), c('vertical')])}>
           {items.map((item, archiveIndex) => (
-            <ArchiveItem key={item.id} item={item} archiveIndex={archiveIndex} />
+            <ArchiveItem
+              key={item.id}
+              item={item}
+              archiveIndex={archiveIndex}
+              cards={cards}
+              archiveDateFormat={archiveDateFormat}
+              showArchiveTime={showArchiveTime}
+            />
           ))}
         </div>
       </div>

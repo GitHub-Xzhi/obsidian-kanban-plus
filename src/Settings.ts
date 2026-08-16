@@ -113,6 +113,7 @@ export interface KanbanSettings {
   'show-add-list'?: boolean;
   'show-archive-all'?: boolean;
   'show-archive-toggle'?: boolean;
+  'show-card-archive-time-in-archive-lane'?: boolean;
   'show-board-settings'?: boolean;
   'show-toggle-all-card-created-times'?: boolean;
   'show-toggle-all-card-completed-times'?: boolean;
@@ -179,6 +180,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'show-add-list',
   'show-archive-all',
   'show-archive-toggle',
+  'show-card-archive-time-in-archive-lane',
   'show-board-settings',
   'show-toggle-all-card-created-times',
   'show-toggle-all-card-completed-times',

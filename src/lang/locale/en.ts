@@ -287,10 +287,13 @@ const en = {
   'Yes, archive cards': 'Yes, archive cards',
   'Edit list': 'Edit list',
   'Archive cards': 'Archive cards',
+  'Archive time': 'Archive time',
   'Show created time': 'Show created time',
   'Hide created time': 'Hide created time',
   'Show completed time': 'Show completed time',
   'Hide completed time': 'Hide completed time',
+  'Show archive time': 'Show archive time',
+  'Hide archive time': 'Hide archive time',
   'Group cards by created time': 'Group cards by created time',
   'When toggled, cards will be grouped by created date.':
     'When enabled, the list menu will show the option to group by created time.',
