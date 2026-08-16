@@ -316,6 +316,8 @@ export class SettingsManager {
               toggle.setValue(value);
             } else if (globalValue !== undefined) {
               toggle.setValue(globalValue);
+            } else {
+              toggle.setValue(true);
             }
 
             toggle.onChange((newValue) => {
@@ -331,7 +333,7 @@ export class SettingsManager {
               .setTooltip(t('Reset to default'))
               .onClick(() => {
                 const [, globalValue] = this.getSetting('show-checkboxes', local);
-                toggleComponent.setValue(!!globalValue);
+                toggleComponent.setValue(globalValue ?? true);
 
                 this.applySettingsUpdate({
                   $unset: ['show-checkboxes'],

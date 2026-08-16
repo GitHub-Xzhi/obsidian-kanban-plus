@@ -295,6 +295,7 @@ export class StateManager {
         this.getSettingRaw('show-card-created-time-in-complete-lane', suppliedSettings) ?? false,
       'show-card-completed-time-in-complete-lane':
         this.getSettingRaw('show-card-completed-time-in-complete-lane', suppliedSettings) ?? true,
+      'show-checkboxes': this.getSettingRaw('show-checkboxes', suppliedSettings) ?? true,
       'tag-action': this.getSettingRaw('tag-action', suppliedSettings) ?? 'obsidian',
     };
   }
