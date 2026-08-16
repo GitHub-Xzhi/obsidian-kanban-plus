@@ -522,6 +522,16 @@ export class StateManager {
         nextBoard = insertEntity(nextBoard, path, nextReplacements) as Board;
       }
 
+      if (isComplete && !nextBoard.children[path[0]]?.data.shouldMarkItemsComplete) {
+        nextBoard = updateEntity(nextBoard, [path[0]], {
+          data: {
+            showCompletedTime: {
+              $set: true,
+            },
+          },
+        }) as Board;
+      }
+
       return this.updateCompletedTime(nextBoard, completedItem, isComplete);
     });
 
