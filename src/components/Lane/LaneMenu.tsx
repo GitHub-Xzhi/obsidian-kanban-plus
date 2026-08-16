@@ -325,7 +325,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
 
         submenu.addItem((item) => {
           item
-            .setIcon('lucide-check-check')
+            .setIcon('lucide-list-checks')
             .setTitle(t('None'))
             .setChecked(defaultLaneIndex === noDefaultCompleteLaneId)
             .onClick(() => stateManager.setNoDefaultCompleteLane(path[0]));
