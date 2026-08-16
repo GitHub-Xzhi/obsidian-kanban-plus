@@ -3,7 +3,7 @@ import { App, TFile, moment } from 'obsidian';
 import { useEffect, useState } from 'preact/compat';
 
 import { KanbanView } from './KanbanView';
-import { KanbanSettings, SettingRetrievers } from './Settings';
+import { KanbanSettings, SettingRetrievers, noDefaultCompleteLaneId } from './Settings';
 import {
   generateInstanceId,
   getDefaultDateFormat,
@@ -349,13 +349,8 @@ export class StateManager {
     }, []);
   }
 
-  getDefaultCompleteLaneIndex(sourceLaneIndex?: number): number | null {
+  getDefaultCompleteLaneIndex(sourceLaneIndex?: number): number | null | typeof noDefaultCompleteLaneId {
     const completeLanes = this.getCompleteLaneOptions();
-
-    if (completeLanes.length === 1) {
-      return completeLanes[0].index;
-    }
-
     const sourceLaneId =
       sourceLaneIndex !== undefined ? this.state.children[sourceLaneIndex]?.id : undefined;
     const defaultLaneId =
@@ -366,6 +361,14 @@ export class StateManager {
 
     if (!defaultLaneId) {
       return null;
+    }
+
+    if (defaultLaneId === noDefaultCompleteLaneId) {
+      return noDefaultCompleteLaneId;
+    }
+
+    if (completeLanes.length === 1) {
+      return completeLanes[0].index;
     }
 
     return completeLanes.find((option) => option.lane.id === defaultLaneId)?.index ?? null;
@@ -441,6 +444,87 @@ export class StateManager {
         },
       })
     );
+  }
+
+  setNoDefaultCompleteLane(sourceLaneIndex?: number) {
+    const sourceLane =
+      sourceLaneIndex !== undefined ? this.state.children[sourceLaneIndex] : undefined;
+
+    if (sourceLane && sourceLane.data.shouldMarkItemsComplete) {
+      return;
+    }
+
+    if (sourceLane) {
+      this.setState((board) =>
+        updateEntity(board, [sourceLaneIndex], {
+          data: {
+            defaultCompleteLaneId: {
+              $set: noDefaultCompleteLaneId,
+            },
+          },
+        })
+      );
+
+      return;
+    }
+
+    this.setState((board) =>
+      update(board, {
+        data: {
+          settings: {
+            'default-complete-lane-id': {
+              $set: noDefaultCompleteLaneId,
+            },
+            $unset: ['default-complete-lane-title'],
+          },
+        },
+      })
+    );
+  }
+
+  completeItemInPlace(
+    path: Path,
+    replacements: Item[],
+    completedIndex: number,
+    isComplete = true
+  ) {
+    if (!replacements[completedIndex]) {
+      return false;
+    }
+
+    this.setState((board) => {
+      if (!board.children[path[0]]?.children[path[1]]) {
+        return board;
+      }
+
+      const sourceItem = board.children[path[0]].children[path[1]];
+      const blockId =
+        sourceItem.data.blockId ||
+        replacements[completedIndex].data.blockId ||
+        generateInstanceId(6);
+      const completedItem = update(replacements[completedIndex], {
+        data: {
+          blockId: {
+            $set: blockId,
+          },
+        },
+      });
+      let nextBoard: Board;
+
+      if (replacements.length === 1) {
+        nextBoard = updateEntity(board, path, completedItem) as Board;
+      } else {
+        const nextReplacements = replacements.slice();
+        nextReplacements[completedIndex] = completedItem;
+
+        nextBoard = removeEntity(board, path) as Board;
+        nextBoard = insertEntity(nextBoard, path, nextReplacements) as Board;
+      }
+
+      return this.updateCompletedTime(nextBoard, completedItem, isComplete);
+    });
+
+    return true;
   }
 
   updateCompletedTime(board: Board, item: Item, isComplete: boolean) {

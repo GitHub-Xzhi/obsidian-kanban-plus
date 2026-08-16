@@ -37,6 +37,7 @@ const lang: Partial<Lang> = {
     '无效的看板文件：解析 frontmatter 时出现问题',
   "I don't know how to interpret this line:": '我不知道如何解读这句话：',
   Untitled: '未命名', // auto-created column
+  None: '无',
 
   // settingHelpers.ts
   'Note: No template plugins are currently enabled.': '注意：当前没有启用模板插件',

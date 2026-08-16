@@ -36,6 +36,7 @@ const en = {
     'Invalid Kanban file: problems parsing frontmatter',
   "I don't know how to interpret this line:": "I don't know how to interpret this line:",
   Untitled: 'Untitled', // auto-created column
+  None: 'None',
 
   // settingHelpers.ts
   'Note: No template plugins are currently enabled.':

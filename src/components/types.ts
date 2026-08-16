@@ -1,5 +1,5 @@
 import { TFile, moment } from 'obsidian';
-import { KanbanSettings } from 'src/Settings';
+import { DefaultCompleteLaneId, KanbanSettings } from 'src/Settings';
 import { Nestable } from 'src/dnd/types';
 import { InlineField } from 'src/parsers/helpers/inlineMetadata';
 import { FileAccessor } from 'src/parsers/helpers/parser';
@@ -32,7 +32,7 @@ export interface LaneData {
   maxItems?: number;
   dom?: HTMLDivElement;
   forceEditMode?: boolean;
-  defaultCompleteLaneId?: string;
+  defaultCompleteLaneId?: DefaultCompleteLaneId;
   backgroundColor?: string;
   groupBy?: 'created-time' | 'completed-time';
   sorted?: LaneSort | string;

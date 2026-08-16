@@ -4,6 +4,7 @@ import { StateManager } from 'src/StateManager';
 import { Path } from 'src/dnd/types';
 import { getTaskStatusDone, toggleTask } from 'src/parsers/helpers/inlineMetadata';
 
+import { noDefaultCompleteLaneId } from '../../Settings';
 import { BoardModifiers } from '../../helpers/boardModifiers';
 import { Icon } from '../Icon/Icon';
 import { openCompleteLaneModal } from '../Lane/CompleteLaneModal';
@@ -72,6 +73,11 @@ export const ItemCheckbox = memo(function ItemCheckbox({
       return;
     }
 
+    if (isComplete && !sourceIsCompleteLane) {
+      stateManager.completeItemInPlace(path, replacements, completedIndex, false);
+      return;
+    }
+
     if (!isComplete && completeLanes.length && !sourceIsCompleteLane) {
       const moveToLane = (laneIndex: number) => {
         if (!stateManager.moveCompletedItemToLane(path, replacements, completedIndex, laneIndex)) {
@@ -81,7 +87,9 @@ export const ItemCheckbox = memo(function ItemCheckbox({
 
       const defaultCompleteLaneIndex = stateManager.getDefaultCompleteLaneIndex(path[0]);
 
-      if (defaultCompleteLaneIndex !== null) {
+      if (defaultCompleteLaneIndex === noDefaultCompleteLaneId) {
+        stateManager.completeItemInPlace(path, replacements, completedIndex);
+      } else if (defaultCompleteLaneIndex !== null) {
         moveToLane(defaultCompleteLaneIndex);
       } else {
         openCompleteLaneModal(stateManager, path[0], moveToLane);

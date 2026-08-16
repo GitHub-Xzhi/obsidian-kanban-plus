@@ -375,6 +375,10 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
         }
 
         Object.entries(nextDefaultCompleteLaneIds).forEach(([sourceLaneId, targetLaneId]) => {
+          if (sourceLaneId === deletedLaneId) {
+            return;
+          }
+
           if (targetLaneId === deletedLaneId) {
             delete nextDefaultCompleteLaneIds[sourceLaneId];
             didUpdateDefaultCompleteLaneIds = true;

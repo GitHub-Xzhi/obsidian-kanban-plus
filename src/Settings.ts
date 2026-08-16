@@ -58,10 +58,13 @@ export interface PersistedLaneSortRule {
   order?: 'asc' | 'desc';
 }
 
+export const noDefaultCompleteLaneId = 'none';
+export type DefaultCompleteLaneId = string;
+
 export interface PersistedLaneSetting {
   id: string;
   'list-collapse'?: boolean;
-  'default-complete-lane-id'?: string;
+  'default-complete-lane-id'?: DefaultCompleteLaneId;
   'background-color'?: string;
   'group-by'?: 'created-time' | 'completed-time';
   'sort-rule'?: PersistedLaneSortRule;
@@ -85,8 +88,8 @@ export interface KanbanSettings {
   'card-created-time-format'?: string;
   'card-completed-time-format'?: string;
   'manual-completed-card-insertion-method'?: 'prepend' | 'append';
-  'default-complete-lane-id'?: string;
-  'default-complete-lane-ids'?: Record<string, string>;
+  'default-complete-lane-id'?: DefaultCompleteLaneId;
+  'default-complete-lane-ids'?: Record<string, DefaultCompleteLaneId>;
   lanes?: PersistedLaneSetting[];
   'lane-background-colors'?: Record<string, string>;
   'full-list-lane-width'?: boolean;

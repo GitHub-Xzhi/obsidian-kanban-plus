@@ -1,4 +1,5 @@
 import { Modal, Setting } from 'obsidian';
+import { noDefaultCompleteLaneId } from 'src/Settings';
 import { StateManager } from 'src/StateManager';
 import { t } from 'src/lang/helpers';
 
@@ -27,6 +28,25 @@ export class CompleteLaneModal extends Modal {
     contentEl.createEl('h3', { text: t('Default complete list') });
     contentEl.createEl('p', {
       text: t('Cards completed by checkbox will be moved to this list.'),
+    });
+
+    const noneSetting = new Setting(contentEl)
+      .setName(t('None'))
+      .setDesc(defaultLaneIndex === noDefaultCompleteLaneId ? t('default') : '');
+
+    const noneRadio = noneSetting.controlEl.createEl('input', {
+      attr: {
+        type: 'radio',
+        name: 'kanban-default-complete-lane',
+      },
+    });
+
+    noneRadio.checked = defaultLaneIndex === noDefaultCompleteLaneId;
+    noneRadio.addEventListener('change', () => {
+      if (noneRadio.checked) {
+        this.stateManager.setNoDefaultCompleteLane(this.sourceLaneIndex);
+        this.close();
+      }
     });
 
     completeLanes.forEach(({ lane, index }) => {
