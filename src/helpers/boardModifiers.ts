@@ -94,7 +94,7 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
   const removeArchiveDate = (item: Item, source: PersistedArchivedCard) => {
     const archivedAt = source.archivedAt;
 
-    if (!stateManager.getSetting('archive-with-date') || !archivedAt) {
+    if (!archivedAt) {
       return item;
     }
 
