@@ -1035,7 +1035,7 @@ export class SettingsManager {
               .setTooltip(t('Reset to default'))
               .onClick(() => {
                 const [, globalValue] = this.getSetting('group-cards-by-created-time', local);
-                toggleComponent.setValue(!!globalValue);
+                toggleComponent.setValue(globalValue ?? true);
 
                 this.applySettingsUpdate({
                   $unset: ['group-cards-by-created-time'],
@@ -1127,7 +1127,7 @@ export class SettingsManager {
               .setTooltip(t('Reset to default'))
               .onClick(() => {
                 const [, globalValue] = this.getSetting('group-cards-by-completed-time', local);
-                toggleComponent.setValue(!!globalValue);
+                toggleComponent.setValue(globalValue ?? true);
 
                 this.applySettingsUpdate({
                   $unset: ['group-cards-by-completed-time'],
