@@ -6,12 +6,12 @@ import { t } from 'src/lang/helpers';
 export class CompleteLaneModal extends Modal {
   stateManager: StateManager;
   sourceLaneIndex?: number;
-  onSelect?: (laneIndex: number) => void;
+  onSelect?: (laneIndex: number | typeof noDefaultCompleteLaneId) => void;
 
   constructor(
     stateManager: StateManager,
     sourceLaneIndex?: number,
-    onSelect?: (laneIndex: number) => void
+    onSelect?: (laneIndex: number | typeof noDefaultCompleteLaneId) => void
   ) {
     super(stateManager.app);
 
@@ -45,6 +45,7 @@ export class CompleteLaneModal extends Modal {
     noneRadio.addEventListener('change', () => {
       if (noneRadio.checked) {
         this.stateManager.setNoDefaultCompleteLane(this.sourceLaneIndex);
+        this.onSelect?.(noDefaultCompleteLaneId);
         this.close();
       }
     });
@@ -80,7 +81,7 @@ export class CompleteLaneModal extends Modal {
 export function openCompleteLaneModal(
   stateManager: StateManager,
   sourceLaneIndex?: number,
-  onSelect?: (laneIndex: number) => void
+  onSelect?: (laneIndex: number | typeof noDefaultCompleteLaneId) => void
 ) {
   new CompleteLaneModal(stateManager, sourceLaneIndex, onSelect).open();
 }

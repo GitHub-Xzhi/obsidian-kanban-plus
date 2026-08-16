@@ -2,6 +2,7 @@ import update from 'immutability-helper';
 import { Menu, MenuItem, Platform, moment, setTooltip } from 'obsidian';
 import { Dispatch, StateUpdater, useContext, useEffect, useMemo, useState } from 'preact/hooks';
 import { Path } from 'src/dnd/types';
+import { noDefaultCompleteLaneId } from 'src/Settings';
 import { getCardCompletedTime, getCardCreatedTime } from 'src/helpers/cardSettings';
 import { defaultSort } from 'src/helpers/util';
 import { t } from 'src/lang/helpers';
@@ -177,6 +178,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
     const canSortCompletedTime = lane.children.some(
       (item) => !!getCardCompletedTime(board.data.settings, item.data.blockId)
     );
+    const canShowCompletedTime = lane.data.shouldMarkItemsComplete || canSortCompletedTime;
 
     lane.children.forEach((item) => {
       const taskData = item.data.metadata.inlineMetadata;
@@ -247,7 +249,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
       });
     }
 
-    if (lane.data.shouldMarkItemsComplete) {
+    if (canShowCompletedTime) {
       menu.addItem((item) => {
         item
           .setIcon('lucide-circle-check')
@@ -266,7 +268,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
           });
       });
 
-      if (groupCardsByCompletedTime) {
+      if (lane.data.shouldMarkItemsComplete && groupCardsByCompletedTime) {
         menu.addItem((item) => {
           item
             .setIcon('lucide-folders')
@@ -320,6 +322,14 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
 
           submenu.addSeparator();
         }
+
+        submenu.addItem((item) => {
+          item
+            .setIcon('lucide-check-check')
+            .setTitle(t('None'))
+            .setChecked(defaultLaneIndex === noDefaultCompleteLaneId)
+            .onClick(() => stateManager.setNoDefaultCompleteLane(path[0]));
+        });
 
         completeLanes.forEach(({ lane, index }) => {
           submenu.addItem((item) => {

@@ -79,7 +79,12 @@ export const ItemCheckbox = memo(function ItemCheckbox({
     }
 
     if (!isComplete && completeLanes.length && !sourceIsCompleteLane) {
-      const moveToLane = (laneIndex: number) => {
+      const completeItem = (laneIndex: number | typeof noDefaultCompleteLaneId) => {
+        if (laneIndex === noDefaultCompleteLaneId) {
+          stateManager.completeItemInPlace(path, replacements, completedIndex);
+          return;
+        }
+
         if (!stateManager.moveCompletedItemToLane(path, replacements, completedIndex, laneIndex)) {
           boardModifiers.updateItem(path, replacements[completedIndex]);
         }
@@ -90,9 +95,9 @@ export const ItemCheckbox = memo(function ItemCheckbox({
       if (defaultCompleteLaneIndex === noDefaultCompleteLaneId) {
         stateManager.completeItemInPlace(path, replacements, completedIndex);
       } else if (defaultCompleteLaneIndex !== null) {
-        moveToLane(defaultCompleteLaneIndex);
+        completeItem(defaultCompleteLaneIndex);
       } else {
-        openCompleteLaneModal(stateManager, path[0], moveToLane);
+        openCompleteLaneModal(stateManager, path[0], completeItem);
       }
 
       return;
