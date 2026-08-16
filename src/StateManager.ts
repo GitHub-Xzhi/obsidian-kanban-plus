@@ -513,7 +513,7 @@ export class StateManager {
       let nextBoard: Board;
 
       if (replacements.length === 1) {
-        nextBoard = updateEntity(board, path, completedItem) as Board;
+        nextBoard = removeEntity(board, path, completedItem) as Board;
       } else {
         const nextReplacements = replacements.slice();
         nextReplacements[completedIndex] = completedItem;
