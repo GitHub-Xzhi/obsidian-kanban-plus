@@ -19,7 +19,7 @@ import {
 } from './components/types';
 import { Path } from './dnd/types';
 import { insertEntity, moveEntity, removeEntity, updateEntity } from './dnd/util/data';
-import { getArchiveDateText } from './helpers/archiveDate';
+import { defaultArchiveDateSeparator, getArchiveDateText } from './helpers/archiveDate';
 import { getCard, getCompletedCardSource, sanitizeCards, updateCard } from './helpers/cardSettings';
 import { asError } from './helpers/unknown';
 import { defaultSort } from './helpers/util';
@@ -266,7 +266,8 @@ export class StateManager {
       'move-tags': this.getSettingRaw('move-tags', suppliedSettings),
       'move-task-metadata': this.getSettingRaw('move-task-metadata', suppliedSettings),
       'metadata-keys': metadataKeys,
-      'archive-date-separator': this.getSettingRaw('archive-date-separator') || '',
+      'archive-date-separator':
+        this.getSettingRaw('archive-date-separator', suppliedSettings) ?? defaultArchiveDateSeparator,
       'archive-date-format': archiveDateFormat,
       'show-add-list': this.getSettingRaw('show-add-list', suppliedSettings) ?? true,
       'show-archive-all': this.getSettingRaw('show-archive-all', suppliedSettings) ?? true,
@@ -1055,16 +1056,17 @@ export class StateManager {
     }> = [];
     const shouldAppendArchiveDate = !!this.getSetting('archive-with-date');
     const archiveDateSeparator = this.getSetting('archive-date-separator');
-    const archiveDateFormat = this.getSetting('archive-date-format');
+    const archiveDateFormat =
+      this.getSetting('archive-date-format') ||
+      `${getDefaultDateFormat(this.app)} ${getDefaultTimeFormat(this.app)}`;
     const archiveDateAfterTitle = this.getSetting('append-archive-date');
 
     const appendArchiveDate = (item: Item, archivedAt: number) => {
       const newTitle = [
         getArchiveDateText({
-          archiveDateFormat,
+          archiveDate: moment(archivedAt).format(archiveDateFormat),
           archiveDateSeparator,
           archiveDateAfterTitle,
-          archivedAt,
         }),
       ];
 

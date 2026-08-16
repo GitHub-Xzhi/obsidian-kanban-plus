@@ -33,6 +33,7 @@ import {
   TagSortSettingTemplate,
 } from './components/types';
 import { getParentWindow } from './dnd/util/getWindow';
+import { defaultArchiveDateSeparator } from './helpers/archiveDate';
 import { PersistedCard } from './helpers/cardSettings';
 import { KanbanLanguage, setKanbanLanguage, t } from './lang/helpers';
 import KanbanPlugin from './main';
@@ -1416,8 +1417,10 @@ export class SettingsManager {
             textComponent = text;
 
             const [value, globalValue] = this.getSetting('archive-date-separator', local);
+            const defaultValue =
+              typeof globalValue === 'string' ? globalValue : defaultArchiveDateSeparator;
 
-            text.inputEl.placeholder = globalValue ? `${globalValue} (default)` : '';
+            text.inputEl.placeholder = `${defaultValue} (default)`;
             text.inputEl.value = value ? (value) : '';
 
             text.onChange((val) => {
@@ -1441,7 +1444,9 @@ export class SettingsManager {
               .setTooltip(t('Reset to default'))
               .onClick(() => {
                 const [, globalValue] = this.getSetting('archive-date-separator', local);
-                textComponent.setValue((globalValue) || '');
+                textComponent.setValue(
+                  typeof globalValue === 'string' ? globalValue : defaultArchiveDateSeparator
+                );
 
                 this.applySettingsUpdate({
                   $unset: ['archive-date-separator'],

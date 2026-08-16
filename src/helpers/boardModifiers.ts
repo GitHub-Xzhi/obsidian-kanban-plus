@@ -77,8 +77,9 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     const archiveDateAfterTitle = archiveDateSettings.archiveDateAfterTitle;
     const newTitle = [
       getArchiveDateText({
-        ...archiveDateSettings,
-        archivedAt,
+        archiveDate: moment(archivedAt).format(archiveDateSettings.archiveDateFormat),
+        archiveDateSeparator: archiveDateSettings.archiveDateSeparator,
+        archiveDateAfterTitle: archiveDateSettings.archiveDateAfterTitle,
       }),
     ];
 
@@ -104,10 +105,9 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     const archiveDateAfterTitle =
       source.archiveDateAfterTitle ?? fallbackSettings.archiveDateAfterTitle;
     const archiveText = getArchiveDateText({
-      archiveDateFormat,
+      archiveDate: moment(archivedAt).format(archiveDateFormat),
       archiveDateSeparator,
       archiveDateAfterTitle,
-      archivedAt,
     });
     const archiveRegExp = archiveDateAfterTitle
       ? new RegExp(`\\s+${escapeRegExpStr(archiveText)}$`)

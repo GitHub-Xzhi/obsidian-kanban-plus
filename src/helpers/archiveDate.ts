@@ -1,19 +1,16 @@
-import { moment } from 'obsidian';
+export const defaultArchiveDateSeparator = '🗄️';
 
 export interface ArchiveDateSettings {
-  archiveDateFormat: string;
+  archiveDate: string;
   archiveDateSeparator?: string;
   archiveDateAfterTitle?: boolean;
 }
 
 export function getArchiveDateText({
-  archiveDateFormat,
+  archiveDate,
   archiveDateSeparator,
   archiveDateAfterTitle,
-  archivedAt,
-}: ArchiveDateSettings & { archivedAt: number }) {
-  const archiveDate = moment(archivedAt).format(archiveDateFormat);
-
+}: ArchiveDateSettings) {
   if (!archiveDateSeparator) {
     return archiveDate;
   }
