@@ -10,7 +10,7 @@ const lang: Partial<Lang> = {
   'Convert empty note to Kanban': '转换空白笔记为看板',
   'Error: cannot create Kanban, the current note is not empty':
     '错误：无法转换当前文件，当前笔记不是空白笔记',
-  'New kanban board': '新看板',
+  'New kanban board': '新建看板',
   'Untitled Kanban': '未命名看板',
   'Toggle between Kanban and markdown mode': '在看板和 Markdown 模式之间进行切换',
 

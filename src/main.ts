@@ -442,8 +442,8 @@ export default class KanbanPlugin extends Plugin {
           menu.addItem((item) => {
             item
               .setSection('action-primary')
-              .setTitle(t('New kanban board'))
               .setIcon(kanbanIcon)
+              .setTitle(t('New kanban board'))
               .onClick(() => this.newKanban(file));
           });
           return;
