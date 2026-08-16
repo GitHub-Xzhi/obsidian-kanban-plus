@@ -22,11 +22,11 @@ import tr from './locale/tr';
 import uk from './locale/tr';
 import zhCN from './locale/zh-cn';
 import zhTW from './locale/zh-tw';
+import { moment } from 'obsidian';
 
 export type KanbanLanguage = 'auto' | 'en' | 'zh';
 
 const kanbanLanguageKey = 'kanban-language';
-const obsidianLanguageKey = 'language';
 
 const localeMap: { [k: string]: Partial<Lang> } = {
   ar,
@@ -66,13 +66,9 @@ function normalizeLanguage(lang: string | null): KanbanLanguage | null {
 }
 
 export function getKanbanLanguage(): KanbanLanguage {
-  const storedLanguage = (window as Window & { localStorage: Storage }).localStorage.getItem(
-    obsidianLanguageKey
-  );
-
   return (
     normalizeLanguage(window.localStorage.getItem(kanbanLanguageKey)) ||
-    normalizeLanguage(storedLanguage) ||
+    normalizeLanguage(moment.locale()) ||
     'en'
   );
 }
