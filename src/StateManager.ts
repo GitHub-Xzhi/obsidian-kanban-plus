@@ -553,13 +553,28 @@ export class StateManager {
         return board;
       }
 
+      const sourceItem = board.children[path[0]].children[path[1]];
+      const blockId =
+        sourceItem.data.blockId ||
+        replacements[completedIndex].data.blockId ||
+        generateInstanceId(6);
+      const completedItem = update(replacements[completedIndex], {
+        data: {
+          blockId: {
+            $set: blockId,
+          },
+        },
+      });
       let nextBoard: Board;
 
       if (replacements.length === 1) {
-        nextBoard = removeEntity(board, path, replacements[0]) as Board;
+        nextBoard = removeEntity(board, path, completedItem) as Board;
       } else {
+        const nextReplacements = replacements.slice();
+        nextReplacements[completedIndex] = completedItem;
+
         nextBoard = removeEntity(board, path) as Board;
-        nextBoard = insertEntity(nextBoard, path, replacements) as Board;
+        nextBoard = insertEntity(nextBoard, path, nextReplacements) as Board;
       }
 
       if (isComplete) {
@@ -572,7 +587,7 @@ export class StateManager {
         }) as Board;
       }
 
-      return this.updateCompletedTime(nextBoard, replacements[completedIndex], isComplete);
+      return this.updateCompletedTime(nextBoard, completedItem, isComplete);
     });
 
     return true;
