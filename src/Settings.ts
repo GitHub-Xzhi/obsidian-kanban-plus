@@ -73,6 +73,7 @@ export interface PersistedLaneSetting {
 }
 
 export interface KanbanSettings {
+  __settingMigrations?: Record<string, boolean>;
   [frontmatterKey]?: KanbanFormat;
   'append-archive-date'?: boolean;
   'archive-date-format'?: string;
@@ -247,12 +248,12 @@ export class SettingsManager {
   getSetting<K extends keyof KanbanSettings>(
     key: K,
     local: boolean
-  ): [KanbanSettings[K], KanbanSettings[K] | null] {
+  ): [KanbanSettings[K], KanbanSettings[K] | undefined] {
     if (local) {
       return [this.settings[key], this.plugin.settings[key]];
     }
 
-    return [this.settings[key], null];
+    return [this.settings[key], undefined];
   }
 
   constructUI(contentEl: HTMLElement, heading: string, local: boolean) {

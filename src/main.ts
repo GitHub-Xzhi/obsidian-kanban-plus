@@ -120,6 +120,19 @@ export default class KanbanPlugin extends Plugin {
   async loadSettings() {
     const loadedSettings = (await this.loadData()) as KanbanSettings | null;
     this.settings = Object.assign({}, loadedSettings || {});
+
+    if (!this.settings.__settingMigrations?.defaultGroupCardsByTimeEnabled) {
+      const nextMigrations = {
+        ...this.settings.__settingMigrations,
+        defaultGroupCardsByTimeEnabled: true,
+      };
+
+      delete this.settings['group-cards-by-created-time'];
+      delete this.settings['group-cards-by-completed-time'];
+
+      this.settings.__settingMigrations = nextMigrations;
+      await this.saveSettings();
+    }
   }
 
   async saveSettings() {
