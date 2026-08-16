@@ -2,7 +2,7 @@ import classcat from 'classcat';
 import update from 'immutability-helper';
 import { Menu, moment } from 'obsidian';
 import { memo } from 'preact/compat';
-import { useCallback, useContext, useMemo } from 'preact/hooks';
+import { useCallback, useContext, useMemo, useState } from 'preact/hooks';
 import { KanbanSettings } from 'src/Settings';
 import { getArchivedCardSource } from 'src/helpers/cardSettings';
 import { t } from 'src/lang/helpers';
@@ -99,7 +99,8 @@ const ArchiveItem = memo(function ArchiveItem({
 });
 
 export const ArchiveLane = memo(function ArchiveLane({ items, collapseDir }: ArchiveLaneProps) {
-  const { stateManager } = useContext(KanbanContext);
+  const { boardModifiers, stateManager } = useContext(KanbanContext);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const cards = stateManager.useSetting('cards');
   const archiveDateFormat = stateManager.useSetting('archive-date-format');
   const showArchiveTime = !!stateManager.useSetting('show-card-archive-time-in-archive-lane');
@@ -126,10 +127,22 @@ export const ArchiveLane = memo(function ArchiveLane({ items, collapseDir }: Arc
               );
             });
         })
+        .addSeparator()
+        .addItem((menuItem) => {
+          menuItem
+            .setIcon('lucide-trash-2')
+            .setTitle(t('Delete list'))
+            .onClick(() => setIsConfirmingDelete(true));
+        })
         .showAtMouseEvent(e);
     },
     [showArchiveTime, stateManager]
   );
+
+  const onDeleteArchiveLane = useCallback(() => {
+    boardModifiers.deleteArchiveLane();
+    setIsConfirmingDelete(false);
+  }, [boardModifiers]);
 
   return (
     <div
@@ -155,6 +168,24 @@ export const ArchiveLane = memo(function ArchiveLane({ items, collapseDir }: Arc
             </a>
           </div>
         </div>
+        {isConfirmingDelete && (
+          <div className={c('action-confirm-wrapper')}>
+            <div className={c('action-confirm-text')}>
+              {t('Are you sure you want to delete this list and all its cards?')}
+            </div>
+            <div>
+              <button onClick={onDeleteArchiveLane} className={c('confirm-action-button')}>
+                {t('Yes, delete list')}
+              </button>
+              <button
+                onClick={() => setIsConfirmingDelete(false)}
+                className={c('cancel-action-button')}
+              >
+                {t('Cancel')}
+              </button>
+            </div>
+          </div>
+        )}
         <div className={classcat([c('lane-items'), c('vertical')])}>
           {items.map((item, archiveIndex) => (
             <ArchiveItem

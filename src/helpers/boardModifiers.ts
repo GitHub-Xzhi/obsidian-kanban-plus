@@ -54,6 +54,7 @@ export interface BoardModifiers {
   updateLane: (path: Path, lane: Lane) => void;
   archiveLane: (path: Path) => void;
   archiveLaneItems: (path: Path) => void;
+  deleteArchiveLane: () => void;
   deleteEntity: (path: Path) => void;
   updateItem: (path: Path, item: Item) => void;
   archiveItem: (path: Path) => void;
@@ -593,6 +594,33 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
           stateManager.setError(e instanceof Error ? e : new Error(String(e)));
           return boardData;
         }
+      });
+    },
+
+    deleteArchiveLane: () => {
+      view.setViewState('show-archive', false);
+      stateManager.setState((boardData) => {
+        const removedBlockIds = boardData.data.archive
+          .map((item) => item.data.blockId)
+          .filter((blockId): blockId is string => !!blockId);
+        const nextBoard = update<Board>(boardData, {
+          data: {
+            archive: {
+              $set: [],
+            },
+          },
+        });
+
+        if (!removedBlockIds.length) {
+          return nextBoard;
+        }
+
+        const nextCards = removeCards(boardData.data.settings, removedBlockIds);
+
+        return applySettingsSpec(
+          nextBoard,
+          nextCards ? { cards: { $set: nextCards } } : { $unset: ['cards'] }
+        );
       });
     },
 
