@@ -19,6 +19,7 @@ import {
 } from './components/types';
 import { Path } from './dnd/types';
 import { insertEntity, moveEntity, removeEntity, updateEntity } from './dnd/util/data';
+import { getArchiveDateText } from './helpers/archiveDate';
 import { getCard, getCompletedCardSource, sanitizeCards, updateCard } from './helpers/cardSettings';
 import { asError } from './helpers/unknown';
 import { defaultSort } from './helpers/util';
@@ -1057,10 +1058,15 @@ export class StateManager {
     const archiveDateFormat = this.getSetting('archive-date-format');
     const archiveDateAfterTitle = this.getSetting('append-archive-date');
 
-    const appendArchiveDate = (item: Item) => {
-      const newTitle = [moment().format(archiveDateFormat)];
-
-      if (archiveDateSeparator) newTitle.push(archiveDateSeparator);
+    const appendArchiveDate = (item: Item, archivedAt: number) => {
+      const newTitle = [
+        getArchiveDateText({
+          archiveDateFormat,
+          archiveDateSeparator,
+          archiveDateAfterTitle,
+          archivedAt,
+        }),
+      ];
 
       newTitle.push(item.data.titleRaw);
 
@@ -1106,7 +1112,7 @@ export class StateManager {
           },
         }));
 
-        return shouldAppendArchiveDate ? appendArchiveDate(itemWithBlockId) : itemWithBlockId;
+        return shouldAppendArchiveDate ? appendArchiveDate(itemWithBlockId, archivedAt) : itemWithBlockId;
       });
 
     try {

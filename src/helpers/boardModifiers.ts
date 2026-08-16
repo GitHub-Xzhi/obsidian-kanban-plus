@@ -28,6 +28,7 @@ import {
   updateCard,
   removeCards,
 } from 'src/helpers/cardSettings';
+import { getArchiveDateText } from 'src/helpers/archiveDate';
 
 import { escapeRegExpStr, generateInstanceId } from '../components/helpers';
 import { Board, DataTypes, Item, Lane } from '../components/types';
@@ -69,28 +70,6 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
       archiveDateSeparator: stateManager.getSetting('archive-date-separator'),
       archiveDateAfterTitle: stateManager.getSetting('append-archive-date'),
     };
-  };
-
-  const getArchiveDateText = ({
-    archiveDateFormat,
-    archiveDateSeparator,
-    archiveDateAfterTitle,
-    archivedAt,
-  }: {
-    archiveDateFormat: string;
-    archiveDateSeparator?: string;
-    archiveDateAfterTitle?: boolean;
-    archivedAt: number;
-  }) => {
-    const archiveDate = moment(archivedAt).format(archiveDateFormat);
-
-    if (!archiveDateSeparator) {
-      return archiveDate;
-    }
-
-    return archiveDateAfterTitle
-      ? `${archiveDateSeparator} ${archiveDate}`
-      : `${archiveDate} ${archiveDateSeparator}`;
   };
 
   const appendArchiveDate = (item: Item, archivedAt: number = Date.now()) => {
