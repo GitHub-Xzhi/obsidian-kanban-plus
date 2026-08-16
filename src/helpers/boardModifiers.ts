@@ -333,8 +333,10 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     if (entity.type !== DataTypes.Lane) {
       const settingsSpec: SettingsSpec = {};
 
-      if (didUpdateCards) {
+      if (didUpdateCards && nextCards) {
         settingsSpec.cards = { $set: nextCards };
+      } else if (didUpdateCards) {
+        settingsSpec.$unset = ['cards'];
       }
 
       return applySettingsSpec(boardData, settingsSpec);
@@ -344,8 +346,10 @@ export function getBoardModifiers(view: KanbanView, stateManager: StateManager):
     const settingsSpec: SettingsSpec = {};
     const unsetSettings: string[] = [];
 
-    if (didUpdateCards) {
+    if (didUpdateCards && nextCards) {
       settingsSpec.cards = { $set: nextCards };
+    } else if (didUpdateCards) {
+      unsetSettings.push('cards');
     }
 
     if (deletedLaneId !== null) {
