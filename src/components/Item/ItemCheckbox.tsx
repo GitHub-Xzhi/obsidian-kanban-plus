@@ -27,6 +27,7 @@ export const ItemCheckbox = memo(function ItemCheckbox({
   boardModifiers,
 }: ItemCheckboxProps) {
   const shouldShowCheckbox = stateManager.useSetting('show-checkboxes');
+  const board = stateManager.useState();
 
   const [isCtrlHoveringCheckbox, setIsCtrlHoveringCheckbox] = useState(false);
   const [isHoveringCheckbox, setIsHoveringCheckbox] = useState(false);
@@ -103,12 +104,17 @@ export const ItemCheckbox = memo(function ItemCheckbox({
       return;
     }
 
+    if (board.children.length === 1) {
+      stateManager.updateItemCompletionInPlace(path, replacements, completedIndex, !isComplete);
+      return;
+    }
+
     if (replacements.length === 1) {
       boardModifiers.updateItem(path, replacements[0]);
     } else {
       boardModifiers.replaceItem(path, replacements);
     }
-  }, [item, stateManager, boardModifiers, ...path]);
+  }, [item, stateManager, boardModifiers, board.children.length, ...path]);
 
   useEffect(() => {
     if (isHoveringCheckbox) {

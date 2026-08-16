@@ -538,6 +538,46 @@ export class StateManager {
     return true;
   }
 
+  updateItemCompletionInPlace(
+    path: Path,
+    replacements: Item[],
+    completedIndex: number,
+    isComplete: boolean
+  ) {
+    if (!replacements[completedIndex]) {
+      return false;
+    }
+
+    this.setState((board) => {
+      if (!board.children[path[0]]?.children[path[1]]) {
+        return board;
+      }
+
+      let nextBoard: Board;
+
+      if (replacements.length === 1) {
+        nextBoard = removeEntity(board, path, replacements[0]) as Board;
+      } else {
+        nextBoard = removeEntity(board, path) as Board;
+        nextBoard = insertEntity(nextBoard, path, replacements) as Board;
+      }
+
+      if (isComplete) {
+        nextBoard = updateEntity(nextBoard, [path[0]], {
+          data: {
+            showCompletedTime: {
+              $set: true,
+            },
+          },
+        }) as Board;
+      }
+
+      return this.updateCompletedTime(nextBoard, replacements[completedIndex], isComplete);
+    });
+
+    return true;
+  }
+
   updateCompletedTime(board: Board, item: Item, isComplete: boolean) {
     const blockId = item.data.blockId;
 
