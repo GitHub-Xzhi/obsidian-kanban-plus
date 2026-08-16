@@ -30,6 +30,17 @@ export class CompleteLaneModal extends Modal {
       text: t('Cards completed by checkbox will be moved to this list.'),
     });
 
+    const selectDefaultLane = (laneIndex: number | typeof noDefaultCompleteLaneId) => {
+      if (laneIndex === noDefaultCompleteLaneId) {
+        this.stateManager.setNoDefaultCompleteLane(this.sourceLaneIndex);
+      } else {
+        this.stateManager.setDefaultCompleteLane(laneIndex, this.sourceLaneIndex);
+      }
+
+      this.onSelect?.(laneIndex);
+      this.close();
+    };
+
     const noneSetting = new Setting(contentEl)
       .setName(t('None'))
       .setDesc(defaultLaneIndex === noDefaultCompleteLaneId ? t('default') : '');
@@ -42,11 +53,14 @@ export class CompleteLaneModal extends Modal {
     });
 
     noneRadio.checked = defaultLaneIndex === noDefaultCompleteLaneId;
+    noneSetting.settingEl.addClass('clickable-icon');
+    noneSetting.settingEl.addEventListener('click', () => {
+      noneRadio.checked = true;
+      selectDefaultLane(noDefaultCompleteLaneId);
+    });
     noneRadio.addEventListener('change', () => {
       if (noneRadio.checked) {
-        this.stateManager.setNoDefaultCompleteLane(this.sourceLaneIndex);
-        this.onSelect?.(noDefaultCompleteLaneId);
-        this.close();
+        selectDefaultLane(noDefaultCompleteLaneId);
       }
     });
 
@@ -63,11 +77,14 @@ export class CompleteLaneModal extends Modal {
       });
 
       radio.checked = index === defaultLaneIndex;
+      setting.settingEl.addClass('clickable-icon');
+      setting.settingEl.addEventListener('click', () => {
+        radio.checked = true;
+        selectDefaultLane(index);
+      });
       radio.addEventListener('change', () => {
         if (radio.checked) {
-          this.stateManager.setDefaultCompleteLane(index, this.sourceLaneIndex);
-          this.onSelect?.(index);
-          this.close();
+          selectDefaultLane(index);
         }
       });
     });
