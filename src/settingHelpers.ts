@@ -1,6 +1,4 @@
-import Choices, { Choices as IChoices } from 'choices.js';
-import update from 'immutability-helper';
-import { App, Setting, TFile, TFolder, Vault } from 'obsidian';
+import { AbstractInputSuggest, App, Setting, TFile, TFolder, Vault } from 'obsidian';
 
 import { KanbanSettings, SettingsManager } from './Settings';
 import { getTemplatePlugins } from './components/helpers';
@@ -10,16 +8,20 @@ export const defaultDateTrigger = '@';
 export const defaultTimeTrigger = '@@';
 export const defaultMetadataPosition = 'body';
 
+export interface ChoiceItem {
+  value: string;
+  label: string;
+  placeholder?: boolean;
+}
+
 export function getFolderChoices(app: App) {
-  const folderList: IChoices.Choice[] = [];
+  const folderList: ChoiceItem[] = [];
 
   Vault.recurseChildren(app.vault.getRoot(), (f) => {
     if (f instanceof TFolder) {
       folderList.push({
         value: f.path,
         label: f.path,
-        selected: false,
-        disabled: false,
       });
     }
   });
@@ -28,21 +30,17 @@ export function getFolderChoices(app: App) {
 }
 
 export function getTemplateChoices(app: App, folderStr?: string) {
-  const fileList: IChoices.Choice[] = [];
+  const fileList: ChoiceItem[] = [];
 
-  let folder = folderStr ? app.vault.getAbstractFileByPath(folderStr) : null;
+  const folder = folderStr ? app.vault.getAbstractFileByPath(folderStr) : null;
 
-  if (!folder || !(folder instanceof TFolder)) {
-    folder = app.vault.getRoot();
-  }
+  const searchRoot = folder instanceof TFolder ? folder : app.vault.getRoot();
 
-  Vault.recurseChildren(folder, (f) => {
+  Vault.recurseChildren(searchRoot, (f) => {
     if (f instanceof TFile) {
       fileList.push({
         value: f.path,
         label: f.basename,
-        selected: false,
-        disabled: false,
       });
     }
   });
@@ -70,12 +68,53 @@ export function getListOptions(app: App) {
 }
 
 interface CreateSearchSelectParams {
-  choices: IChoices.Choice[];
+  choices: ChoiceItem[];
   key: keyof KanbanSettings;
   warningText?: string;
   local: boolean;
   placeHolderStr: string;
   manager: SettingsManager;
+}
+
+/**
+ * Obsidian 原生输入建议组件。
+ *
+ * 不再使用 choices.js:其内部依赖全局 document/requestAnimationFrame,
+ * 在新版 Obsidian 的设置页中点击无法展开下拉列表;
+ * AbstractInputSuggest 的事件绑定跟随元素作用域,无此问题。
+ */
+class ChoiceSuggest extends AbstractInputSuggest<ChoiceItem> {
+  constructor(
+    app: App,
+    inputEl: HTMLInputElement,
+    private items: ChoiceItem[],
+    private onPick: (item: ChoiceItem) => void
+  ) {
+    super(app, inputEl);
+  }
+
+  protected getSuggestions(query: string): ChoiceItem[] {
+    const q = query.trim().toLowerCase();
+
+    if (!q) {
+      return this.items.slice(0, this.limit);
+    }
+
+    return this.items
+      .filter(
+        (item) => item.label.toLowerCase().includes(q) || item.value.toLowerCase().includes(q)
+      )
+      .slice(0, this.limit);
+  }
+
+  renderSuggestion(item: ChoiceItem, el: HTMLElement): void {
+    el.setText(item.label);
+  }
+
+  selectSuggestion(item: ChoiceItem, evt: MouseEvent | KeyboardEvent): void {
+    this.onPick(item);
+    this.close();
+  }
 }
 
 export function createSearchSelect({
@@ -87,95 +126,84 @@ export function createSearchSelect({
   manager,
 }: CreateSearchSelectParams) {
   return (setting: Setting) => {
-    setting.controlEl.createEl('select', {}, (el) => {
-      // el must be in the dom, so we setTimeout
-      el.win.setTimeout(() => {
-        let list = choices;
+    const inputEl = setting.controlEl.createEl('input', { type: 'text' });
+    inputEl.style.width = '100%';
 
-        const [value, globalValue] = manager.getSetting(key, local);
+    const [value, globalValue] = manager.getSetting(key, local);
 
-        let didSetPlaceholder = false;
-        if (globalValue) {
-          const index = list.findIndex((f) => f.value === globalValue);
+    const current = value && typeof value === 'string' ? value : '';
+    if (current) {
+      inputEl.value = current;
+    }
 
-          if (index > -1) {
-            didSetPlaceholder = true;
-            const choice = choices[index];
+    const globalChoice =
+      globalValue && typeof globalValue === 'string'
+        ? choices.find((c) => c.value === globalValue)
+        : undefined;
 
-            list = update(list, {
-              $splice: [[index, 1]],
-              $unshift: [
-                update(choice, {
-                  placeholder: {
-                    $set: true,
-                  },
-                  value: {
-                    $set: '',
-                  },
-                  label: {
-                    $apply: (v) => `${v} (${t('default')})`,
-                  },
-                }),
-              ],
-            });
-          }
-        }
+    inputEl.placeholder = globalChoice
+      ? `${globalChoice.label} (${t('default')})`
+      : placeHolderStr;
 
-        if (!didSetPlaceholder) {
-          list = update(list, {
-            $unshift: [
-              {
-                placeholder: true,
-                value: '',
-                label: placeHolderStr,
-                selected: false,
-                disabled: false,
-              },
-            ],
-          });
-        }
-
-        const c = new Choices(el, {
-          placeholder: true,
-          position: 'auto',
-          searchPlaceholderValue: t('Search...'),
-          searchEnabled: list.length > 10,
-          choices: list,
-        }).setChoiceByValue('');
-
-        if (value && typeof value === 'string' && list.findIndex((f) => f.value === value) > -1) {
-          c.setChoiceByValue(value);
-        }
-
-        const onChange = (e: CustomEvent<{ value?: unknown }>) => {
-          const val = e.detail.value;
-
-          if (typeof val === 'string' && val) {
-            manager.applySettingsUpdate({
-              [key]: {
-                $set: val,
-              },
-            });
-          } else {
-            manager.applySettingsUpdate({
-              $unset: [key],
-            });
-          }
-        };
-
-        el.addEventListener('change', onChange);
-
-        manager.cleanupFns.push(() => {
-          c.destroy();
-          el.removeEventListener('change', onChange);
+    const commit = (val: string | null) => {
+      if (val) {
+        manager.applySettingsUpdate({
+          [key]: {
+            $set: val,
+          },
         });
-      });
-
-      if (warningText) {
-        setting.descEl.createDiv({}, (div) => {
-          div.createEl('strong', { text: warningText });
+      } else {
+        manager.applySettingsUpdate({
+          $unset: [key],
         });
       }
+    };
+
+    const suggest = new ChoiceSuggest(manager.app, inputEl, choices, (item) => {
+      if (item.placeholder) {
+        inputEl.value = '';
+        commit(null);
+        return;
+      }
+
+      inputEl.value = item.value;
+      commit(item.value);
     });
+
+    const openSuggest = () => {
+      suggest.open();
+    };
+    inputEl.addEventListener('focus', openSuggest);
+
+    // 失焦/回车时校验:空值 = 清除设置(回退到默认);非法输入 = 回退到原值
+    const onValidate = () => {
+      const val = inputEl.value.trim();
+
+      if (!val) {
+        inputEl.value = '';
+        commit(null);
+        return;
+      }
+
+      if (choices.some((c) => c.value === val)) {
+        commit(val);
+        return;
+      }
+
+      inputEl.value = current;
+    };
+    inputEl.addEventListener('change', onValidate);
+
+    manager.cleanupFns.push(() => {
+      inputEl.removeEventListener('focus', openSuggest);
+      inputEl.removeEventListener('change', onValidate);
+      suggest.close();
+    });
+
+    if (warningText) {
+      setting.descEl.createDiv({}, (div) => {
+        div.createEl('strong', { text: warningText });
+      });
+    }
   };
 }

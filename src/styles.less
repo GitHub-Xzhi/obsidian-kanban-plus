@@ -1,4 +1,4 @@
-@import 'choices.js/public/assets/styles/choices.css';
+// Kanban Plus
 @import './components/Editor/flatpickr/flatpickr.min.css';
 
 .workspace-leaf-content[data-type='kanban'] {
@@ -1231,68 +1231,6 @@ button.kanban-plugin__cancel-action-button {
 .kanban-plugin__board-settings-modal .setting-item-control {
   min-width: 300px;
   flex-shrink: 0;
-}
-
-.kanban-plugin__board-settings-modal .choices {
-  width: 100%;
-  text-align: left;
-}
-
-.kanban-plugin__board-settings-modal .choices[data-type*='select-one'] .choices__inner {
-  background-color: var(--background-primary);
-  border-color: var(--background-modifier-border);
-  padding: 0;
-  min-height: 0;
-}
-
-.kanban-plugin__board-settings-modal .choices[data-type*='select-one'] .choices__input {
-  background-color: var(--background-primary);
-  border-bottom-color: var(--background-modifier-border);
-  font-size: 14px;
-}
-
-.kanban-plugin__board-settings-modal .choices__input {
-  border-radius: 0;
-  border-top: none;
-  border-left: none;
-  border-right: none;
-}
-
-.kanban-plugin__board-settings-modal .choices__list[role='listbox'] {
-  overflow-x: hidden;
-}
-
-.kanban-plugin__board-settings-modal .choices__list--single {
-  padding-block: 4px;
-  padding-inline: 6px 20px;
-}
-
-.kanban-plugin__board-settings-modal .is-open .choices__list--dropdown,
-.kanban-plugin__board-settings-modal .choices__list--dropdown {
-  background-color: var(--background-primary);
-  border-color: var(--background-modifier-border);
-  word-break: normal;
-  max-height: 200px;
-  display: flex;
-  flex-direction: column;
-}
-
-.kanban-plugin__board-settings-modal .choices__list--dropdown .choices__item--selectable:after {
-  display: none;
-}
-
-.kanban-plugin__board-settings-modal .choices__list--dropdown .choices__item--selectable {
-  padding-block: 4px;
-  padding-inline: 6px;
-}
-
-.kanban-plugin__board-settings-modal .choices__list--dropdown .choices__item.is-highlighted {
-  background-color: var(--background-primary-alt);
-}
-
-.kanban-plugin__board-settings-modal .choices__placeholder {
-  opacity: 1;
-  color: var(--text-muted);
 }
 
 .kanban-plugin__board-settings-modal .error {
