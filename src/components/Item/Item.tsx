@@ -35,6 +35,7 @@ export interface DraggableItemProps {
   shouldMarkItemsComplete?: boolean;
   showCreatedTime?: boolean;
   showCompletedTime?: boolean;
+  showFlowButtons?: boolean;
 }
 
 export interface ItemInnerProps {
@@ -43,6 +44,7 @@ export interface ItemInnerProps {
   shouldMarkItemsComplete?: boolean;
   showCreatedTime?: boolean;
   showCompletedTime?: boolean;
+  showFlowButtons?: boolean;
   isMatch?: boolean;
   searchQuery?: string;
 }
@@ -52,6 +54,7 @@ const ItemInner = memo(function ItemInner({
   shouldMarkItemsComplete,
   showCreatedTime,
   showCompletedTime,
+  showFlowButtons,
   isMatch,
   searchQuery,
   isStatic,
@@ -87,6 +90,17 @@ const ItemInner = memo(function ItemInner({
     stateManager,
     path,
   });
+
+  const canFlowNext = !isStatic && !!stateManager.getNextLaneIndex(path);
+  const canFlowBack = !isStatic && !!stateManager.getFlowBackLaneIndex(path);
+
+  const onFlowNext = useCallback(() => {
+    if (!isEditing(editState)) stateManager.flowItemToNextLane(path);
+  }, [stateManager, path, editState]);
+
+  const onFlowBack = useCallback(() => {
+    if (!isEditing(editState)) stateManager.flowItemBack(path);
+  }, [stateManager, path, editState]);
 
   const onContextMenu: JSX.MouseEventHandler<HTMLDivElement> = useCallback(
     (e) => {
@@ -140,6 +154,32 @@ const ItemInner = memo(function ItemInner({
           isStatic={isStatic}
         />
         <ItemMenuButton editState={editState} setEditState={setEditState} showMenu={showItemMenu} />
+        {showFlowButtons && (canFlowNext || canFlowBack) && (
+          <div {...ignoreAttr} className={`${c('item-postfix-button-wrapper')} ${c('item-flow-buttons')}`}>
+            {canFlowBack && (
+              <a
+                data-ignore-drag={true}
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={onFlowBack}
+                className={`${c('item-postfix-button')} clickable-icon`}
+                aria-label={t('Flow back')}
+              >
+                <Icon name="lucide-arrow-left" />
+              </a>
+            )}
+            {canFlowNext && (
+              <a
+                data-ignore-drag={true}
+                onPointerDown={(e) => e.preventDefault()}
+                onClick={onFlowNext}
+                className={`${c('item-postfix-button')} clickable-icon`}
+                aria-label={t('Flow next')}
+              >
+                <Icon name="lucide-arrow-right" />
+              </a>
+            )}
+          </div>
+        )}
       </div>
       <ItemMetadata
         searchQuery={isMatch ? searchQuery : undefined}
@@ -202,6 +242,7 @@ interface ItemsProps {
   shouldMarkItemsComplete: boolean;
   showCreatedTime?: boolean;
   showCompletedTime?: boolean;
+  showFlowButtons?: boolean;
   laneId?: string;
   groupBy?: 'created-time' | 'completed-time';
 }
@@ -218,6 +259,7 @@ export const Items = memo(function Items({
   shouldMarkItemsComplete,
   showCreatedTime,
   showCompletedTime,
+  showFlowButtons,
   laneId,
   groupBy,
 }: ItemsProps) {
@@ -312,6 +354,7 @@ export const Items = memo(function Items({
                     shouldMarkItemsComplete={shouldMarkItemsComplete}
                     showCreatedTime={showCreatedTime}
                     showCompletedTime={showCompletedTime}
+                    showFlowButtons={showFlowButtons}
                     isStatic={isStatic}
                   />
                 );

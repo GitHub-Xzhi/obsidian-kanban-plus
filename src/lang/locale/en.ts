@@ -74,6 +74,19 @@ const en = {
   'Board template': 'Board template',
   'This template will be used when creating new Kanban boards.':
     'This template will be used when creating new Kanban boards.',
+  'Flow': 'Flow',
+  'Flow next': 'Flow to next list',
+  'Flow back': 'Flow back',
+  'Flow to next list': 'Flow to next list…',
+  'Clear flow target': 'Clear flow target',
+  'Show flow time': 'Show flow time',
+  'Hide flow time': 'Hide flow time',
+  'Flow time': 'Flow time',
+  'View flow history': 'View flow history',
+  'No flow history': 'No flow history',
+  'Show flow buttons on cards': 'Show flow buttons on cards',
+  'When enabled, hovering a card shows buttons to flow it to the next list or back.':
+    'When enabled, hovering a card shows buttons to flow it to the next list or back.',
   'Note folder': 'Note folder',
   'Notes created from Kanban cards will be placed in this folder. If blank, they will be placed in the default location for this vault.':
     'Notes created from Kanban cards will be placed in this folder. If blank, they will be placed in the default location for this vault.',

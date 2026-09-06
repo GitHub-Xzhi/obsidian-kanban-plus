@@ -54,6 +54,7 @@ function DraggableLaneRaw({
   const groupCardsByCreatedTime = stateManager.useSetting('group-cards-by-created-time');
   const groupCardsByCompletedTime = stateManager.useSetting('group-cards-by-completed-time');
   const insertionMethod = stateManager.useSetting('new-card-insertion-method');
+  const showFlowButtons = stateManager.useSetting('show-flow-button-on-card') ?? true;
   const effectiveGroupBy =
     (lane.data.groupBy === 'created-time' && groupCardsByCreatedTime ? 'created-time' : undefined) ||
     (lane.data.groupBy === 'completed-time' && groupCardsByCompletedTime
@@ -214,6 +215,7 @@ function DraggableLaneRaw({
                       shouldMarkItemsComplete={shouldMarkItemsComplete}
                       showCreatedTime={lane.data.showCreatedTime}
                       showCompletedTime={lane.data.showCompletedTime}
+                      showFlowButtons={showFlowButtons}
                     />
                     <SortPlaceholder
                       accepts={laneAccepts}

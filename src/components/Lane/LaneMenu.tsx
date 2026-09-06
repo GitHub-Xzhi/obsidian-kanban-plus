@@ -163,7 +163,7 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
   const completeLanesKey = board.children
     .map(
       (lane, index) =>
-        `${index}:${lane.data.title}:${!!lane.data.shouldMarkItemsComplete}:${lane.data.defaultCompleteLaneId || ''}:${lane.data.showCreatedTime}:${lane.data.showCompletedTime}`
+        `${index}:${lane.data.title}:${!!lane.data.shouldMarkItemsComplete}:${lane.data.defaultCompleteLaneId || ''}:${lane.data.nextLaneId || ''}:${lane.data.showFlowTime}:${lane.data.showCreatedTime}:${lane.data.showCompletedTime}`
     )
     .join('|');
 
@@ -342,6 +342,76 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         });
       });
     }
+
+    // 流转:配置下一列 + 流转时间显示开关(与默认完成列逻辑相互独立)
+    const otherLanes = board.children.filter((_, index) => index !== path[0]);
+
+    menu.addItem((item) => {
+      item.setIcon('lucide-arrow-right-left').setTitle(t('Flow to next list'));
+
+      const submenu = (item as MenuItemWithSubmenu).setSubmenu();
+
+      if (lane.data.nextLaneId) {
+        submenu.addItem((item) => {
+          item
+            .setIcon('lucide-x')
+            .setTitle(t('Clear flow target'))
+            .onClick(() => {
+              boardModifiers.updateLane(
+                path,
+                update(lane, {
+                  data: {
+                    $unset: ['nextLaneId'],
+                  },
+                })
+              );
+            });
+        });
+
+        submenu.addSeparator();
+      }
+
+      otherLanes.forEach((targetLane, index) => {
+        const targetIndex = board.children.indexOf(targetLane);
+
+        submenu.addItem((item) => {
+          item
+            .setIcon('lucide-corner-down-right')
+            .setTitle(targetLane.data.title || t('Untitled'))
+            .setChecked(lane.data.nextLaneId === targetLane.id)
+            .onClick(() => {
+              boardModifiers.updateLane(
+                path,
+                update(lane, {
+                  data: {
+                    nextLaneId: {
+                      $set: targetLane.id,
+                    },
+                  },
+                })
+              );
+            });
+        });
+      });
+    });
+
+    menu.addItem((item) => {
+      item
+        .setIcon('lucide-timeline')
+        .setTitle(lane.data.showFlowTime ? t('Hide flow time') : t('Show flow time'))
+        .onClick(() => {
+          boardModifiers.updateLane(
+            path,
+            update(lane, {
+              data: {
+                showFlowTime: {
+                  $set: !lane.data.showFlowTime,
+                },
+              },
+            })
+          );
+        });
+    });
 
     menu
       .addSeparator()

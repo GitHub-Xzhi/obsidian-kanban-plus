@@ -72,6 +72,36 @@ export function useItemMenu({
           .onClick(() => setEditState(coordinates));
       });
 
+      // 流转入口:与默认完成列逻辑完全独立
+      const canFlowNext = stateManager.getNextLaneIndex(path) !== null;
+      const canFlowBack = stateManager.getFlowBackLaneIndex(path) !== null;
+
+      if (canFlowNext || canFlowBack) {
+        menu.addItem((i) => {
+          (i as MenuItemWithSubmenu)
+            .setIcon('lucide-arrow-right-left')
+            .setTitle(t('Flow'));
+
+          const submenu = (i as MenuItemWithSubmenu).setSubmenu();
+
+          if (canFlowNext) {
+            submenu.addItem((sub) => {
+              sub.setIcon('lucide-arrow-right')
+                .setTitle(t('Flow next'))
+                .onClick(() => stateManager.flowItemToNextLane(path));
+            });
+          }
+
+          if (canFlowBack) {
+            submenu.addItem((sub) => {
+              sub.setIcon('lucide-arrow-left')
+                .setTitle(t('Flow back'))
+                .onClick(() => stateManager.flowItemBack(path));
+            });
+          }
+        });
+      }
+
       menu
         .addItem((i) => {
           i.setIcon('lucide-file-plus-2')
