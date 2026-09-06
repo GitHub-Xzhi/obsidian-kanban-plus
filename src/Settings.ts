@@ -588,20 +588,6 @@ export class SettingsManager {
       );
 
     new Setting(contentEl)
-      .setName(t('Board template'))
-      .setDesc(t('This template will be used when creating new Kanban boards.'))
-      .then(
-        createSearchSelect({
-          choices: templateFiles,
-          key: 'new-board-template',
-          warningText: templateWarning,
-          local,
-          placeHolderStr: t('No template'),
-          manager: this,
-        })
-      );
-
-    new Setting(contentEl)
       .setName(t('Note folder'))
       .setDesc(
         t(
@@ -617,6 +603,23 @@ export class SettingsManager {
           manager: this,
         })
       );
+
+    // 看板模板仅用于新建全局看板,单板设置(独立看板设置)中无意义,不显示
+    if (!local) {
+      new Setting(contentEl)
+        .setName(t('Board template'))
+        .setDesc(t('This template will be used when creating new Kanban boards.'))
+        .then(
+          createSearchSelect({
+            choices: templateFiles,
+            key: 'new-board-template',
+            warningText: templateWarning,
+            local,
+            placeHolderStr: t('No template'),
+            manager: this,
+          })
+        );
+    }
 
     contentEl.createEl('h4', { text: t('Tags') });
 
