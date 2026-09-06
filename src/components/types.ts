@@ -33,6 +33,8 @@ export interface LaneData {
   dom?: HTMLDivElement;
   forceEditMode?: boolean;
   defaultCompleteLaneId?: DefaultCompleteLaneId;
+  nextLaneId?: string;
+  showFlowTime?: boolean;
   backgroundColor?: string;
   groupBy?: 'created-time' | 'completed-time';
   sorted?: LaneSort | string;

@@ -393,6 +393,8 @@ function getPersistedLaneData(
     defaultCompleteLaneId:
       persistedLane?.['default-complete-lane-id'] ||
       settings['default-complete-lane-ids']?.[laneId],
+    nextLaneId: persistedLane?.['next-lane-id'],
+    showFlowTime: persistedLane?.['show-flow-time'],
     backgroundColor:
       persistedLane?.['background-color'] || settings['lane-background-colors']?.[laneId],
     groupBy: persistedLane?.['group-by'],
@@ -421,6 +423,14 @@ function buildPersistedLaneSettings(board: Board): PersistedLaneSetting[] {
 
     if (defaultCompleteLaneId) {
       persistedLane['default-complete-lane-id'] = defaultCompleteLaneId;
+    }
+
+    if (lane.data.nextLaneId) {
+      persistedLane['next-lane-id'] = lane.data.nextLaneId;
+    }
+
+    if (lane.data.showFlowTime !== undefined) {
+      persistedLane['show-flow-time'] = lane.data.showFlowTime;
     }
 
     if (backgroundColor) {

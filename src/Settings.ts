@@ -66,6 +66,8 @@ export interface PersistedLaneSetting {
   id: string;
   'list-collapse'?: boolean;
   'default-complete-lane-id'?: DefaultCompleteLaneId;
+  'next-lane-id'?: string;
+  'show-flow-time'?: boolean;
   'background-color'?: string;
   'group-by'?: 'created-time' | 'completed-time';
   'sort-rule'?: PersistedLaneSortRule;
@@ -111,6 +113,7 @@ export interface KanbanSettings {
   'new-line-trigger'?: 'enter' | 'shift-enter';
   'new-note-folder'?: string;
   'new-note-template'?: string;
+  'show-flow-button-on-card'?: boolean;
   'show-add-list'?: boolean;
   'show-archive-all'?: boolean;
   'show-archive-toggle'?: boolean;
@@ -179,6 +182,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'new-line-trigger',
   'new-note-folder',
   'new-note-template',
+  'show-flow-button-on-card',
   'show-add-list',
   'show-archive-all',
   'show-archive-toggle',

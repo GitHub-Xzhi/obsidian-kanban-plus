@@ -9,6 +9,13 @@ export interface PersistedArchivedCard {
   archiveDateAfterTitle?: boolean;
 }
 
+/** 卡片流转记录:从 fromLaneId 流转到 toLaneId 的时刻 */
+export interface PersistedFlowRecord {
+  fromLaneId?: string;
+  toLaneId: string;
+  at: number;
+}
+
 export interface PersistedCard {
   id: string;
   'created-time'?: number;
@@ -16,6 +23,7 @@ export interface PersistedCard {
   sourceLaneId?: string;
   sourceItemIndex?: number;
   targetLaneId?: string;
+  'flow-history'?: PersistedFlowRecord[];
   archived?: PersistedArchivedCard;
 }
 
@@ -55,7 +63,39 @@ function sanitizeArchivedCard(archived: unknown): PersistedArchivedCard | undefi
   };
 }
 
-export function sanitizeCards(cards: unknown): PersistedCards | undefined {
+export function sanitizeFlowHistory(history: unknown): PersistedFlowRecord[] | undefined {
+  if (!Array.isArray(history)) {
+    return undefined;
+  }
+
+  const records = history.reduce<PersistedFlowRecord[]>((acc, record) => {
+    if (!record || typeof record !== 'object') {
+      return acc;
+    }
+
+    const source = record as Record<string, unknown>;
+
+    if (typeof source.toLaneId !== 'string' || !source.toLaneId) {
+      return acc;
+    }
+
+    if (!isValidNumber(source.at)) {
+      return acc;
+    }
+
+    acc.push({
+      fromLaneId: typeof source.fromLaneId === 'string' ? source.fromLaneId : undefined,
+      toLaneId: source.toLaneId,
+      at: source.at as number,
+    });
+
+    return acc;
+  }, []);
+
+  return records.length ? records : undefined;
+}
+
+function sanitizeCards(cards: unknown): PersistedCards | undefined {
   if (!Array.isArray(cards)) {
     return undefined;
   }
@@ -96,6 +136,12 @@ export function sanitizeCards(cards: unknown): PersistedCards | undefined {
       nextCard.targetLaneId = source.targetLaneId;
     }
 
+    const flowHistory = sanitizeFlowHistory(source['flow-history']);
+
+    if (flowHistory) {
+      nextCard['flow-history'] = flowHistory;
+    }
+
     if (archived) {
       nextCard.archived = archived;
     }
@@ -106,6 +152,7 @@ export function sanitizeCards(cards: unknown): PersistedCards | undefined {
       nextCard.sourceLaneId === undefined &&
       nextCard.sourceItemIndex === undefined &&
       nextCard.targetLaneId === undefined &&
+      nextCard['flow-history'] === undefined &&
       nextCard.archived === undefined
     ) {
       return acc;
@@ -156,6 +203,30 @@ export function getCompletedCardSource(settings: KanbanSettings | undefined, blo
 
 export function getArchivedCardSource(settings: KanbanSettings | undefined, blockId?: string) {
   return getCard(settings, blockId)?.archived;
+}
+
+export function getCardFlowHistory(
+  settings: KanbanSettings | undefined,
+  blockId?: string
+): PersistedFlowRecord[] {
+  return getCard(settings, blockId)?.['flow-history'] || [];
+}
+
+/** 追加一条流转记录;若新记录与末条完全同向则合并(更新时间)避免连点产生重复项 */
+export function appendFlowRecord(
+  card: PersistedCard,
+  record: PersistedFlowRecord
+): PersistedCard {
+  const history = (card['flow-history'] || []).slice();
+  const last = history[history.length - 1];
+
+  if (last && last.toLaneId === record.toLaneId && last.fromLaneId === record.fromLaneId) {
+    history[history.length - 1] = record;
+  } else {
+    history.push(record);
+  }
+
+  return { ...card, 'flow-history': history };
 }
 
 export function upsertCard(
