@@ -291,6 +291,10 @@ export function normalizeCard(card: PersistedCard): PersistedCard | undefined {
     nextCard.targetLaneId = card.targetLaneId;
   }
 
+  if (card['flow-history']) {
+    nextCard['flow-history'] = card['flow-history'];
+  }
+
   if (card.archived) {
     nextCard.archived = card.archived;
   }
