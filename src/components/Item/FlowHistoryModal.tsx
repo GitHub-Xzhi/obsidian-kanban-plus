@@ -1,4 +1,5 @@
 import { App, Modal, moment } from 'obsidian';
+import classcat from 'classcat';
 
 import { PersistedFlowRecord } from 'src/helpers/cardSettings';
 import { t } from 'src/lang/helpers';
@@ -52,7 +53,16 @@ class FlowHistoryModalImpl extends Modal {
 
     [...history].reverse().forEach((record) => {
       const row = list.createEl('div', { cls: c('flow-history-row') });
-      row.createEl('div', {
+
+      const labelRow = row.createEl('div', { cls: c('flow-history-label-row') });
+      labelRow.createEl('span', {
+        cls: classcat([
+          c('flow-history-tag'),
+          record.back ? 'is-back' : 'is-forward',
+        ]),
+        text: record.back ? t('Back') : t('Flow'),
+      });
+      labelRow.createEl('div', {
         cls: c('flow-history-time'),
         text: moment(record.at).format(format),
       });

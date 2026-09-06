@@ -82,6 +82,7 @@ const en = {
   'Show flow time': 'Show flow time',
   'Hide flow time': 'Hide flow time',
   'Flow time': 'Flow time',
+  'Back': 'Back',
   'View flow history': 'View flow history',
   'No flow history': 'No flow history',
   'Show flow buttons on cards': 'Show flow buttons on cards',

@@ -1063,11 +1063,12 @@ export class StateManager {
           settings: {
             cards: {
               $set: updateCard(nextBoard.data.settings, blockId, (card) => {
-                // 审计日志:回退也是一次真实发生的流转,如实追加
+                // 审计日志:回退也是一次真实发生的流转,如实追加(带回退标记)
                 const withRecord = appendFlowRecord(card, {
                   fromLaneId: sourceLane.id,
                   toLaneId: targetLane.id,
                   at: Date.now(),
+                  back: true,
                 });
 
                 // 撤销栈弹出顶部一步(与 flow-history 追加同次数,保证回退目标正确)

@@ -14,6 +14,8 @@ export interface PersistedFlowRecord {
   fromLaneId?: string;
   toLaneId: string;
   at: number;
+  /** 回退动作标记(用于弹窗胶囊标签) */
+  back?: boolean;
 }
 
 /** 撤销栈中的一步(无时间字段):从 fromLaneId 流转到 toLaneId */
@@ -96,6 +98,7 @@ export function sanitizeFlowHistory(history: unknown): PersistedFlowRecord[] | u
       fromLaneId: typeof source.fromLaneId === 'string' ? source.fromLaneId : undefined,
       toLaneId: source.toLaneId,
       at: source.at as number,
+      back: source.back === true ? true : undefined,
     });
 
     return acc;

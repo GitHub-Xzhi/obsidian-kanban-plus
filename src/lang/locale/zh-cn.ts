@@ -80,6 +80,7 @@ const lang: Partial<Lang> = {
   'Show flow time': '显示流转时间',
   'Hide flow time': '隐藏流转时间',
   'Flow time': '流转时间',
+  'Back': '回退',
   'View flow history': '查看流转历史',
   'No flow history': '暂无流转记录',
   'Show flow buttons on cards': '在卡片上显示流转按钮',
