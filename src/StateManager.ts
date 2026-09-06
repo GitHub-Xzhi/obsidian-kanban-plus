@@ -22,6 +22,7 @@ import { insertEntity, moveEntity, removeEntity, updateEntity } from './dnd/util
 import { defaultArchiveDateSeparator, getArchiveDateText } from './helpers/archiveDate';
 import {
   appendFlowRecord,
+  applyFlowHistoryLimit,
   getCard,
   getCardFlowHistory,
   getCardFlowSourceHistory,
@@ -1077,7 +1078,11 @@ export class StateManager {
                 steps.pop();
                 withRecord['flow-source-history'] = steps.length ? steps : undefined;
 
-                return withRecord;
+                // 历史上限:回退追加的审计记录同样受限
+                return applyFlowHistoryLimit(
+                  withRecord,
+                  this.getSetting('max-flow-history') || 99
+                );
               }),
             },
           },
@@ -1125,20 +1130,17 @@ export class StateManager {
                   at: Date.now(),
                 });
 
-                // 历史上限:超出时丢弃最旧的记录
-                const max = this.getSetting('max-flow-history') || 99;
-
-                if (withRecord['flow-history'] && withRecord['flow-history'].length > max) {
-                  withRecord['flow-history'] = withRecord['flow-history'].slice(-max);
-                }
-
                 // 撤销栈 push 本步(与审计日志独立,回退时 pop)
                 const steps = (withRecord['flow-source-history'] || []).slice();
 
                 steps.push({ fromLaneId: sourceLane.id, toLaneId: targetLane.id });
                 withRecord['flow-source-history'] = steps;
 
-                return withRecord;
+                // 历史上限:超出时丢弃最旧的记录
+                return applyFlowHistoryLimit(
+                  withRecord,
+                  this.getSetting('max-flow-history') || 99
+                );
               }),
             },
           },

@@ -266,6 +266,18 @@ export function getCardFlowSourceHistory(
   return getCard(settings, blockId)?.['flow-source-history'] || [];
 }
 
+/** 历史上限:超出时丢弃最旧的记录(流转与回退共用) */
+export function applyFlowHistoryLimit(
+  card: PersistedCard,
+  max: number
+): PersistedCard {
+  if (card['flow-history'] && card['flow-history'].length > max) {
+    return { ...card, 'flow-history': card['flow-history'].slice(-max) };
+  }
+
+  return card;
+}
+
 /** 追加一条流转记录;若新记录与末条完全同向则合并(更新时间)避免连点产生重复项 */
 export function appendFlowRecord(
   card: PersistedCard,

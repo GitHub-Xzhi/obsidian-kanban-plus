@@ -16,7 +16,11 @@ import { DndManagerContext } from 'src/dnd/components/context';
 import { useDragHandle } from 'src/dnd/managers/DragManager';
 import { frontmatterKey } from 'src/parsers/common';
 import { t } from 'src/lang/helpers';
-import { getCardCreatedTime, getCardCompletedTime } from 'src/helpers/cardSettings';
+import {
+  getCardCreatedTime,
+  getCardCompletedTime,
+  getCardFlowSourceHistory,
+} from 'src/helpers/cardSettings';
 
 import { KanbanContext, SearchContext } from '../context';
 import { c } from '../helpers';
@@ -90,6 +94,17 @@ const ItemInner = memo(function ItemInner({
 
   const path = useNestedEntityPath();
 
+  // 流转按钮可用性:订阅看板数据(cards/lanes),流转/回退/列配置变化立即重渲染
+  const board = stateManager.useState();
+  const flowCards = board?.data?.settings?.cards;
+  const flowLanes = board?.data?.settings?.lanes;
+  const laneSettings = laneId ? flowLanes?.find((l) => l.id === laneId) : undefined;
+  const nextLaneId = laneSettings?.['next-lane-id'];
+  const canFlowNext = !isStatic && !!nextLaneId && nextLaneId !== laneId;
+  const flowBackSource = getCardFlowSourceHistory({ cards: flowCards }, item.data.blockId);
+  const canFlowBack =
+    !isStatic && !!flowBackSource && flowBackSource !== laneId;
+
   const showItemMenu = useItemMenu({
     boardModifiers,
     item,
@@ -97,10 +112,6 @@ const ItemInner = memo(function ItemInner({
     stateManager,
     path,
   });
-
-  // 按钮常驻显示;未配置下一列/无可回退历史时禁用并提示
-  const canFlowNext = !isStatic && !!stateManager.getNextLaneIndex(path);
-  const canFlowBack = !isStatic && !!stateManager.getFlowBackLaneIndex(path);
 
   const onFlowNext = useCallback(() => {
     if (isEditing(editState)) return;
