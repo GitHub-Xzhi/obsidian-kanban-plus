@@ -83,6 +83,7 @@ const en = {
   'Hide flow time': 'Hide flow/back time',
   'Flow time': 'Flow time',
   'Back': 'Back',
+  'Back time': 'Back time',
   'Show/hide all flow buttons': 'Show/hide all flow buttons',
   'Show/hide all flow time': 'Show/hide all flow time',
   'Show flow buttons': 'Show flow buttons',

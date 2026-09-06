@@ -81,6 +81,7 @@ const lang: Partial<Lang> = {
   'Hide flow time': '隐藏流转回退时间',
   'Flow time': '流转时间',
   'Back': '回退',
+  'Back time': '回退时间',
   'Show/hide all flow buttons': '显示/隐藏所有的流转回退按钮',
   'Show/hide all flow time': '显示/隐藏所有的流转回退时间',
   'Show flow buttons': '显示流转回退按钮',

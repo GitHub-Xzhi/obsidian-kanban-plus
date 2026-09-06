@@ -119,7 +119,7 @@ export function ItemMetadata({
         ...(metadata || {}),
         'card-flow-time': {
           metadataKey: 'card-flow-time',
-          label: lastFlow.back ? t('Back') : t('Flow time'),
+          label: lastFlow.back ? t('Back time') : t('Flow time'),
           shouldHideLabel: false,
           containsMarkdown: false,
           value: moment(lastFlow.at),
