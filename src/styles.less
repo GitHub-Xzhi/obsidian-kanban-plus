@@ -1791,8 +1791,8 @@ body:not(.native-scrollbars) .kanban-plugin__scroll-container::-webkit-scrollbar
 .kanban-plugin__item-flow-buttons {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--size-2-2);
   margin-top: var(--size-2-2);
 }
@@ -1811,13 +1811,14 @@ body:not(.native-scrollbars) .kanban-plugin__scroll-container::-webkit-scrollbar
     color: var(--text-normal);
   }
 
+  // 不可用(未配置下一列/无流转记录)时置灰
   &.is-disabled {
-    opacity: 0.4;
-    pointer-events: auto;
+    color: var(--text-faint);
+    opacity: 0.55;
 
     &:hover {
       background-color: transparent;
-      color: var(--text-muted);
+      color: var(--text-faint);
     }
   }
 }
