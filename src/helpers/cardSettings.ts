@@ -23,6 +23,7 @@ export interface PersistedCard {
   sourceLaneId?: string;
   sourceItemIndex?: number;
   targetLaneId?: string;
+  'flow-source-lane-id'?: string;
   'flow-history'?: PersistedFlowRecord[];
   archived?: PersistedArchivedCard;
 }
@@ -142,6 +143,10 @@ export function sanitizeCards(cards: unknown): PersistedCards | undefined {
       nextCard['flow-history'] = flowHistory;
     }
 
+    if (typeof source['flow-source-lane-id'] === 'string' && source['flow-source-lane-id']) {
+      nextCard['flow-source-lane-id'] = source['flow-source-lane-id'] as string;
+    }
+
     if (archived) {
       nextCard.archived = archived;
     }
@@ -152,6 +157,7 @@ export function sanitizeCards(cards: unknown): PersistedCards | undefined {
       nextCard.sourceLaneId === undefined &&
       nextCard.sourceItemIndex === undefined &&
       nextCard.targetLaneId === undefined &&
+      nextCard['flow-source-lane-id'] === undefined &&
       nextCard['flow-history'] === undefined &&
       nextCard.archived === undefined
     ) {
@@ -210,6 +216,14 @@ export function getCardFlowHistory(
   blockId?: string
 ): PersistedFlowRecord[] {
   return getCard(settings, blockId)?.['flow-history'] || [];
+}
+
+/** 卡片当前来源列(独立于历史日志的回退状态) */
+export function getCardFlowSource(
+  settings: KanbanSettings | undefined,
+  blockId?: string
+): string | undefined {
+  return getCard(settings, blockId)?.['flow-source-lane-id'];
 }
 
 /** 追加一条流转记录;若新记录与末条完全同向则合并(更新时间)避免连点产生重复项 */
@@ -289,6 +303,10 @@ export function normalizeCard(card: PersistedCard): PersistedCard | undefined {
 
   if (typeof card.targetLaneId === 'string') {
     nextCard.targetLaneId = card.targetLaneId;
+  }
+
+  if (card['flow-source-lane-id']) {
+    nextCard['flow-source-lane-id'] = card['flow-source-lane-id'];
   }
 
   if (card['flow-history']) {

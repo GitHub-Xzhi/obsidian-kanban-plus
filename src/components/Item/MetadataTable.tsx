@@ -70,12 +70,10 @@ export function ItemMetadata({
   const { fileMetadata, fileMetadataOrder, inlineMetadata } = item.data.metadata;
   const createdAt = getCardCreatedTime({ cards }, item.data.blockId);
   const completedAt = getCardCompletedTime({ cards }, item.data.blockId);
-  // 流转时间:列级开关,默认隐藏;取最后一条流转记录
-  const lane = laneId ? stateManager.state.children.find((child) => child.id === laneId) : undefined;
-  const laneWantsFlowTime = showFlowTime ?? lane?.data.showFlowTime ?? false;
+  // 流转时间:列级开关(响应式 prop),默认隐藏;取最后一条流转记录
   const flowHistory = getCardFlowHistory({ cards }, item.data.blockId);
   const lastFlow = flowHistory[flowHistory.length - 1];
-  const shouldShowFlowTime = !!laneWantsFlowTime && !!lastFlow;
+  const shouldShowFlowTime = !!showFlowTime && !!lastFlow;
   const flowTimeFormat = stateManager.useSetting('card-completed-time-format');
   const shouldShowCreatedTime =
     showCreatedTime ??

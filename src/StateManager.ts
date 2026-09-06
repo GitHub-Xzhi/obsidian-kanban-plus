@@ -24,6 +24,7 @@ import {
   appendFlowRecord,
   getCard,
   getCardFlowHistory,
+  getCardFlowSource,
   getCompletedCardSource,
   sanitizeCards,
   updateCard,
@@ -1008,17 +1009,16 @@ export class StateManager {
     return laneIndex >= 0 && laneIndex !== path[0] ? laneIndex : null;
   }
 
-  /** 流转历史的上一站(最后一条记录的来源列)索引;不可回退时返回 null */
+  /** 卡片当前来源列(独立状态,与 flow-history 日志分离)索引;不可回退时返回 null */
   getFlowBackLaneIndex(path: Path): number | null {
     const item = this.state.children[path[0]]?.children[path[1]];
-    const history = getCardFlowHistory(this.state.data.settings, item?.data.blockId);
-    const last = history[history.length - 1];
+    const sourceLaneId = getCardFlowSource(this.state.data.settings, item?.data.blockId);
 
-    if (!last?.fromLaneId) {
+    if (!sourceLaneId) {
       return null;
     }
 
-    const laneIndex = this.state.children.findIndex((child) => child.id === last.fromLaneId);
+    const laneIndex = this.state.children.findIndex((child) => child.id === sourceLaneId);
 
     return laneIndex >= 0 && laneIndex !== path[0] ? laneIndex : null;
   }
@@ -1036,7 +1036,7 @@ export class StateManager {
     return true;
   }
 
-  /** 回退到流转历史的上一站(撤销式:弹出该条记录,不新增);成功返回 true */
+  /** 回退到卡片来源列;回退本身也记入历史,并交换来源(可来回流转);成功返回 true */
   flowItemBack(path: Path) {
     const laneIndex = this.getFlowBackLaneIndex(path);
 
@@ -1044,41 +1044,12 @@ export class StateManager {
       return false;
     }
 
-    this.setState((board) => {
-      const item = board.children[path[0]]?.children[path[1]];
-      const blockId = item?.data.blockId;
-
-      if (!item || !blockId) {
-        return board;
-      }
-
-      const destinationIndex = board.children[laneIndex].children.length;
-      const nextBoard = moveEntity(board, path, [laneIndex, destinationIndex]) as Board;
-
-      // 撤销式回退:弹出最后一条记录(不新增),历史回到流转前状态
-      return update(nextBoard, {
-        data: {
-          settings: {
-            cards: {
-              $set: updateCard(nextBoard.data.settings, blockId, (card) => {
-                const nextCard = { ...card };
-                const history = (nextCard['flow-history'] || []).slice();
-
-                history.pop();
-                nextCard['flow-history'] = history.length ? history : undefined;
-
-                return nextCard;
-              }),
-            },
-          },
-        },
-      });
-    });
+    this.flowItemToLane(path, laneIndex);
 
     return true;
   }
 
-  /** 流转核心:移动卡片到目标列末尾,并向该卡片的流转历史追加一条记录(不触碰完成时间) */
+  /** 流转核心:移动卡片到目标列末尾;追加历史日志并更新独立来源状态(不触碰完成时间) */
   private flowItemToLane(path: Path, laneIndex: number) {
     this.setState((board) => {
       const sourceLane = board.children[path[0]];
@@ -1121,6 +1092,9 @@ export class StateManager {
                 if (withRecord['flow-history'] && withRecord['flow-history'].length > max) {
                   withRecord['flow-history'] = withRecord['flow-history'].slice(-max);
                 }
+
+                // 来源列是独立状态:每次流转都更新,回退时自然交换
+                withRecord['flow-source-lane-id'] = sourceLane.id;
 
                 return withRecord;
               }),
