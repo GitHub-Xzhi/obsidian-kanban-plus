@@ -408,7 +408,9 @@ export class KanbanView extends TextFileView implements HoverParent {
 
     if (!stateManager) return;
 
-    const toggleAllLaneTimes = (key: 'showCreatedTime' | 'showCompletedTime') => {
+    const toggleAllLaneTimes = (
+      key: 'showCreatedTime' | 'showCompletedTime' | 'showFlowTime' | 'showFlowButtons'
+    ) => {
       const shouldShow = !stateManager.state.children.every((lane) => !!lane.data[key]);
 
       stateManager.setState((board) =>
@@ -595,6 +597,40 @@ export class KanbanView extends TextFileView implements HoverParent {
     ) {
       this.actionButtons['show-toggle-all-card-completed-times'].remove();
       delete this.actionButtons['show-toggle-all-card-completed-times'];
+    }
+
+    if (
+      stateManager.getSetting('show-toggle-all-flow-buttons') &&
+      !this.actionButtons['show-toggle-all-flow-buttons']
+    ) {
+      this.actionButtons['show-toggle-all-flow-buttons'] = this.addAction(
+        'lucide-arrow-right-left',
+        t('Show/hide all flow buttons'),
+        () => toggleAllLaneTimes('showFlowButtons')
+      );
+    } else if (
+      !stateManager.getSetting('show-toggle-all-flow-buttons') &&
+      this.actionButtons['show-toggle-all-flow-buttons']
+    ) {
+      this.actionButtons['show-toggle-all-flow-buttons'].remove();
+      delete this.actionButtons['show-toggle-all-flow-buttons'];
+    }
+
+    if (
+      stateManager.getSetting('show-toggle-all-flow-time') &&
+      !this.actionButtons['show-toggle-all-flow-time']
+    ) {
+      this.actionButtons['show-toggle-all-flow-time'] = this.addAction(
+        'lucide-timeline',
+        t('Show/hide all flow time'),
+        () => toggleAllLaneTimes('showFlowTime')
+      );
+    } else if (
+      !stateManager.getSetting('show-toggle-all-flow-time') &&
+      this.actionButtons['show-toggle-all-flow-time']
+    ) {
+      this.actionButtons['show-toggle-all-flow-time'].remove();
+      delete this.actionButtons['show-toggle-all-flow-time'];
     }
   };
 

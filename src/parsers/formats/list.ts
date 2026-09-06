@@ -395,6 +395,7 @@ function getPersistedLaneData(
       settings['default-complete-lane-ids']?.[laneId],
     nextLaneId: persistedLane?.['next-lane-id'],
     showFlowTime: persistedLane?.['show-flow-time'],
+    showFlowButtons: persistedLane?.['show-flow-buttons'],
     backgroundColor:
       persistedLane?.['background-color'] || settings['lane-background-colors']?.[laneId],
     groupBy: persistedLane?.['group-by'],
@@ -431,6 +432,10 @@ function buildPersistedLaneSettings(board: Board): PersistedLaneSetting[] {
 
     if (lane.data.showFlowTime !== undefined) {
       persistedLane['show-flow-time'] = lane.data.showFlowTime;
+    }
+
+    if (lane.data.showFlowButtons !== undefined) {
+      persistedLane['show-flow-buttons'] = lane.data.showFlowButtons;
     }
 
     if (backgroundColor) {

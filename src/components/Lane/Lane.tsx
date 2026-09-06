@@ -215,7 +215,7 @@ function DraggableLaneRaw({
                       shouldMarkItemsComplete={shouldMarkItemsComplete}
                       showCreatedTime={lane.data.showCreatedTime}
                       showCompletedTime={lane.data.showCompletedTime}
-                      showFlowButtons={showFlowButtons}
+                      showFlowButtons={lane.data.showFlowButtons ?? showFlowButtons}
                       showFlowTime={lane.data.showFlowTime}
                     />
                     <SortPlaceholder

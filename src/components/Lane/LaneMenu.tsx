@@ -413,6 +413,29 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         });
     });
 
+    const laneFlowButtonsVisible =
+      lane.data.showFlowButtons ?? stateManager.getSetting('show-flow-button-on-card', board.data.settings) ?? true;
+
+    menu.addItem((item) => {
+      item
+        .setIcon('lucide-arrow-right-left')
+        .setTitle(
+          laneFlowButtonsVisible ? t('Hide flow buttons') : t('Show flow buttons')
+        )
+        .onClick(() => {
+          boardModifiers.updateLane(
+            path,
+            update(lane, {
+              data: {
+                showFlowButtons: {
+                  $set: !laneFlowButtonsVisible,
+                },
+              },
+            })
+          );
+        });
+    });
+
     menu
       .addSeparator()
       .addItem((i) => {

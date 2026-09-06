@@ -33,7 +33,7 @@ class FlowHistoryModalImpl extends Modal {
     document.body.addEventListener('mousedown', this.onClickOutside, true);
 
     const { history, lanes } = this;
-    const format = 'YYYY-MM-DD HH:mm';
+    const format = 'YYYY-MM-DD HH:mm:ss';
 
     this.contentEl.empty();
     this.contentEl.createEl('div', {

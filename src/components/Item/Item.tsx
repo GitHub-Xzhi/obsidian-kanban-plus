@@ -206,8 +206,8 @@ const ItemInner = memo(function ItemInner({
             ])}
             aria-label={t('Flow next')}
           >
-            <Icon name="lucide-arrow-right" />
             <span>{t('Flow next')}</span>
+            <Icon name="lucide-arrow-right" />
           </a>
         </div>
       )}

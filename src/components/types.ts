@@ -35,6 +35,7 @@ export interface LaneData {
   defaultCompleteLaneId?: DefaultCompleteLaneId;
   nextLaneId?: string;
   showFlowTime?: boolean;
+  showFlowButtons?: boolean;
   backgroundColor?: string;
   groupBy?: 'created-time' | 'completed-time';
   sorted?: LaneSort | string;

@@ -68,6 +68,7 @@ export interface PersistedLaneSetting {
   'default-complete-lane-id'?: DefaultCompleteLaneId;
   'next-lane-id'?: string;
   'show-flow-time'?: boolean;
+  'show-flow-buttons'?: boolean;
   'background-color'?: string;
   'group-by'?: 'created-time' | 'completed-time';
   'sort-rule'?: PersistedLaneSortRule;
@@ -115,6 +116,8 @@ export interface KanbanSettings {
   'new-note-template'?: string;
   'show-flow-button-on-card'?: boolean;
   'max-flow-history'?: number;
+  'show-toggle-all-flow-buttons'?: boolean;
+  'show-toggle-all-flow-time'?: boolean;
   'show-add-list'?: boolean;
   'show-archive-all'?: boolean;
   'show-archive-toggle'?: boolean;
@@ -185,6 +188,8 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'new-note-template',
   'show-flow-button-on-card',
   'max-flow-history',
+  'show-toggle-all-flow-buttons',
+  'show-toggle-all-flow-time',
   'show-add-list',
   'show-archive-all',
   'show-archive-toggle',
@@ -2057,6 +2062,84 @@ export class SettingsManager {
 
               this.applySettingsUpdate({
                 $unset: ['show-toggle-all-card-completed-times'],
+              });
+            });
+        });
+    });
+
+    new Setting(contentEl).setName(t('Show/hide all flow buttons')).then((setting) => {
+      let toggleComponent: ToggleComponent;
+
+      setting
+        .addToggle((toggle) => {
+          toggleComponent = toggle;
+
+          const [value, globalValue] = this.getSetting('show-toggle-all-flow-buttons', local);
+
+          if (value !== undefined && value !== null) {
+            toggle.setValue(value);
+          } else if (globalValue !== undefined && globalValue !== null) {
+            toggle.setValue(globalValue);
+          } else {
+            toggle.setValue(false);
+          }
+
+          toggle.onChange((newValue) => {
+            this.applySettingsUpdate({
+              'show-toggle-all-flow-buttons': {
+                $set: newValue,
+              },
+            });
+          });
+        })
+        .addExtraButton((b) => {
+          b.setIcon('lucide-rotate-ccw')
+            .setTooltip(t('Reset to default'))
+            .onClick(() => {
+              const [, globalValue] = this.getSetting('show-toggle-all-flow-buttons', local);
+              toggleComponent.setValue(!!globalValue);
+
+              this.applySettingsUpdate({
+                $unset: ['show-toggle-all-flow-buttons'],
+              });
+            });
+        });
+    });
+
+    new Setting(contentEl).setName(t('Show/hide all flow time')).then((setting) => {
+      let toggleComponent: ToggleComponent;
+
+      setting
+        .addToggle((toggle) => {
+          toggleComponent = toggle;
+
+          const [value, globalValue] = this.getSetting('show-toggle-all-flow-time', local);
+
+          if (value !== undefined && value !== null) {
+            toggle.setValue(value);
+          } else if (globalValue !== undefined && globalValue !== null) {
+            toggle.setValue(globalValue);
+          } else {
+            toggle.setValue(false);
+          }
+
+          toggle.onChange((newValue) => {
+            this.applySettingsUpdate({
+              'show-toggle-all-flow-time': {
+                $set: newValue,
+              },
+            });
+          });
+        })
+        .addExtraButton((b) => {
+          b.setIcon('lucide-rotate-ccw')
+            .setTooltip(t('Reset to default'))
+            .onClick(() => {
+              const [, globalValue] = this.getSetting('show-toggle-all-flow-time', local);
+              toggleComponent.setValue(!!globalValue);
+
+              this.applySettingsUpdate({
+                $unset: ['show-toggle-all-flow-time'],
               });
             });
         });
