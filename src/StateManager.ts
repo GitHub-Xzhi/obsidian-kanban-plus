@@ -1036,7 +1036,7 @@ export class StateManager {
     return true;
   }
 
-  /** 回退到流转历史的上一站;成功返回 true */
+  /** 回退到流转历史的上一站(撤销式:弹出该条记录,不新增);成功返回 true */
   flowItemBack(path: Path) {
     const laneIndex = this.getFlowBackLaneIndex(path);
 
@@ -1044,7 +1044,36 @@ export class StateManager {
       return false;
     }
 
-    this.flowItemToLane(path, laneIndex);
+    this.setState((board) => {
+      const item = board.children[path[0]]?.children[path[1]];
+      const blockId = item?.data.blockId;
+
+      if (!item || !blockId) {
+        return board;
+      }
+
+      const destinationIndex = board.children[laneIndex].children.length;
+      const nextBoard = moveEntity(board, path, [laneIndex, destinationIndex]) as Board;
+
+      // 撤销式回退:弹出最后一条记录(不新增),历史回到流转前状态
+      return update(nextBoard, {
+        data: {
+          settings: {
+            cards: {
+              $set: updateCard(nextBoard.data.settings, blockId, (card) => {
+                const nextCard = { ...card };
+                const history = (nextCard['flow-history'] || []).slice();
+
+                history.pop();
+                nextCard['flow-history'] = history.length ? history : undefined;
+
+                return nextCard;
+              }),
+            },
+          },
+        },
+      });
+    });
 
     return true;
   }
@@ -1079,13 +1108,22 @@ export class StateManager {
         data: {
           settings: {
             cards: {
-              $set: updateCard(nextBoard.data.settings, blockId, (card) =>
-                appendFlowRecord(card, {
+              $set: updateCard(nextBoard.data.settings, blockId, (card) => {
+                const withRecord = appendFlowRecord(card, {
                   fromLaneId: sourceLane.id,
                   toLaneId: targetLane.id,
                   at: Date.now(),
-                })
-              ),
+                });
+
+                // 历史上限:超出时丢弃最旧的记录
+                const max = this.getSetting('max-flow-history') || 99;
+
+                if (withRecord['flow-history'] && withRecord['flow-history'].length > max) {
+                  withRecord['flow-history'] = withRecord['flow-history'].slice(-max);
+                }
+
+                return withRecord;
+              }),
             },
           },
         },

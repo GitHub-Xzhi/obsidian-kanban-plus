@@ -84,6 +84,8 @@ const lang: Partial<Lang> = {
   'No flow history': '暂无流转记录',
   'Show flow buttons on cards': '在卡片上显示流转按钮',
   'When enabled, hovering a card shows buttons to flow it to the next list or back.': '开启后，鼠标悬停卡片时显示流转到下一列/退回上一列的按钮。',
+  'Max flow history': '流转历史上限',
+  'Maximum number of flow records kept per card. Oldest records are removed first. Setting this to 0 disables the limit.': '每张卡片最多保留的流转记录条数，超出后自动丢弃最旧的记录。填 0 表示不限制。',
   'Set a flow target for this list first': '请先在列菜单“流转下一列…”中设置目标列',
   'No flow record to revert': '暂无可退回的流转记录',
   'Note folder': '笔记存放位置',

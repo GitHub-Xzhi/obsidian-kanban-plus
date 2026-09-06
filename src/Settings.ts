@@ -114,6 +114,7 @@ export interface KanbanSettings {
   'new-note-folder'?: string;
   'new-note-template'?: string;
   'show-flow-button-on-card'?: boolean;
+  'max-flow-history'?: number;
   'show-add-list'?: boolean;
   'show-archive-all'?: boolean;
   'show-archive-toggle'?: boolean;
@@ -183,6 +184,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'new-note-folder',
   'new-note-template',
   'show-flow-button-on-card',
+  'max-flow-history',
   'show-add-list',
   'show-archive-all',
   'show-archive-toggle',
@@ -403,6 +405,43 @@ export class SettingsManager {
                 });
               });
           });
+      });
+
+    new Setting(contentEl)
+      .setName(t('Max flow history'))
+      .setDesc(
+        t(
+          'Maximum number of flow records kept per card. Oldest records are removed first. Setting this to 0 disables the limit.'
+        )
+      )
+      .addText((text) => {
+        const [value, globalValue] = this.getSetting('max-flow-history', local);
+
+        text.inputEl.setAttr('type', 'number');
+        text.inputEl.placeholder = `${globalValue ?? 99} (default)`;
+        text.inputEl.value = value !== undefined ? value.toString() : '';
+
+        text.onChange((val) => {
+          if (val && numberRegEx.test(val)) {
+            text.inputEl.removeClass('error');
+
+            this.applySettingsUpdate({
+              'max-flow-history': {
+                $set: parseInt(val),
+              },
+            });
+
+            return;
+          }
+
+          if (val) {
+            text.inputEl.addClass('error');
+          }
+
+          this.applySettingsUpdate({
+            $unset: ['max-flow-history'],
+          });
+        });
       });
 
     new Setting(contentEl)

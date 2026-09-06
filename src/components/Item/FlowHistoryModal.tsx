@@ -1,16 +1,73 @@
-import { moment } from 'obsidian';
-import Preact, { useContext } from 'preact/compat';
+import { App, Modal, moment } from 'obsidian';
 
 import { PersistedFlowRecord } from 'src/helpers/cardSettings';
 import { t } from 'src/lang/helpers';
 
-import { KanbanContext } from '../context';
 import { c } from '../helpers';
 import { Lane } from '../types';
 
-interface FlowHistoryModalProps {
-  history: PersistedFlowRecord[];
-  onClose: () => void;
+class FlowHistoryModalImpl extends Modal {
+  private onClickOutside: (e: MouseEvent) => void;
+
+  constructor(
+    app: App,
+    private history: PersistedFlowRecord[],
+    private lanes: Lane[],
+    private onCloseCb: () => void
+  ) {
+    super(app);
+  }
+
+  onOpen() {
+    this.modalEl.addClass(c('flow-history-modal'));
+
+    // 阻止点击弹窗内部时冒泡到遮罩
+    this.modalEl.addEventListener('click', (e) => e.stopPropagation());
+    // 点击遮罩(弹窗外部)关闭
+    this.onClickOutside = (e: MouseEvent) => {
+      if (!this.modalEl.contains(e.target as Node)) {
+        this.close();
+      }
+    };
+    document.body.addEventListener('mousedown', this.onClickOutside, true);
+
+    const { history, lanes } = this;
+    const format = 'YYYY-MM-DD HH:mm';
+
+    this.contentEl.empty();
+    this.contentEl.createEl('div', {
+      cls: c('flow-history-title'),
+      text: t('View flow history'),
+    });
+
+    if (!history.length) {
+      this.contentEl.createEl('div', {
+        cls: c('flow-history-empty'),
+        text: t('No flow history'),
+      });
+      return;
+    }
+
+    const list = this.contentEl.createEl('div', { cls: c('flow-history-list') });
+
+    [...history].reverse().forEach((record) => {
+      const row = list.createEl('div', { cls: c('flow-history-row') });
+      row.createEl('div', {
+        cls: c('flow-history-time'),
+        text: moment(record.at).format(format),
+      });
+      row.createEl('div', {
+        cls: c('flow-history-path'),
+        text: `${laneTitle(lanes, record.fromLaneId)} → ${laneTitle(lanes, record.toLaneId)}`,
+      });
+    });
+  }
+
+  onClose() {
+    document.body.removeEventListener('mousedown', this.onClickOutside, true);
+    this.contentEl.empty();
+    this.onCloseCb?.();
+  }
 }
 
 function laneTitle(lanes: Lane[], laneId?: string) {
@@ -21,41 +78,12 @@ function laneTitle(lanes: Lane[], laneId?: string) {
   return lane?.data.title || '—';
 }
 
-export function FlowHistoryModal({ history, onClose }: FlowHistoryModalProps) {
-  const { stateManager } = useContext(KanbanContext);
-  const lanes = stateManager.state.children;
-  const format = stateManager.getSetting('card-completed-time-format') || 'YYYY-MM-DD HH:mm';
-
-  return (
-    <div className={c('flow-history-backdrop')} onClick={onClose}>
-      <div
-        className={c('flow-history-modal')}
-        onClick={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-        }}
-      >
-        <div className={c('flow-history-title')}>{t('View flow history')}</div>
-
-        {history.length === 0 ? (
-          <div className={c('flow-history-empty')}>{t('No flow history')}</div>
-        ) : (
-          <div className={c('flow-history-list')}>
-            {history.map((record, index) => {
-              const m = moment(record.at);
-
-              return (
-                <div className={c('flow-history-row')} key={index}>
-                  <span className={c('flow-history-time')}>{m.format(format)}</span>
-                  <span className={c('flow-history-path')}>
-                    {`${laneTitle(lanes, record.fromLaneId)} → ${laneTitle(lanes, record.toLaneId)}`}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+/** 打开流转历史弹窗(原生 Modal:Esc/点击遮罩关闭) */
+export function openFlowHistoryModal(
+  app: App,
+  history: PersistedFlowRecord[],
+  lanes: Lane[],
+  onClose?: () => void
+) {
+  new FlowHistoryModalImpl(app, history, lanes, onClose).open();
 }

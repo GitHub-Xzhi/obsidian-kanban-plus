@@ -4,7 +4,7 @@ import classcat from 'classcat';
 import { TFile, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
 import { ComponentChild } from 'preact';
-import Preact, { memo, useContext, useMemo } from 'preact/compat';
+import { memo, useContext, useMemo } from 'preact/compat';
 import { KanbanView } from 'src/KanbanView';
 import { StateManager } from 'src/StateManager';
 import { isPlainObject } from 'src/helpers/isPlainObject';
@@ -17,7 +17,7 @@ import { KanbanContext } from '../context';
 import { c, parseMetadataWithOptions, useGetDateColorFn } from '../helpers';
 import { DataKey, FileMetadata, Item, PageData } from '../types';
 import { Tags } from './ItemContent';
-import { FlowHistoryModal } from './FlowHistoryModal';
+import { openFlowHistoryModal } from './FlowHistoryModal';
 
 export interface ItemMetadataProps {
   item: Item;
@@ -183,8 +183,6 @@ export function ItemMetadata({
     return null;
   }
 
-  const [showFlowHistory, setShowFlowHistory] = Preact.useState(false);
-
   return (
     <div className={c('item-metadata-wrapper')}>
       <MetadataTable
@@ -194,14 +192,15 @@ export function ItemMetadata({
         onFlowTimeClick={
           flowHistory.length
             ? () => {
-                setShowFlowHistory(true);
+                openFlowHistoryModal(
+                  stateManager.app,
+                  flowHistory,
+                  stateManager.state.children
+                );
               }
             : undefined
         }
       />
-      {showFlowHistory && (
-        <FlowHistoryModal history={flowHistory} onClose={() => setShowFlowHistory(false)} />
-      )}
     </div>
   );
 }
