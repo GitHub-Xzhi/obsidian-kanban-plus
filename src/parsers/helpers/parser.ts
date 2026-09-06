@@ -44,17 +44,19 @@ export function addBlockId(str: string, item: Item) {
   if (!item.data.blockId) return str;
 
   const lines = str.split(/(?:\r\n|\n)/g);
-  lines[0] += ' ^' + item.data.blockId;
+  const lastLine = lines[lines.length - 1] ?? '';
+
+  // 块 ID 应附在块的最后一行(Obsidian 惯例);已存在时不再追加,避免 ID 重复
+  if (lastLine.endsWith('^' + item.data.blockId)) return str;
+
+  lines[lines.length - 1] = `${lastLine} ^${item.data.blockId}`;
 
   return lines.join('\n');
 }
 
 export function removeBlockId(str: string) {
-  const lines = str.split(/(?:\r\n|\n)/g);
-
-  lines[0] = lines[0].replace(/\s+\^([a-zA-Z0-9-]+)$/, '');
-
-  return lines.join('\n');
+  // 与解析端一致:任意行行尾的块 ID 都属于该卡片,全部移除,防止 ID 在行间残留/重复
+  return str.replace(/ +\^[a-zA-Z0-9-]+$/gm, '');
 }
 
 export function dedentNewLines(str: string) {
