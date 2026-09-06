@@ -1,7 +1,7 @@
  
 
 import update from 'immutability-helper';
-import { App, MarkdownView, TFile, moment } from 'obsidian';
+import { App, MarkdownView, TFile, TFolder, moment } from 'obsidian';
 import Preact, { Dispatch, RefObject, useEffect } from 'preact/compat';
 import { StateUpdater, useMemo } from 'preact/hooks';
 import { StateManager } from 'src/StateManager';
@@ -129,33 +129,69 @@ export function useIMEInputProps() {
 
 export const templaterDetectRegex = /<%/;
 
-export async function applyTemplate(stateManager: StateManager, templatePath?: string) {
+/**
+ * 替代已废弃的 fileManager.createNewMarkdownFile。
+ * 新版 Obsidian 中该 API 已被移除,改用官方公开的 vault.create 并自行处理重名。
+ */
+export async function createMarkdownFileIn(
+  app: App,
+  folder: TFolder | null,
+  basename: string
+): Promise<TFile> {
+  const vault = app.vault;
+  const dir = folder && !folder.isRoot() ? `${folder.path}/` : '';
+  const name = basename.trim() || 'Untitled';
+
+  let path = `${dir}${name}.md`;
+  let count = 1;
+
+  while (vault.getAbstractFileByPath(path)) {
+    path = `${dir}${name} ${count}.md`;
+    count++;
+  }
+
+  return vault.create(path, '');
+}
+
+export async function applyTemplate(
+  stateManager: StateManager,
+  templatePath?: string,
+  targetFile?: TFile
+) {
   const templateFile = templatePath
     ? stateManager.app.vault.getAbstractFileByPath(templatePath)
     : null;
 
   if (templateFile && templateFile instanceof TFile) {
-    const activeView = stateManager.app.workspace.getActiveViewOfType(MarkdownView);
-
     try {
-      // Force the view to source mode, if needed
-      if (activeView?.getMode() !== 'source') {
-        await activeView.setState(
-          {
-            ...activeView.getState(),
-            mode: 'source',
-          },
-          { history: false }
-        );
-      }
-
       const { templatesEnabled, templaterEnabled, templatesPlugin, templaterPlugin } =
         getTemplatePlugins(stateManager.app);
+
+      // 方法存在性防御:插件版本更迭时内部 API 可能变化
+      const canUseTemplates =
+        templatesEnabled && typeof templatesPlugin?.instance?.insertTemplate === 'function';
+      const canUseTemplater =
+        templaterEnabled && typeof templaterPlugin?.append_template_to_active_file === 'function';
+
+      // 这两类插入通常面向当前活动文件,确保目标笔记处于激活状态
+      if (canUseTemplates || canUseTemplater) {
+        const activeView = stateManager.app.workspace.getActiveViewOfType(MarkdownView);
+
+        if (activeView?.getMode() !== 'source') {
+          await activeView?.setState(
+            {
+              ...activeView.getState(),
+              mode: 'source',
+            },
+            { history: false }
+          );
+        }
+      }
 
       const templateContent = await stateManager.app.vault.read(templateFile);
 
       // If both plugins are enabled, attempt to detect templater first
-      if (templatesEnabled && templaterEnabled) {
+      if (canUseTemplates && canUseTemplater) {
         if (templaterDetectRegex.test(templateContent)) {
           return await templaterPlugin.append_template_to_active_file(templateFile);
         }
@@ -163,19 +199,20 @@ export async function applyTemplate(stateManager: StateManager, templatePath?: s
         return await templatesPlugin.instance.insertTemplate(templateFile);
       }
 
-      if (templatesEnabled) {
+      if (canUseTemplates) {
         return await templatesPlugin.instance.insertTemplate(templateFile);
       }
 
-      if (templaterEnabled) {
+      if (canUseTemplater) {
         return await templaterPlugin.append_template_to_active_file(templateFile);
       }
 
       // No template plugins enabled so we can just append the template to the doc
-      await stateManager.app.vault.modify(
-        stateManager.app.workspace.getActiveFile(),
-        templateContent
-      );
+      const fallbackFile = targetFile ?? stateManager.app.workspace.getActiveFile();
+
+      if (fallbackFile) {
+        await stateManager.app.vault.modify(fallbackFile, templateContent);
+      }
     } catch (e) {
       console.error(e);
       stateManager.setError(e instanceof Error ? e : new Error(String(e)));

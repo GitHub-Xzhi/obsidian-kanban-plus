@@ -6,7 +6,7 @@ import { Path } from 'src/dnd/types';
 import { t } from 'src/lang/helpers';
 
 import { BoardModifiers } from '../../helpers/boardModifiers';
-import { applyTemplate, escapeRegExpStr, generateInstanceId } from '../helpers';
+import { applyTemplate, createMarkdownFileIn, escapeRegExpStr, generateInstanceId } from '../helpers';
 import { EditState, Item } from '../types';
 import {
   constructDatePicker,
@@ -21,10 +21,6 @@ const wikilinkRegEx = /!?\[\[([^\]]*)\]\]/g;
 const mdLinkRegEx = /!?\[([^\]]*)\]\([^)]*\)/g;
 const tagRegEx = /#([^\u2000-\u206F\u2E00-\u2E7F'!"#$%&()*+,.:;<=>?@^`{|}~[\]\\\s\n\r]+)/g;
 const condenceWhiteSpaceRE = /\s+/g;
-
-type FileManagerWithCreate = StateManager['app']['fileManager'] & {
-  createNewMarkdownFile: (folder: TFolder, title: string) => Promise<TFile>;
-};
 
 interface MenuItemWithSubmenu extends MenuItem {
   setSubmenu: () => Menu;
@@ -101,16 +97,15 @@ export function useItemMenu({
                 ? configuredFolder
                 : stateManager.app.fileManager.getNewFileParent(stateManager.file.path);
 
-              const newFile = await (stateManager.app.fileManager as FileManagerWithCreate).createNewMarkdownFile(
-                targetFolder,
-                sanitizedTitle
-              );
+              // fileManager.createNewMarkdownFile 已在新版 Obsidian 中被移除，
+              // 改用官方公开 API vault.create 并自行处理重名
+              const newFile = await createMarkdownFileIn(stateManager.app, targetFolder, sanitizedTitle);
 
               const newLeaf = stateManager.app.workspace.getLeaf(true);
 
               await newLeaf.openFile(newFile);
 
-              await applyTemplate(stateManager, newNoteTemplatePath);
+              await applyTemplate(stateManager, newNoteTemplatePath, newFile);
 
               const newTitleRaw = card.data.titleRaw.replace(
                 prevTitle,
