@@ -40,6 +40,17 @@ export function settingsToCodeblock(board: Board): string {
   ].join('\n');
 }
 
+/** 新建看板时若模板未自带设置块,使用的默认 %% kanban:settings 代码块 */
+export function defaultSettingsCodeblock(): string {
+  return [
+    '%% kanban:settings',
+    '```',
+    JSON.stringify({ [frontmatterKey]: 'board', lanes: [] }),
+    '```',
+    '%%',
+  ].join('\n');
+}
+
 export function getSearchValue(item: Item, stateManager: StateManager) {
   const fileMetadata = item.data.metadata.fileMetadata;
   const { titleSearchRaw } = item.data;

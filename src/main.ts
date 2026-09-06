@@ -22,7 +22,11 @@ import { getParentWindow } from './dnd/util/getWindow';
 import { hasFrontmatterKey } from './helpers';
 import { setKanbanLanguage, t } from './lang/helpers';
 import { createMarkdownFileIn } from './components/helpers';
-import { basicFrontmatter, frontmatterKey } from './parsers/common';
+import {
+  basicFrontmatter,
+  defaultSettingsCodeblock,
+  frontmatterKey,
+} from './parsers/common';
 import { setTasksPluginHost } from './parsers/helpers/inlineMetadata';
 
 interface WindowRegistry {
@@ -429,10 +433,7 @@ export default class KanbanPlugin extends Plugin {
       // 应用“笔记模板”设置,让新看板用模板中的列/内容初始化
       const templateContent = await this.getBoardTemplateContent();
 
-      await this.app.vault.modify(
-        kanban,
-        templateContent ? `${basicFrontmatter}${templateContent}` : basicFrontmatter
-      );
+      await this.app.vault.modify(kanban, templateContent || basicFrontmatter);
 
       await this.app.workspace.getLeaf().setViewState({
         type: kanbanViewType,
@@ -443,7 +444,14 @@ export default class KanbanPlugin extends Plugin {
     }
   }
 
-  /** 读取“看板模板”设置指向的模板内容,去除模板自带的 YAML frontmatter */
+  /**
+   * 组装新建看板的内容。
+   *
+   * - 模板自带 YAML frontmatter 原样保留
+   * - frontmatter 中缺少 kanban-plugin: board 时补上
+   * - 模板缺少 %% kanban:settings 代码块时补上默认的设置块
+   * - 未设置模板时返回空串(回退到 basicFrontmatter)
+   */
   private async getBoardTemplateContent(): Promise<string> {
     const templatePath = this.settings?.['new-board-template'];
 
@@ -453,9 +461,29 @@ export default class KanbanPlugin extends Plugin {
 
     if (!(templateFile instanceof TFile)) return '';
 
-    const content = await this.app.vault.read(templateFile);
+    let content = await this.app.vault.read(templateFile);
 
-    return content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
+    const frontmatterMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+
+    if (frontmatterMatch) {
+      // frontmatter 保留,但确保包含 kanban-plugin: board
+      if (!frontmatterMatch[1].contains(frontmatterKey)) {
+        content = content.replace(
+          /^(---\r?\n[\s\S]*?)(\r?\n---)/,
+          `$1\n${frontmatterKey}: board$2`
+        );
+      }
+    } else {
+      // 无 frontmatter,拼上
+      content = `${basicFrontmatter}${content}`;
+    }
+
+    // 缺少 %% kanban:settings 代码块时补默认设置块
+    if (!content.contains('%% kanban:settings')) {
+      content = `${content.trimEnd()}\n\n${defaultSettingsCodeblock()}`;
+    }
+
+    return content;
   }
 
   registerEvents() {
