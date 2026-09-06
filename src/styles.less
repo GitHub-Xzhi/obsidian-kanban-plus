@@ -1809,6 +1809,16 @@ body:not(.native-scrollbars) .kanban-plugin__scroll-container::-webkit-scrollbar
     background-color: var(--background-modifier-hover);
     color: var(--text-normal);
   }
+
+  &.is-disabled {
+    opacity: 0.4;
+    pointer-events: auto;
+
+    &:hover {
+      background-color: transparent;
+      color: var(--text-muted);
+    }
+  }
 }
 
 .kanban-plugin__meta-value-wrapper.is-clickable {

@@ -1,4 +1,5 @@
 import classcat from 'classcat';
+import { Notice } from 'obsidian';
 import {
   JSX,
   Fragment,
@@ -94,15 +95,24 @@ const ItemInner = memo(function ItemInner({
     path,
   });
 
+  // 按钮常驻显示;未配置下一列/无可回退历史时禁用并提示
   const canFlowNext = !isStatic && !!stateManager.getNextLaneIndex(path);
   const canFlowBack = !isStatic && !!stateManager.getFlowBackLaneIndex(path);
 
   const onFlowNext = useCallback(() => {
-    if (!isEditing(editState)) stateManager.flowItemToNextLane(path);
+    if (isEditing(editState)) return;
+
+    if (!stateManager.flowItemToNextLane(path)) {
+      new Notice(t('Set a flow target for this list first'));
+    }
   }, [stateManager, path, editState]);
 
   const onFlowBack = useCallback(() => {
-    if (!isEditing(editState)) stateManager.flowItemBack(path);
+    if (isEditing(editState)) return;
+
+    if (!stateManager.flowItemBack(path)) {
+      new Notice(t('No flow record to revert'));
+    }
   }, [stateManager, path, editState]);
 
   const onContextMenu: JSX.MouseEventHandler<HTMLDivElement> = useCallback(
@@ -167,32 +177,34 @@ const ItemInner = memo(function ItemInner({
         laneId={laneId}
       />
       {/* 流转按钮常驻显示在元数据(创建时间)下方,受全局设置控制 */}
-      {showFlowButtons && (canFlowNext || canFlowBack) && !isStatic && (
+      {showFlowButtons && !isStatic && (
         <div {...ignoreAttr} className={c('item-flow-buttons')}>
-          {canFlowBack && (
-            <a
-              data-ignore-drag={true}
-              onPointerDown={(e) => e.preventDefault()}
-              onClick={onFlowBack}
-              className={`${c('item-flow-button')} clickable-icon`}
-              aria-label={t('Flow back')}
-            >
-              <Icon name="lucide-arrow-left" />
-              <span>{t('Flow back')}</span>
-            </a>
-          )}
-          {canFlowNext && (
-            <a
-              data-ignore-drag={true}
-              onPointerDown={(e) => e.preventDefault()}
-              onClick={onFlowNext}
-              className={`${c('item-flow-button')} clickable-icon`}
-              aria-label={t('Flow next')}
-            >
-              <Icon name="lucide-arrow-right" />
-              <span>{t('Flow next')}</span>
-            </a>
-          )}
+          <a
+            data-ignore-drag={true}
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={onFlowBack}
+            className={classcat([
+              `${c('item-flow-button')} clickable-icon`,
+              { 'is-disabled': !canFlowBack },
+            ])}
+            aria-label={t('Flow back')}
+          >
+            <Icon name="lucide-arrow-left" />
+            <span>{t('Flow back')}</span>
+          </a>
+          <a
+            data-ignore-drag={true}
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={onFlowNext}
+            className={classcat([
+              `${c('item-flow-button')} clickable-icon`,
+              { 'is-disabled': !canFlowNext },
+            ])}
+            aria-label={t('Flow next')}
+          >
+            <Icon name="lucide-arrow-right" />
+            <span>{t('Flow next')}</span>
+          </a>
         </div>
       )}
     </div>

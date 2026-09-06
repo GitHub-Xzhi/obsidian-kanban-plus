@@ -84,6 +84,8 @@ const lang: Partial<Lang> = {
   'No flow history': '暂无流转记录',
   'Show flow buttons on cards': '在卡片上显示流转按钮',
   'When enabled, hovering a card shows buttons to flow it to the next list or back.': '开启后，鼠标悬停卡片时显示流转到下一列/退回上一列的按钮。',
+  'Set a flow target for this list first': '请先在列菜单“流转下一列…”中设置目标列',
+  'No flow record to revert': '暂无可退回的流转记录',
   'Note folder': '笔记存放位置',
   'Notes created from Kanban cards will be placed in this folder. If blank, they will be placed in the default location for this vault.':
     '从看板卡片创建的笔记会放置到该文件夹中。如果为空，笔记将会放置到 Obsidian 的默认文件存放位置。',
