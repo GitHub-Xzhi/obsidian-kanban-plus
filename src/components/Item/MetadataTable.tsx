@@ -142,6 +142,9 @@ export function ItemMetadata({
     completedAt,
     shouldShowCompletedTime,
     cardCompletedTimeFormat,
+    shouldShowFlowTime,
+    lastFlow,
+    flowTimeFormat,
   ]);
 
   const order = useMemo(() => {
