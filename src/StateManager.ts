@@ -1060,12 +1060,19 @@ export class StateManager {
         return board;
       }
 
-      const blockId = item.data.blockId;
+      // 无 blockId 的卡片自动补一个,保证流转历史/流转时间可用
+      const blockId = item.data.blockId || generateInstanceId(6);
       const destinationIndex = targetLane.children.length;
-      const nextBoard = moveEntity(board, path, [laneIndex, destinationIndex]) as Board;
+      let nextBoard = moveEntity(board, path, [laneIndex, destinationIndex]) as Board;
 
-      if (!blockId) {
-        return nextBoard;
+      if (!item.data.blockId) {
+        nextBoard = updateEntity(nextBoard, [laneIndex, destinationIndex], {
+          data: {
+            blockId: {
+              $set: blockId,
+            },
+          },
+        }) as Board;
       }
 
       return update(nextBoard, {

@@ -1789,13 +1789,26 @@ body:not(.native-scrollbars) .kanban-plugin__scroll-container::-webkit-scrollbar
 
 // 流转按钮(卡片 hover 时显示,受全局设置控制)
 .kanban-plugin__item-flow-buttons {
-  display: none;
-  flex-direction: column;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--size-2-2);
+  margin-top: var(--size-2-2);
 }
 
-.kanban-plugin__item-content-wrapper:hover .kanban-plugin__item-flow-buttons,
-.kanban-plugin__item-flow-buttons:active {
-  display: flex;
+.kanban-plugin__item-flow-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-1);
+  padding: 2px 6px;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  border-radius: var(--radius-s);
+
+  &:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+  }
 }
 
 .kanban-plugin__meta-value-wrapper.is-clickable {

@@ -157,32 +157,6 @@ const ItemInner = memo(function ItemInner({
           isStatic={isStatic}
         />
         <ItemMenuButton editState={editState} setEditState={setEditState} showMenu={showItemMenu} />
-        {showFlowButtons && (canFlowNext || canFlowBack) && (
-          <div {...ignoreAttr} className={`${c('item-postfix-button-wrapper')} ${c('item-flow-buttons')}`}>
-            {canFlowBack && (
-              <a
-                data-ignore-drag={true}
-                onPointerDown={(e) => e.preventDefault()}
-                onClick={onFlowBack}
-                className={`${c('item-postfix-button')} clickable-icon`}
-                aria-label={t('Flow back')}
-              >
-                <Icon name="lucide-arrow-left" />
-              </a>
-            )}
-            {canFlowNext && (
-              <a
-                data-ignore-drag={true}
-                onPointerDown={(e) => e.preventDefault()}
-                onClick={onFlowNext}
-                className={`${c('item-postfix-button')} clickable-icon`}
-                aria-label={t('Flow next')}
-              >
-                <Icon name="lucide-arrow-right" />
-              </a>
-            )}
-          </div>
-        )}
       </div>
       <ItemMetadata
         searchQuery={isMatch ? searchQuery : undefined}
@@ -190,9 +164,37 @@ const ItemInner = memo(function ItemInner({
         shouldMarkItemsComplete={shouldMarkItemsComplete}
         showCreatedTime={showCreatedTime}
         showCompletedTime={showCompletedTime}
-        showFlowTime={!isStatic}
         laneId={laneId}
       />
+      {/* 流转按钮常驻显示在元数据(创建时间)下方,受全局设置控制 */}
+      {showFlowButtons && (canFlowNext || canFlowBack) && !isStatic && (
+        <div {...ignoreAttr} className={c('item-flow-buttons')}>
+          {canFlowBack && (
+            <a
+              data-ignore-drag={true}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={onFlowBack}
+              className={`${c('item-flow-button')} clickable-icon`}
+              aria-label={t('Flow back')}
+            >
+              <Icon name="lucide-arrow-left" />
+              <span>{t('Flow back')}</span>
+            </a>
+          )}
+          {canFlowNext && (
+            <a
+              data-ignore-drag={true}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={onFlowNext}
+              className={`${c('item-flow-button')} clickable-icon`}
+              aria-label={t('Flow next')}
+            >
+              <Icon name="lucide-arrow-right" />
+              <span>{t('Flow next')}</span>
+            </a>
+          )}
+        </div>
+      )}
     </div>
   );
 });
