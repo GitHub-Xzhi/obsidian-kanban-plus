@@ -360,6 +360,52 @@ export class SettingsManager {
       });
 
     new Setting(contentEl)
+      .setName(t('Show flow buttons on cards'))
+      .setDesc(
+        t(
+          'When enabled, hovering a card shows buttons to flow it to the next list or back.'
+        )
+      )
+      .then((setting) => {
+        let toggleComponent: ToggleComponent;
+
+        setting
+          .addToggle((toggle) => {
+            toggleComponent = toggle;
+
+            const [value, globalValue] = this.getSetting('show-flow-button-on-card', local);
+
+            if (value !== undefined) {
+              toggle.setValue(value);
+            } else if (globalValue !== undefined) {
+              toggle.setValue(globalValue);
+            } else {
+              toggle.setValue(true);
+            }
+
+            toggle.onChange((newValue) => {
+              this.applySettingsUpdate({
+                'show-flow-button-on-card': {
+                  $set: newValue,
+                },
+              });
+            });
+          })
+          .addExtraButton((b) => {
+            b.setIcon('lucide-rotate-ccw')
+              .setTooltip(t('Reset to default'))
+              .onClick(() => {
+                const [, globalValue] = this.getSetting('show-flow-button-on-card', local);
+                toggleComponent.setValue(globalValue ?? true);
+
+                this.applySettingsUpdate({
+                  $unset: ['show-flow-button-on-card'],
+                });
+              });
+          });
+      });
+
+    new Setting(contentEl)
       .setName(t('New line trigger'))
       .setDesc(
         t(

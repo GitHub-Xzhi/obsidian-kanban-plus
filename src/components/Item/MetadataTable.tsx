@@ -4,11 +4,11 @@ import classcat from 'classcat';
 import { TFile, moment } from 'obsidian';
 import { getAPI } from 'obsidian-dataview';
 import { ComponentChild } from 'preact';
-import { memo, useContext, useMemo } from 'preact/compat';
+import Preact, { memo, useContext, useMemo } from 'preact/compat';
 import { KanbanView } from 'src/KanbanView';
 import { StateManager } from 'src/StateManager';
 import { isPlainObject } from 'src/helpers/isPlainObject';
-import { getCardCreatedTime, getCardCompletedTime } from 'src/helpers/cardSettings';
+import { getCardCreatedTime, getCardCompletedTime, getCardFlowHistory } from 'src/helpers/cardSettings';
 import { t } from 'src/lang/helpers';
 import { InlineField, taskFields } from 'src/parsers/helpers/inlineMetadata';
 
@@ -17,6 +17,7 @@ import { KanbanContext } from '../context';
 import { c, parseMetadataWithOptions, useGetDateColorFn } from '../helpers';
 import { DataKey, FileMetadata, Item, PageData } from '../types';
 import { Tags } from './ItemContent';
+import { FlowHistoryModal } from './FlowHistoryModal';
 
 export interface ItemMetadataProps {
   item: Item;
@@ -24,6 +25,8 @@ export interface ItemMetadataProps {
   shouldMarkItemsComplete?: boolean;
   showCreatedTime?: boolean;
   showCompletedTime?: boolean;
+  showFlowTime?: boolean;
+  laneId?: string;
 }
 
 function mergeMetadata(
@@ -47,6 +50,8 @@ export function ItemMetadata({
   shouldMarkItemsComplete,
   showCreatedTime,
   showCompletedTime,
+  showFlowTime,
+  laneId,
 }: ItemMetadataProps) {
   const { stateManager } = useContext(KanbanContext);
   const mergeInlineMetadata =
@@ -65,6 +70,13 @@ export function ItemMetadata({
   const { fileMetadata, fileMetadataOrder, inlineMetadata } = item.data.metadata;
   const createdAt = getCardCreatedTime({ cards }, item.data.blockId);
   const completedAt = getCardCompletedTime({ cards }, item.data.blockId);
+  // 流转时间:列级开关,默认隐藏;取最后一条流转记录
+  const lane = laneId ? stateManager.state.children.find((child) => child.id === laneId) : undefined;
+  const laneWantsFlowTime = showFlowTime ?? lane?.data.showFlowTime ?? false;
+  const flowHistory = getCardFlowHistory({ cards }, item.data.blockId);
+  const lastFlow = flowHistory[flowHistory.length - 1];
+  const shouldShowFlowTime = !!laneWantsFlowTime && !!lastFlow;
+  const flowTimeFormat = stateManager.useSetting('card-completed-time-format');
   const shouldShowCreatedTime =
     showCreatedTime ??
     (shouldMarkItemsComplete ? showCardCreatedTimeInCompleteLane : showCardCreatedTime);
@@ -104,6 +116,20 @@ export function ItemMetadata({
       };
     }
 
+    if (shouldShowFlowTime && lastFlow) {
+      metadata = {
+        ...(metadata || {}),
+        'card-flow-time': {
+          metadataKey: 'card-flow-time',
+          label: t('Flow time'),
+          shouldHideLabel: false,
+          containsMarkdown: false,
+          value: moment(lastFlow.at),
+          format: flowTimeFormat,
+        },
+      };
+    }
+
     if (!metadata) return null;
     if (!Object.keys(metadata).length) return null;
 
@@ -136,6 +162,10 @@ export function ItemMetadata({
       metadataOrder.add('card-completed-time');
     }
 
+    if (shouldShowFlowTime && lastFlow) {
+      metadataOrder.add('card-flow-time');
+    }
+
     return Array.from(metadataOrder);
   }, [
     fileMetadataOrder,
@@ -145,15 +175,33 @@ export function ItemMetadata({
     createdAt,
     completedAt,
     shouldShowCompletedTime,
+    shouldShowFlowTime,
+    lastFlow,
   ]);
 
   if (!metadata) {
     return null;
   }
 
+  const [showFlowHistory, setShowFlowHistory] = Preact.useState(false);
+
   return (
     <div className={c('item-metadata-wrapper')}>
-      <MetadataTable metadata={metadata} order={order} searchQuery={searchQuery} />
+      <MetadataTable
+        metadata={metadata}
+        order={order}
+        searchQuery={searchQuery}
+        onFlowTimeClick={
+          flowHistory.length
+            ? () => {
+                setShowFlowHistory(true);
+              }
+            : undefined
+        }
+      />
+      {showFlowHistory && (
+        <FlowHistoryModal history={flowHistory} onClose={() => setShowFlowHistory(false)} />
+      )}
     </div>
   );
 }
@@ -360,12 +408,14 @@ export interface MetadataTableProps {
   metadata: { [k: string]: PageData } | null;
   order?: string[];
   searchQuery?: string;
+  onFlowTimeClick?: () => void;
 }
 
 export const MetadataTable = memo(function MetadataTable({
   metadata,
   order,
   searchQuery,
+  onFlowTimeClick,
 }: MetadataTableProps) {
   const { stateManager } = useContext(KanbanContext);
 
@@ -397,8 +447,14 @@ export const MetadataTable = memo(function MetadataTable({
               )}
               <td
                 colSpan={data.shouldHideLabel ? 2 : 1}
-                className={c('meta-value-wrapper')}
+                className={classcat([
+                  c('meta-value-wrapper'),
+                  {
+                    'is-clickable': k === 'card-flow-time' && !!onFlowTimeClick,
+                  },
+                ])}
                 data-value={pageDataToString(data, stateManager)}
+                onClick={k === 'card-flow-time' ? onFlowTimeClick : undefined}
               >
                 {k === 'tags' ? (
                   <Tags searchQuery={searchQuery} tags={data.value as string[]} alwaysShow />

@@ -1786,3 +1786,74 @@ body:not(.native-scrollbars) .kanban-plugin__scroll-container::-webkit-scrollbar
     background-color: var(--date-background-color, rgba(var(--mono-rgb-100), 0.05));
   }
 }
+
+// 流转按钮(卡片 hover 时显示,受全局设置控制)
+.kanban-plugin__item-flow-buttons {
+  display: none;
+  flex-direction: column;
+}
+
+.kanban-plugin__item-content-wrapper:hover .kanban-plugin__item-flow-buttons,
+.kanban-plugin__item-flow-buttons:active {
+  display: flex;
+}
+
+.kanban-plugin__meta-value-wrapper.is-clickable {
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--background-modifier-hover);
+  }
+}
+
+// 流转历史弹窗
+.kanban-plugin__flow-history-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--layer-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(var(--mono-rgb-0), 0.5);
+}
+
+.kanban-plugin__flow-history-modal {
+  min-width: 280px;
+  max-width: 480px;
+  max-height: 60vh;
+  padding: var(--size-4-3);
+  overflow: auto;
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-s);
+}
+
+.kanban-plugin__flow-history-title {
+  margin-bottom: var(--size-4-2);
+  font-weight: var(--font-semibold);
+}
+
+.kanban-plugin__flow-history-empty {
+  color: var(--text-muted);
+}
+
+.kanban-plugin__flow-history-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+  padding: var(--size-2-1) 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--background-modifier-border);
+  }
+}
+
+.kanban-plugin__flow-history-time {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.kanban-plugin__flow-history-path {
+  font-size: var(--font-ui-small);
+}

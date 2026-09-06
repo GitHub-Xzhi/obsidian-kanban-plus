@@ -36,6 +36,7 @@ export interface DraggableItemProps {
   showCreatedTime?: boolean;
   showCompletedTime?: boolean;
   showFlowButtons?: boolean;
+  laneId?: string;
 }
 
 export interface ItemInnerProps {
@@ -45,6 +46,7 @@ export interface ItemInnerProps {
   showCreatedTime?: boolean;
   showCompletedTime?: boolean;
   showFlowButtons?: boolean;
+  laneId?: string;
   isMatch?: boolean;
   searchQuery?: string;
 }
@@ -55,6 +57,7 @@ const ItemInner = memo(function ItemInner({
   showCreatedTime,
   showCompletedTime,
   showFlowButtons,
+  laneId,
   isMatch,
   searchQuery,
   isStatic,
@@ -187,6 +190,8 @@ const ItemInner = memo(function ItemInner({
         shouldMarkItemsComplete={shouldMarkItemsComplete}
         showCreatedTime={showCreatedTime}
         showCompletedTime={showCompletedTime}
+        showFlowTime={!isStatic}
+        laneId={laneId}
       />
     </div>
   );
@@ -355,6 +360,7 @@ export const Items = memo(function Items({
                     showCreatedTime={showCreatedTime}
                     showCompletedTime={showCompletedTime}
                     showFlowButtons={showFlowButtons}
+                    laneId={laneId}
                     isStatic={isStatic}
                   />
                 );
