@@ -137,7 +137,7 @@ export function createSearchSelect({
 
         const c = new Choices(el, {
           placeholder: true,
-          position: 'bottom' as 'auto',
+          position: 'auto',
           searchPlaceholderValue: t('Search...'),
           searchEnabled: list.length > 10,
           choices: list,
