@@ -266,7 +266,12 @@ export function getCardFlowSourceHistory(
   return getCard(settings, blockId)?.['flow-source-history'] || [];
 }
 
-/** 历史上限:0=不保留任何记录,-1=不限制,其他=保留最近 max 条(流转与回退共用) */
+/**
+ * 流转回退历史上限:仅约束审计日志 flow-history。
+ * - max < 0(-1):不限制
+ * - max === 0:不保留任何审计记录(撤销栈 flow-source-history 不受影响,回退仍可用)
+ * - 其他:保留最近 max 条,超出丢弃最旧的
+ */
 export function applyFlowHistoryLimit(
   card: PersistedCard,
   max: number
@@ -279,17 +284,12 @@ export function applyFlowHistoryLimit(
 
   if (max === 0) {
     delete nextCard['flow-history'];
-    delete nextCard['flow-source-history'];
 
     return nextCard;
   }
 
   if (nextCard['flow-history'] && nextCard['flow-history'].length > max) {
     nextCard['flow-history'] = nextCard['flow-history'].slice(-max);
-  }
-
-  if (nextCard['flow-source-history'] && nextCard['flow-source-history'].length > max) {
-    nextCard['flow-source-history'] = nextCard['flow-source-history'].slice(-max);
   }
 
   return nextCard;
