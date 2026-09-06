@@ -16,6 +16,12 @@ export interface PersistedFlowRecord {
   at: number;
 }
 
+/** 撤销栈中的一步(无时间字段):从 fromLaneId 流转到 toLaneId */
+export interface PersistedFlowStep {
+  fromLaneId?: string;
+  toLaneId: string;
+}
+
 export interface PersistedCard {
   id: string;
   'created-time'?: number;
@@ -23,8 +29,10 @@ export interface PersistedCard {
   sourceLaneId?: string;
   sourceItemIndex?: number;
   targetLaneId?: string;
-  'flow-source-lane-id'?: string;
+  /** 审计日志:所有流转动作(含回退)追加,只增不删(受历史上限约束) */
   'flow-history'?: PersistedFlowRecord[];
+  /** 撤销栈:仅“流转下一列”时 push,回退时 pop */
+  'flow-source-history'?: PersistedFlowStep[];
   archived?: PersistedArchivedCard;
 }
 
@@ -96,6 +104,33 @@ export function sanitizeFlowHistory(history: unknown): PersistedFlowRecord[] | u
   return records.length ? records : undefined;
 }
 
+export function sanitizeFlowSourceHistory(history: unknown): PersistedFlowStep[] | undefined {
+  if (!Array.isArray(history)) {
+    return undefined;
+  }
+
+  const steps = history.reduce<PersistedFlowStep[]>((acc, step) => {
+    if (!step || typeof step !== 'object') {
+      return acc;
+    }
+
+    const source = step as Record<string, unknown>;
+
+    if (typeof source.toLaneId !== 'string' || !source.toLaneId) {
+      return acc;
+    }
+
+    acc.push({
+      fromLaneId: typeof source.fromLaneId === 'string' ? source.fromLaneId : undefined,
+      toLaneId: source.toLaneId,
+    });
+
+    return acc;
+  }, []);
+
+  return steps.length ? steps : undefined;
+}
+
 export function sanitizeCards(cards: unknown): PersistedCards | undefined {
   if (!Array.isArray(cards)) {
     return undefined;
@@ -143,8 +178,10 @@ export function sanitizeCards(cards: unknown): PersistedCards | undefined {
       nextCard['flow-history'] = flowHistory;
     }
 
-    if (typeof source['flow-source-lane-id'] === 'string' && source['flow-source-lane-id']) {
-      nextCard['flow-source-lane-id'] = source['flow-source-lane-id'] as string;
+    const flowSourceHistory = sanitizeFlowSourceHistory(source['flow-source-history']);
+
+    if (flowSourceHistory) {
+      nextCard['flow-source-history'] = flowSourceHistory;
     }
 
     if (archived) {
@@ -157,8 +194,8 @@ export function sanitizeCards(cards: unknown): PersistedCards | undefined {
       nextCard.sourceLaneId === undefined &&
       nextCard.sourceItemIndex === undefined &&
       nextCard.targetLaneId === undefined &&
-      nextCard['flow-source-lane-id'] === undefined &&
       nextCard['flow-history'] === undefined &&
+      nextCard['flow-source-history'] === undefined &&
       nextCard.archived === undefined
     ) {
       return acc;
@@ -218,12 +255,12 @@ export function getCardFlowHistory(
   return getCard(settings, blockId)?.['flow-history'] || [];
 }
 
-/** 卡片当前来源列(独立于历史日志的回退状态) */
-export function getCardFlowSource(
+/** 卡片撤销栈(仅“流转下一列”时 push,回退时 pop) */
+export function getCardFlowSourceHistory(
   settings: KanbanSettings | undefined,
   blockId?: string
-): string | undefined {
-  return getCard(settings, blockId)?.['flow-source-lane-id'];
+): PersistedFlowStep[] {
+  return getCard(settings, blockId)?.['flow-source-history'] || [];
 }
 
 /** 追加一条流转记录;若新记录与末条完全同向则合并(更新时间)避免连点产生重复项 */
@@ -305,12 +342,12 @@ export function normalizeCard(card: PersistedCard): PersistedCard | undefined {
     nextCard.targetLaneId = card.targetLaneId;
   }
 
-  if (card['flow-source-lane-id']) {
-    nextCard['flow-source-lane-id'] = card['flow-source-lane-id'];
-  }
-
   if (card['flow-history']) {
     nextCard['flow-history'] = card['flow-history'];
+  }
+
+  if (card['flow-source-history']) {
+    nextCard['flow-source-history'] = card['flow-source-history'];
   }
 
   if (card.archived) {
