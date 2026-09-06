@@ -95,7 +95,7 @@ export function sanitizeFlowHistory(history: unknown): PersistedFlowRecord[] | u
   return records.length ? records : undefined;
 }
 
-function sanitizeCards(cards: unknown): PersistedCards | undefined {
+export function sanitizeCards(cards: unknown): PersistedCards | undefined {
   if (!Array.isArray(cards)) {
     return undefined;
   }
