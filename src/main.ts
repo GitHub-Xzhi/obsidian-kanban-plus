@@ -21,6 +21,7 @@ import { DateSuggest, TimeSuggest } from './components/Editor/suggest';
 import { getParentWindow } from './dnd/util/getWindow';
 import { hasFrontmatterKey } from './helpers';
 import { setKanbanLanguage, t } from './lang/helpers';
+import { createMarkdownFileIn } from './components/helpers';
 import { basicFrontmatter, frontmatterKey } from './parsers/common';
 import { setTasksPluginHost } from './parsers/helpers/inlineMetadata';
 
@@ -68,10 +69,6 @@ type WorkspaceWithExtras = PluginApp['workspace'] & {
   };
   registerHoverLinkSource?: (source: string, info: { display: string; defaultMod: boolean }) => void;
   unregisterHoverLinkSource?: (source: string) => void;
-};
-
-type FileManagerWithCreateNewMarkdownFile = PluginApp['fileManager'] & {
-  createNewMarkdownFile?: (folder: TFolder, name: string) => Promise<TFile>;
 };
 
 interface CommandManagerLike {
@@ -425,12 +422,18 @@ export default class KanbanPlugin extends Plugin {
       : this.app.fileManager.getNewFileParent(this.app.workspace.getActiveFile()?.path || '');
 
     try {
-      const kanban: TFile = await (this.app.fileManager as FileManagerWithCreateNewMarkdownFile).createNewMarkdownFile(
-        targetFolder,
-        t('Untitled Kanban')
+      // fileManager.createNewMarkdownFile 已在新版 Obsidian 中被移除,
+      // 改用官方公开 API vault.create 并自行处理重名
+      const kanban: TFile = await createMarkdownFileIn(this.app, targetFolder, t('Untitled Kanban'));
+
+      // 应用“笔记模板”设置,让新看板用模板中的列/内容初始化
+      const templateContent = await this.getBoardTemplateContent();
+
+      await this.app.vault.modify(
+        kanban,
+        templateContent ? `${basicFrontmatter}${templateContent}` : basicFrontmatter
       );
 
-      await this.app.vault.modify(kanban, basicFrontmatter);
       await this.app.workspace.getLeaf().setViewState({
         type: kanbanViewType,
         state: { file: kanban.path },
@@ -438,6 +441,21 @@ export default class KanbanPlugin extends Plugin {
     } catch (e) {
       console.error('Error creating kanban board:', e);
     }
+  }
+
+  /** 读取“笔记模板”设置指向的模板内容,去除模板自带的 YAML frontmatter */
+  private async getBoardTemplateContent(): Promise<string> {
+    const templatePath = this.settings?.['new-note-template'];
+
+    if (!templatePath) return '';
+
+    const templateFile = this.app.vault.getAbstractFileByPath(templatePath);
+
+    if (!(templateFile instanceof TFile)) return '';
+
+    const content = await this.app.vault.read(templateFile);
+
+    return content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
   }
 
   registerEvents() {
