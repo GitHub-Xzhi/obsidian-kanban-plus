@@ -177,6 +177,7 @@ const ItemInner = memo(function ItemInner({
         shouldMarkItemsComplete={shouldMarkItemsComplete}
         showCreatedTime={showCreatedTime}
         showCompletedTime={showCompletedTime}
+        showFlowTime={showFlowTime}
         laneId={laneId}
       />
       {/* 流转按钮常驻显示在元数据(创建时间)下方,受全局设置控制 */}
