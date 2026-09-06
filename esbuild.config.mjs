@@ -210,7 +210,11 @@ const context = await esbuild.context({
     NodeModulesPolyfillPlugin(),
     lessLoader(),
     replace({
-      include: /node_modules\/.*/,
+      // Windows 上 esbuild 传入的路径使用反斜杠（如 E:\...\node_modules\x.js），
+      // 必须同时匹配两种路径分隔符，否则该插件会静默失效，
+      // 导致 node_modules 中的 setTimeout/requestAnimationFrame 等未被包装为
+      // activeWindow.*，多窗口（弹出窗口/独立设置窗口）场景下全局引用错位。
+      include: /node_modules[\\/].*/,
       values: {
         setTimeout: 'activeWindow.setTimeout',
         clearTimeout: 'activeWindow.clearTimeout',
