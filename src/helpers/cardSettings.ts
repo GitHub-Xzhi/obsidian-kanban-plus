@@ -266,16 +266,33 @@ export function getCardFlowSourceHistory(
   return getCard(settings, blockId)?.['flow-source-history'] || [];
 }
 
-/** 历史上限:超出时丢弃最旧的记录(流转与回退共用) */
+/** 历史上限:0=不保留任何记录,-1=不限制,其他=保留最近 max 条(流转与回退共用) */
 export function applyFlowHistoryLimit(
   card: PersistedCard,
   max: number
 ): PersistedCard {
-  if (card['flow-history'] && card['flow-history'].length > max) {
-    return { ...card, 'flow-history': card['flow-history'].slice(-max) };
+  if (max < 0) {
+    return card;
   }
 
-  return card;
+  const nextCard = { ...card };
+
+  if (max === 0) {
+    delete nextCard['flow-history'];
+    delete nextCard['flow-source-history'];
+
+    return nextCard;
+  }
+
+  if (nextCard['flow-history'] && nextCard['flow-history'].length > max) {
+    nextCard['flow-history'] = nextCard['flow-history'].slice(-max);
+  }
+
+  if (nextCard['flow-source-history'] && nextCard['flow-source-history'].length > max) {
+    nextCard['flow-source-history'] = nextCard['flow-source-history'].slice(-max);
+  }
+
+  return nextCard;
 }
 
 /** 追加一条流转记录;若新记录与末条完全同向则合并(更新时间)避免连点产生重复项 */

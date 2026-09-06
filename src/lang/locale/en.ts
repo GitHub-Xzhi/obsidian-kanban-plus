@@ -94,8 +94,8 @@ const en = {
   'When enabled, hovering a card shows buttons to flow it to the next list or back.':
     'When enabled, hovering a card shows buttons to flow it to the next list or back.',
   'Max flow history': 'Max flow/back history',
-  'Maximum number of flow records kept per card. Oldest records are removed first. Setting this to 0 disables the limit.':
-    'Maximum number of flow records kept per card. Oldest records are removed first. Setting this to 0 disables the limit.',
+  'Maximum number of flow records kept per card (flow + back). Oldest records are removed first. Set 0 to keep none, or -1 for no limit.':
+    'Maximum number of flow records kept per card (flow + back). Oldest records are removed first. Set 0 to keep none, or -1 for no limit.',
   'Set a flow target for this list first': 'Set a flow target for this list first',
   'No flow record to revert': 'No flow record to revert',
   'Note folder': 'Note folder',

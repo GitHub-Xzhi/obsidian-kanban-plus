@@ -94,12 +94,11 @@ const ItemInner = memo(function ItemInner({
 
   const path = useNestedEntityPath();
 
-  // 流转按钮可用性:订阅看板数据(cards/lanes),流转/回退/列配置变化立即重渲染
+  // 流转按钮可用性:订阅看板数据(children/cards),流转/回退/列配置变化立即重渲染
   const board = stateManager.useState();
   const flowCards = board?.data?.settings?.cards;
-  const flowLanes = board?.data?.settings?.lanes;
-  const laneSettings = laneId ? flowLanes?.find((l) => l.id === laneId) : undefined;
-  const nextLaneId = laneSettings?.['next-lane-id'];
+  const flowLane = laneId ? board?.children?.find((c) => c.id === laneId) : undefined;
+  const nextLaneId = flowLane?.data.nextLaneId;
   const canFlowNext = !isStatic && !!nextLaneId && nextLaneId !== laneId;
   const flowBackSource = getCardFlowSourceHistory({ cards: flowCards }, item.data.blockId);
   const canFlowBack =

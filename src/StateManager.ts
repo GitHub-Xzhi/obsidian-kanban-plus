@@ -1078,10 +1078,12 @@ export class StateManager {
                 steps.pop();
                 withRecord['flow-source-history'] = steps.length ? steps : undefined;
 
-                // 历史上限:回退追加的审计记录同样受限
+                // 历史上限:回退追加的审计记录同样受限(0=不保留,-1=无限)
+                const maxSetting = this.getSetting('max-flow-history');
+
                 return applyFlowHistoryLimit(
                   withRecord,
-                  this.getSetting('max-flow-history') || 99
+                  typeof maxSetting === 'number' ? maxSetting : 99
                 );
               }),
             },
@@ -1136,10 +1138,12 @@ export class StateManager {
                 steps.push({ fromLaneId: sourceLane.id, toLaneId: targetLane.id });
                 withRecord['flow-source-history'] = steps;
 
-                // 历史上限:超出时丢弃最旧的记录
+                // 历史上限(0=不保留,-1=无限)
+                const maxSetting = this.getSetting('max-flow-history');
+
                 return applyFlowHistoryLimit(
                   withRecord,
-                  this.getSetting('max-flow-history') || 99
+                  typeof maxSetting === 'number' ? maxSetting : 99
                 );
               }),
             },

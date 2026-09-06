@@ -416,7 +416,7 @@ export class SettingsManager {
       .setName(t('Max flow history'))
       .setDesc(
         t(
-          'Maximum number of flow records kept per card. Oldest records are removed first. Setting this to 0 disables the limit.'
+          'Maximum number of flow records kept per card (flow + back). Oldest records are removed first. Set 0 to keep none, or -1 for no limit.'
         )
       )
       .addText((text) => {
@@ -427,12 +427,12 @@ export class SettingsManager {
         text.inputEl.value = value !== undefined ? value.toString() : '';
 
         text.onChange((val) => {
-          if (val && numberRegEx.test(val)) {
+          if (val && /^-?\d+$/.test(val.trim())) {
             text.inputEl.removeClass('error');
 
             this.applySettingsUpdate({
               'max-flow-history': {
-                $set: parseInt(val),
+                $set: parseInt(val.trim()),
               },
             });
 
