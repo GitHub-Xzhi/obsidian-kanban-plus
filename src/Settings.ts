@@ -107,6 +107,7 @@ export interface KanbanSettings {
   'move-tags'?: boolean;
   'move-task-metadata'?: boolean;
   'new-card-insertion-method'?: 'prepend' | 'prepend-compact' | 'append';
+  'new-board-template'?: string;
   'new-line-trigger'?: 'enter' | 'shift-enter';
   'new-note-folder'?: string;
   'new-note-template'?: string;
@@ -174,6 +175,7 @@ export const settingKeyLookup: Set<keyof KanbanSettings> = new Set([
   'move-tags',
   'move-task-metadata',
   'new-card-insertion-method',
+  'new-board-template',
   'new-line-trigger',
   'new-note-folder',
   'new-note-template',
@@ -578,6 +580,20 @@ export class SettingsManager {
         createSearchSelect({
           choices: templateFiles,
           key: 'new-note-template',
+          warningText: templateWarning,
+          local,
+          placeHolderStr: t('No template'),
+          manager: this,
+        })
+      );
+
+    new Setting(contentEl)
+      .setName(t('Board template'))
+      .setDesc(t('This template will be used when creating new Kanban boards.'))
+      .then(
+        createSearchSelect({
+          choices: templateFiles,
+          key: 'new-board-template',
           warningText: templateWarning,
           local,
           placeHolderStr: t('No template'),

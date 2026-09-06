@@ -443,9 +443,9 @@ export default class KanbanPlugin extends Plugin {
     }
   }
 
-  /** 读取“笔记模板”设置指向的模板内容,去除模板自带的 YAML frontmatter */
+  /** 读取“看板模板”设置指向的模板内容,去除模板自带的 YAML frontmatter */
   private async getBoardTemplateContent(): Promise<string> {
-    const templatePath = this.settings?.['new-note-template'];
+    const templatePath = this.settings?.['new-board-template'];
 
     if (!templatePath) return '';
 

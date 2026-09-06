@@ -71,6 +71,9 @@ const en = {
   'This template will be used when creating new notes from Kanban cards.':
     'This template will be used when creating new notes from Kanban cards.',
   'No template': 'No template',
+  'Board template': 'Board template',
+  'This template will be used when creating new Kanban boards.':
+    'This template will be used when creating new Kanban boards.',
   'Note folder': 'Note folder',
   'Notes created from Kanban cards will be placed in this folder. If blank, they will be placed in the default location for this vault.':
     'Notes created from Kanban cards will be placed in this folder. If blank, they will be placed in the default location for this vault.',
