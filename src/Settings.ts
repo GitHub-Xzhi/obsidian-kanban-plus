@@ -376,11 +376,19 @@ export class SettingsManager {
       .then((setting) => {
         let toggleComponent: ToggleComponent;
 
+        // 总开关重新开启时,清除板头/列菜单批量隐藏留下的列级覆盖,恢复按钮显示
+        const resetFlowButtonVisibility = () => {
+          this.plugin.stateManagers.forEach((stateManager) => {
+            stateManager.clearLaneFlowButtonOverrides();
+          });
+        };
+
         setting
           .addToggle((toggle) => {
             toggleComponent = toggle;
 
             const [value, globalValue] = this.getSetting('show-flow-button-on-card', local);
+            const previousValue = value !== undefined ? value : globalValue;
 
             if (value !== undefined) {
               toggle.setValue(value);
@@ -391,6 +399,11 @@ export class SettingsManager {
             }
 
             toggle.onChange((newValue) => {
+              // 从关闭(或未启用)切到开启:清掉列级隐藏,按钮恢复显示
+              if (newValue && previousValue === false) {
+                resetFlowButtonVisibility();
+              }
+
               this.applySettingsUpdate({
                 'show-flow-button-on-card': {
                   $set: newValue,
@@ -403,7 +416,13 @@ export class SettingsManager {
               .setTooltip(t('Reset to default'))
               .onClick(() => {
                 const [, globalValue] = this.getSetting('show-flow-button-on-card', local);
+                const previousValue = this.getSetting('show-flow-button-on-card', local)[0];
                 toggleComponent.setValue(globalValue ?? true);
+
+                // 之前显式关闭、重置后回到开启:同样清除列级隐藏
+                if ((globalValue ?? true) && previousValue === false) {
+                  resetFlowButtonVisibility();
+                }
 
                 this.applySettingsUpdate({
                   $unset: ['show-flow-button-on-card'],

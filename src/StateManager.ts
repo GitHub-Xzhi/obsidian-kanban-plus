@@ -986,6 +986,34 @@ export class StateManager {
     });
   }
 
+  /**
+   * 清除所有列的流转按钮显示覆盖(showFlowButtons/show-flow-buttons)。
+   * 用于总开关“开启流转回退”从关闭转为开启时:板头按钮此前批量隐藏的列级值全部作废,
+   * 按钮恢复默认显示。仅清理纯隐藏值;列级显式开启的值一并清除(语义:回归默认显示)。
+   */
+  clearLaneFlowButtonOverrides() {
+    const lanes = this.state?.data?.settings?.lanes;
+
+    if (!lanes?.length || !lanes.some((lane) => lane['show-flow-buttons'] !== undefined)) {
+      return;
+    }
+
+    this.setState((board) =>
+      update(board, {
+        data: {
+          settings: {
+            lanes: {
+              $set: board.data.settings.lanes?.map((lane) => {
+                const { 'show-flow-buttons': _flowButtons, ...rest } = lane;
+                return rest;
+              }),
+            },
+          },
+        },
+      })
+    );
+  }
+
   moveItemToLane(path: Path, laneIndex: number) {
     this.setState((board) => {
       const item = board.children[path[0]]?.children[path[1]];
