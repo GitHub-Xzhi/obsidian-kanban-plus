@@ -54,7 +54,9 @@ function DraggableLaneRaw({
   const groupCardsByCreatedTime = stateManager.useSetting('group-cards-by-created-time');
   const groupCardsByCompletedTime = stateManager.useSetting('group-cards-by-completed-time');
   const insertionMethod = stateManager.useSetting('new-card-insertion-method');
-  const showFlowButtons = stateManager.useSetting('show-flow-button-on-card') ?? true;
+  // 设置项“开启流转回退”是总开关:显式关闭时强制隐藏;开启/未设置时由列级值(板头/列菜单)控制,未设置默认显示
+  const flowEnabled = stateManager.useSetting('show-flow-button-on-card') ?? true;
+  const showFlowButtons = flowEnabled ? (lane.data.showFlowButtons ?? true) : false;
   const effectiveGroupBy =
     (lane.data.groupBy === 'created-time' && groupCardsByCreatedTime ? 'created-time' : undefined) ||
     (lane.data.groupBy === 'completed-time' && groupCardsByCompletedTime
@@ -215,8 +217,7 @@ function DraggableLaneRaw({
                       shouldMarkItemsComplete={shouldMarkItemsComplete}
                       showCreatedTime={lane.data.showCreatedTime}
                       showCompletedTime={lane.data.showCompletedTime}
-                      // 优先级:设置项 > 板头“显示/隐藏所有”按钮写入的列级值
-                      showFlowButtons={showFlowButtons ?? lane.data.showFlowButtons}
+                      showFlowButtons={showFlowButtons}
                       showFlowTime={lane.data.showFlowTime}
                     />
                     <SortPlaceholder

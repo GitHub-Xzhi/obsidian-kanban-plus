@@ -413,11 +413,10 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         });
     });
 
-    // 优先级:设置项 > 列级覆盖 > 默认显示(与 Lane.tsx 渲染优先级一致)
-    const laneFlowButtonsVisible =
-      stateManager.getSetting('show-flow-button-on-card', board.data.settings) ??
-      lane.data.showFlowButtons ??
-      true;
+    // 总开关关闭时列菜单同样禁用流转按钮切换;开启时由列级值控制,未设置默认显示
+    const flowEnabled =
+      stateManager.getSetting('show-flow-button-on-card', board.data.settings) !== false;
+    const laneFlowButtonsVisible = flowEnabled ? (lane.data.showFlowButtons ?? true) : false;
 
     menu.addItem((item) => {
       item
