@@ -1854,9 +1854,45 @@ body:not(.native-scrollbars) .kanban-plugin__scroll-container::-webkit-scrollbar
   box-shadow: var(--shadow-s);
 }
 
-.kanban-plugin__flow-history-title {
+.kanban-plugin__flow-history-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-2-2);
   margin-bottom: var(--size-4-2);
+}
+
+.kanban-plugin__flow-history-title {
   font-weight: var(--font-semibold);
+}
+
+// 清空按钮(点击后二次确认)
+.kanban-plugin__flow-history-clear {
+  color: var(--text-muted);
+  cursor: var(--cursor);
+  font-size: var(--font-ui-smaller);
+
+  &:hover {
+    color: var(--text-error);
+    background-color: var(--background-modifier-hover);
+  }
+}
+
+// 清空二次确认视图
+.kanban-plugin__flow-history-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+}
+
+.kanban-plugin__flow-history-confirm-text {
+  color: var(--text-muted);
+}
+
+.kanban-plugin__flow-history-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--size-2-2);
 }
 
 .kanban-plugin__flow-history-empty {

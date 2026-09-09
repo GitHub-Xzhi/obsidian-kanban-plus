@@ -9,14 +9,20 @@ import { Lane } from '../types';
 
 class FlowHistoryModalImpl extends Modal {
   private onClickOutside: (e: MouseEvent) => void;
+  /** 当前展示的历史快照;清空后置空并重渲染 */
+  private history: PersistedFlowRecord[];
+  /** 是否处于“确认清空”视图 */
+  private confirming = false;
 
   constructor(
     app: App,
-    private history: PersistedFlowRecord[],
+    history: PersistedFlowRecord[],
     private lanes: Lane[],
-    private onCloseCb: () => void
+    private onCloseCb: () => void,
+    private onClear?: () => void
   ) {
     super(app);
+    this.history = history;
   }
 
   onOpen() {
@@ -32,14 +38,40 @@ class FlowHistoryModalImpl extends Modal {
     };
     document.body.addEventListener('mousedown', this.onClickOutside, true);
 
-    const { history, lanes } = this;
+    this.renderContent();
+  }
+
+  renderContent() {
+    const { lanes } = this;
+    const history = this.history;
     const format = 'YYYY-MM-DD HH:mm:ss';
 
     this.contentEl.empty();
-    this.contentEl.createEl('div', {
+
+    // 标题行:标题 + 清空按钮(有记录且提供清空回调时显示)
+    const titleRow = this.contentEl.createEl('div', { cls: c('flow-history-title-row') });
+    titleRow.createEl('div', {
       cls: c('flow-history-title'),
       text: t('View flow history'),
     });
+
+    if (!this.confirming && this.onClear && history.length) {
+      titleRow
+        .createEl('a', {
+          cls: c('flow-history-clear'),
+          text: t('Clear'),
+        })
+        .addEventListener('click', () => {
+          this.confirming = true;
+          this.renderContent();
+        });
+    }
+
+    // 二次确认视图:点击清空后先询问用户是否确定
+    if (this.confirming) {
+      this.renderConfirm();
+      return;
+    }
 
     if (!history.length) {
       this.contentEl.createEl('div', {
@@ -73,6 +105,33 @@ class FlowHistoryModalImpl extends Modal {
     });
   }
 
+  renderConfirm() {
+    const confirm = this.contentEl.createEl('div', { cls: c('flow-history-confirm') });
+
+    confirm.createEl('div', {
+      cls: c('flow-history-confirm-text'),
+      text: t('Are you sure you want to clear the flow history?'),
+    });
+
+    const actions = confirm.createEl('div', { cls: c('flow-history-confirm-actions') });
+
+    actions
+      .createEl('button', { cls: 'mod-warning', text: t('Yes, clear history') })
+      .addEventListener('click', () => {
+        this.confirming = false;
+        this.history = [];
+        this.onClear?.();
+        this.close();
+      });
+
+    actions
+      .createEl('button', { text: t('Cancel') })
+      .addEventListener('click', () => {
+        this.confirming = false;
+        this.renderContent();
+      });
+  }
+
   onClose() {
     document.body.removeEventListener('mousedown', this.onClickOutside, true);
     this.contentEl.empty();
@@ -88,12 +147,13 @@ function laneTitle(lanes: Lane[], laneId?: string) {
   return lane?.data.title || '—';
 }
 
-/** 打开流转历史弹窗(原生 Modal:Esc/点击遮罩关闭) */
+/** 打开流转历史弹窗(原生 Modal:Esc/点击遮罩关闭);提供 onClear 时显示“清空”按钮(点击后二次确认) */
 export function openFlowHistoryModal(
   app: App,
   history: PersistedFlowRecord[],
   lanes: Lane[],
-  onClose?: () => void
+  onClose?: () => void,
+  onClear?: () => void
 ) {
-  new FlowHistoryModalImpl(app, history, lanes, onClose).open();
+  new FlowHistoryModalImpl(app, history, lanes, onClose, onClear).open();
 }

@@ -963,6 +963,29 @@ export class StateManager {
     });
   }
 
+  /** 清空卡片的流转回退历史(审计日志 flow-history);不影响撤销栈,回退功能不受影响 */
+  clearCardFlowHistory(blockId?: string) {
+    if (!blockId || !getCard(this.state.data.settings, blockId)?.['flow-history']) {
+      return;
+    }
+
+    this.setState((board) => {
+      return update(board, {
+        data: {
+          settings: {
+            cards: {
+              $set: updateCard(board.data.settings, blockId, (card) => {
+                const nextCard = { ...card };
+                delete nextCard['flow-history'];
+                return nextCard;
+              }),
+            },
+          },
+        },
+      });
+    });
+  }
+
   moveItemToLane(path: Path, laneIndex: number) {
     this.setState((board) => {
       const item = board.children[path[0]]?.children[path[1]];

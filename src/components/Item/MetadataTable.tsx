@@ -196,7 +196,9 @@ export function ItemMetadata({
                 openFlowHistoryModal(
                   stateManager.app,
                   flowHistory,
-                  stateManager.state.children
+                  stateManager.state.children,
+                  undefined,
+                  () => stateManager.clearCardFlowHistory(item.data.blockId)
                 );
               }
             : undefined
