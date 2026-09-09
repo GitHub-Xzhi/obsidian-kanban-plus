@@ -77,7 +77,7 @@ const en = {
   'Flow': 'Flow',
   'Flow next': 'Flow to next list',
   'Flow back': 'Back to previous list',
-  'Flow to next list': 'Flow to next list…',
+  'Flow to next list': 'Flow to next list',
   'Clear flow target': 'Clear flow target',
   'Show flow time': 'Show flow/back time',
   'Hide flow time': 'Hide flow/back time',
