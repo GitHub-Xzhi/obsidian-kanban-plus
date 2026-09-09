@@ -1852,13 +1852,18 @@ body:not(.native-scrollbars) .kanban-plugin__scroll-container::-webkit-scrollbar
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-m);
   box-shadow: var(--shadow-s);
+
+  // 隐藏右上角关闭 X(与清空按钮重叠);点击遮罩/Esc 仍可关闭
+  .modal-close-button {
+    display: none;
+  }
 }
 
 .kanban-plugin__flow-history-title-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--size-2-2);
+  // 清空按钮在标题右侧,与标题保持间距
+  gap: var(--size-4-3);
   margin-bottom: var(--size-4-2);
 }
 
