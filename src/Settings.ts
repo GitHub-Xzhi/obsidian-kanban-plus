@@ -320,6 +320,15 @@ export class SettingsManager {
             }
 
             this.plugin.settingsTab.display();
+
+            // 语言变化需实时生效:刷新所有已打开看板的命令式 UI(板头按钮 tooltip 等)
+            // 以及响应式渲染(卡片/列菜单文案随下次渲染更新,softRefresh 立即触发重渲染)
+            this.plugin.stateManagers.forEach((stateManager) => {
+              stateManager.viewSet.forEach((view) => {
+                view.initHeaderButtons();
+              });
+              stateManager.softRefresh();
+            });
           });
         });
     }

@@ -31,6 +31,21 @@ import { frontmatterKey } from './parsers/common';
 export const kanbanViewType = 'kanban';
 export const kanbanIcon = 'lucide-square-kanban';
 
+// 板头按钮 key → 词条键映射,用于语言切换时刷新已存在按钮的 aria-label 提示
+const HEADER_BUTTON_TITLE_KEYS = {
+  'show-board-settings': 'Open board settings',
+  'show-set-view': 'Board view',
+  'show-search': 'Search...',
+  'show-view-as-markdown': 'Open as markdown',
+  'show-archive-all': 'Archive completed cards',
+  'show-archive-toggle': 'Show archived cards',
+  'show-add-list': 'Add a list',
+  'show-toggle-all-card-created-times': 'Show/hide all created times',
+  'show-toggle-all-card-completed-times': 'Show/hide all completed times',
+  'show-toggle-all-flow-buttons': 'Show/hide all flow buttons',
+  'show-toggle-all-flow-time': 'Show/hide all flow time',
+} as const;
+
 interface KanbanViewEvents {
   hotkey: [{ commandId: string; data?: string }];
   queueEmpty: [];
@@ -640,6 +655,11 @@ export class KanbanView extends TextFileView implements HoverParent {
       this.actionButtons['show-toggle-all-flow-time'].remove();
       delete this.actionButtons['show-toggle-all-flow-time'];
     }
+
+    // 语言切换后刷新已存在按钮的提示(actionButton 的提示是 aria-label,创建后不会自动更新)
+    Object.entries(HEADER_BUTTON_TITLE_KEYS).forEach(([key, labelKey]) => {
+      this.actionButtons[key]?.setAttribute('aria-label', t(labelKey));
+    });
   };
 
   clear() {
