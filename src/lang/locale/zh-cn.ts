@@ -89,7 +89,7 @@ const lang: Partial<Lang> = {
   'View flow history': '查看流转回退历史',
   'No flow history': '暂无流转记录',
   'Show flow buttons on cards': '在卡片上显示流转回退按钮',
-  'When enabled, hovering a card shows buttons to flow it to the next list or back.': '开启后，卡片时显示回退上一列/流转下一列的按钮。',
+  'When enabled, cards show buttons to flow back to the previous list or flow to the next list.': '开启后，卡片显示回退上一列/流转下一列的按钮。',
   'Max flow history': '流转回退历史上限',
   'Maximum number of flow records kept per card (flow + back). Oldest records are removed first. Set 0 to keep none, or -1 for no limit.': '审计日志最多保留的条数（含流转与回退），超出后自动丢弃最旧的记录。填 0 表示不保留任何审计记录，填 -1 表示不限制。不影响回退功能。',
   'Set a flow target for this list first': '请先在列菜单“流转下一列…”中设置目标列',

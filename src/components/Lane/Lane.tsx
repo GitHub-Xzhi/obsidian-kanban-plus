@@ -215,7 +215,8 @@ function DraggableLaneRaw({
                       shouldMarkItemsComplete={shouldMarkItemsComplete}
                       showCreatedTime={lane.data.showCreatedTime}
                       showCompletedTime={lane.data.showCompletedTime}
-                      showFlowButtons={lane.data.showFlowButtons ?? showFlowButtons}
+                      // 优先级:设置项 > 板头“显示/隐藏所有”按钮写入的列级值
+                      showFlowButtons={showFlowButtons ?? lane.data.showFlowButtons}
                       showFlowTime={lane.data.showFlowTime}
                     />
                     <SortPlaceholder

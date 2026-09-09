@@ -413,8 +413,11 @@ export function useSettingsMenu({ setEditState, path, lane }: UseSettingsMenuPar
         });
     });
 
+    // 优先级:设置项 > 列级覆盖 > 默认显示(与 Lane.tsx 渲染优先级一致)
     const laneFlowButtonsVisible =
-      lane.data.showFlowButtons ?? stateManager.getSetting('show-flow-button-on-card', board.data.settings) ?? true;
+      stateManager.getSetting('show-flow-button-on-card', board.data.settings) ??
+      lane.data.showFlowButtons ??
+      true;
 
     menu.addItem((item) => {
       item

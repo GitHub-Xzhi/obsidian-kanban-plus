@@ -91,8 +91,8 @@ const en = {
   'View flow history': 'View flow/back history',
   'No flow history': 'No flow history',
   'Show flow buttons on cards': 'Show flow buttons on cards',
-  'When enabled, hovering a card shows buttons to flow it to the next list or back.':
-    'When enabled, hovering a card shows buttons to flow it to the next list or back.',
+  'When enabled, cards show buttons to flow back to the previous list or flow to the next list.':
+    'When enabled, cards show buttons to flow back to the previous list or flow to the next list.',
   'Max flow history': 'Max flow/back history',
   'Maximum number of flow records kept per card (flow + back). Oldest records are removed first. Set 0 to keep none, or -1 for no limit.':
     'Maximum number of flow records kept per card (flow + back). Oldest records are removed first. Set 0 to keep none, or -1 for no limit.',

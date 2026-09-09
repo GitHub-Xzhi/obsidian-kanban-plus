@@ -370,22 +370,11 @@ export class SettingsManager {
       .setName(t('Show flow buttons on cards'))
       .setDesc(
         t(
-          'When enabled, hovering a card shows buttons to flow it to the next list or back.'
+          'When enabled, cards show buttons to flow back to the previous list or flow to the next list.'
         )
       )
       .then((setting) => {
         let toggleComponent: ToggleComponent;
-
-        // 全局开关变更时清除列级覆盖(show-flow-buttons),确保开关对所有列立即生效
-        const clearLaneFlowButtonOverrides = () => ({
-          lanes: {
-            $apply: (lanes?: PersistedLaneSetting[]) =>
-              lanes?.map((lane) => {
-                const { 'show-flow-buttons': _flowButtons, ...rest } = lane;
-                return rest;
-              }),
-          },
-        });
 
         setting
           .addToggle((toggle) => {
@@ -406,7 +395,6 @@ export class SettingsManager {
                 'show-flow-button-on-card': {
                   $set: newValue,
                 },
-                ...clearLaneFlowButtonOverrides(),
               });
             });
           })
@@ -419,7 +407,6 @@ export class SettingsManager {
 
                 this.applySettingsUpdate({
                   $unset: ['show-flow-button-on-card'],
-                  ...clearLaneFlowButtonOverrides(),
                 });
               });
           });
