@@ -5,6 +5,7 @@ import {
   HoverPopover,
   MarkdownFileInfo,
   Menu,
+  Notice,
   Platform,
   TFile,
   TextFileView,
@@ -603,11 +604,17 @@ export class KanbanView extends TextFileView implements HoverParent {
       stateManager.getSetting('show-toggle-all-flow-buttons') &&
       !this.actionButtons['show-toggle-all-flow-buttons']
     ) {
-      this.actionButtons['show-toggle-all-flow-buttons'] = this.addAction(
-        'lucide-arrow-right-left',
-        t('Show/hide all flow buttons'),
-        () => toggleAllLaneTimes('showFlowButtons')
-      );
+      // 设置项“开启流转回退”是总开关:关闭时板头按钮不可操作,点击提示去设置里开启
+      const btn = this.addAction('lucide-arrow-right-left', t('Show/hide all flow buttons'), () => {
+        if (!stateManager.getSetting('show-flow-button-on-card')) {
+          new Notice(t('Enable flow/back in settings first'));
+          return;
+        }
+
+        toggleAllLaneTimes('showFlowButtons');
+      });
+      btn.toggleClass('is-disabled', !stateManager.getSetting('show-flow-button-on-card'));
+      this.actionButtons['show-toggle-all-flow-buttons'] = btn;
     } else if (
       !stateManager.getSetting('show-toggle-all-flow-buttons') &&
       this.actionButtons['show-toggle-all-flow-buttons']
