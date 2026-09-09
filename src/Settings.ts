@@ -388,7 +388,8 @@ export class SettingsManager {
             toggleComponent = toggle;
 
             const [value, globalValue] = this.getSetting('show-flow-button-on-card', local);
-            const previousValue = value !== undefined ? value : globalValue;
+            // 跟踪当前值,用于在 onChange 时判断是否为“关闭→开启”的切换
+            let lastValue = value !== undefined ? value : globalValue;
 
             if (value !== undefined) {
               toggle.setValue(value);
@@ -399,10 +400,12 @@ export class SettingsManager {
             }
 
             toggle.onChange((newValue) => {
-              // 从关闭(或未启用)切到开启:清掉列级隐藏,按钮恢复显示
-              if (newValue && previousValue === false) {
+              // 从关闭切到开启:清掉列级隐藏,按钮恢复显示
+              if (newValue && lastValue === false) {
                 resetFlowButtonVisibility();
               }
+
+              lastValue = newValue;
 
               this.applySettingsUpdate({
                 'show-flow-button-on-card': {
@@ -416,13 +419,14 @@ export class SettingsManager {
               .setTooltip(t('Reset to default'))
               .onClick(() => {
                 const [, globalValue] = this.getSetting('show-flow-button-on-card', local);
-                const previousValue = this.getSetting('show-flow-button-on-card', local)[0];
                 toggleComponent.setValue(globalValue ?? true);
 
                 // 之前显式关闭、重置后回到开启:同样清除列级隐藏
-                if ((globalValue ?? true) && previousValue === false) {
+                if ((globalValue ?? true) && lastValue === false) {
                   resetFlowButtonVisibility();
                 }
+
+                lastValue = globalValue;
 
                 this.applySettingsUpdate({
                   $unset: ['show-flow-button-on-card'],

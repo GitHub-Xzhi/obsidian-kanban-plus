@@ -989,29 +989,47 @@ export class StateManager {
   /**
    * 清除所有列的流转按钮显示覆盖(showFlowButtons/show-flow-buttons)。
    * 用于总开关“开启流转回退”从关闭转为开启时:板头按钮此前批量隐藏的列级值全部作废,
-   * 按钮恢复默认显示。仅清理纯隐藏值;列级显式开启的值一并清除(语义:回归默认显示)。
+   * 按钮恢复默认显示。
+   * 注意:children 的 lane.data 是渲染与持久化(boardToMd)的数据源,必须一并清理,
+   * 否则 saveToDisk 会用 children 里的旧值把覆盖写回文件。
    */
   clearLaneFlowButtonOverrides() {
-    const lanes = this.state?.data?.settings?.lanes;
+    const hasOverrides =
+      this.state?.children?.some((lane) => lane.data.showFlowButtons !== undefined) ||
+      this.state?.data?.settings?.lanes?.some(
+        (lane) => lane['show-flow-buttons'] !== undefined
+      );
 
-    if (!lanes?.length || !lanes.some((lane) => lane['show-flow-buttons'] !== undefined)) {
+    if (!hasOverrides) {
       return;
     }
 
-    this.setState((board) =>
-      update(board, {
-        data: {
-          settings: {
-            lanes: {
-              $set: board.data.settings.lanes?.map((lane) => {
-                const { 'show-flow-buttons': _flowButtons, ...rest } = lane;
-                return rest;
-              }),
+    this.setState((board) => {
+      let nextBoard = update(board, {
+        children: {
+          $set: board.children.map((lane) => {
+            const { showFlowButtons: _showFlowButtons, ...data } = lane.data;
+            return { ...lane, data };
+          }),
+        },
+      });
+
+      if (nextBoard.data.settings.lanes) {
+        nextBoard = update(nextBoard, {
+          data: {
+            settings: {
+              lanes: {
+                $set: nextBoard.data.settings.lanes.map(
+                  ({ 'show-flow-buttons': _showFlowButtons, ...rest }) => rest
+                ),
+              },
             },
           },
-        },
-      })
-    );
+        });
+      }
+
+      return nextBoard;
+    });
   }
 
   moveItemToLane(path: Path, laneIndex: number) {
