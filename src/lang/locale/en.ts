@@ -98,6 +98,11 @@ const en = {
     'Maximum number of flow records kept per card (flow + back). Oldest records are removed first. Set 0 to keep none, or -1 for no limit.',
   'Set a flow target for this list first': 'Set a flow target for this list first',
   'No flow record to revert': 'No flow record to revert',
+  Clear: 'Clear',
+  'Clear flow history': 'Clear flow history',
+  'Are you sure you want to clear the flow history?':
+    'Are you sure you want to clear the flow history?',
+  'Yes, clear history': 'Yes, clear history',
   'Note folder': 'Note folder',
   'Notes created from Kanban cards will be placed in this folder. If blank, they will be placed in the default location for this vault.':
     'Notes created from Kanban cards will be placed in this folder. If blank, they will be placed in the default location for this vault.',

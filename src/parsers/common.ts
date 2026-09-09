@@ -311,6 +311,7 @@ export function shouldRefreshBoard(oldSettings: KanbanSettings, newSettings: Kan
     'hide-card-count',
     'tag-colors',
     'date-colors',
+    'show-flow-button-on-card',
   ];
 
   return !toCompare.every((k) => {
