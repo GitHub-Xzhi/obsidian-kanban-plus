@@ -1,16 +1,25 @@
-- 新增
-  - feat: 默认完成列支持【无（在自身列）】
-  - feat: 默认开启卡片复选框
-  - feat: 语言默认跟随系统
-  - feat: 默认完成列弹窗支持整行点击
-  - feat: 完成列新增卡片记录完成时间
-  - feat: 调整归档时间默认格式
-  - feat: 归档列菜单支持删除列
-  - feat: 归档列支持显示隐藏归档时间
+## 📝 更新日志 / Changelog
 
-- 修复
-  - fix: 修复默认看板分组开关显示
-  - fix: 修复新建看板菜单图标
-  - fix: 修复在完成列，点击复选框没有显示完成时间
-  - fix: 修复单列，点击复选框没有显示完成时间
-  - fix: 修复取消归档未移除归档时间
+### 2026-09-10
+
+#### ✨ 新功能
+
+- 新增「流转回退」功能：卡片可流转到下一列或回退上一列，支持卡片级流转历史与流转时间显示。
+- 新增「看板模板」设置：新建看板时使用指定笔记的内容初始化列与卡片。
+
+#### 🐛 修复
+
+- 卡片块 ID（`^id`）改为附加在卡片内容末行：修复多行卡片在上方编辑插入内容后，块 ID 上移、文件中出现重复 ID 的问题。
+- 语言切换实时刷新已打开看板
+
+---
+
+#### ✨ Features
+
+- New "Flow/back" feature: flow a card to the next list or revert it back to the previous list, with per-card flow history and flow time display.
+- New "Board template" setting: new Kanban boards are initialized with the columns and cards from the selected note.
+
+#### 🐛 Fixes
+
+- Card block IDs (`^id`) are now appended to the last line of the card content: fixes block IDs moving upward and duplicated IDs appearing in the file after inserting content above multi-line cards.
+- Switching the plugin language now live-updates already-open Kanban boards.
