@@ -20,6 +20,10 @@ Kanban Plus++ is a Markdown-backed Kanban plugin for Obsidian. It stores boards 
 
 ![](assets/README/2026-08-14.gif)
 
+### 流转回退 / Flow back
+
+![](assets/README/2026-09-11.gif)
+
 ## ✨ 新增功能 / New Features
 
 | 功能                     | 描述                                                                                      | 默认值                                               |
