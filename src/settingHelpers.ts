@@ -127,7 +127,7 @@ export function createSearchSelect({
 }: CreateSearchSelectParams) {
   return (setting: Setting) => {
     const inputEl = setting.controlEl.createEl('input', { type: 'text' });
-    inputEl.style.width = '100%';
+    inputEl.setCssStyles({ width: '100%' });
 
     const [value, globalValue] = manager.getSetting(key, local);
 
